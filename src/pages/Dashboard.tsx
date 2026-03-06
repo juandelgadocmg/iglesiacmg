@@ -2,9 +2,17 @@ import MetricCard from "@/components/shared/MetricCard";
 import StatusBadge from "@/components/shared/StatusBadge";
 import { Users, Church, DollarSign, UserPlus, CalendarDays, Cake } from "lucide-react";
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, LineChart, Line, Legend } from "recharts";
-import { asistenciaSemanal, ingresosMensuales, cumpleanos, servicios, eventos } from "@/data/mockData";
+import { useDashboardStats } from "@/hooks/useDatabase";
+import { asistenciaSemanal, ingresosMensuales, cumpleanos } from "@/data/mockData";
 
 export default function Dashboard() {
+  const { data: stats, isLoading } = useDashboardStats();
+
+  const totalMiembros = stats?.totalPersonas || 0;
+  const nuevos = stats?.nuevosEsteMes || 0;
+  const ingresos = stats?.ingresosMes || 0;
+  const fmt = (n: number) => n >= 1000000 ? `$${(n / 1000000).toFixed(1)}M` : `$${(n / 1000).toFixed(0)}K`;
+
   return (
     <div className="space-y-6 animate-fade-in">
       <div>
@@ -12,15 +20,13 @@ export default function Dashboard() {
         <p className="text-sm text-muted-foreground">Bienvenido al panel de administración de CMG</p>
       </div>
 
-      {/* Metrics */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-        <MetricCard title="Total Miembros" value={248} icon={Users} variant="default" trend={{ value: "12 este mes", positive: true }} />
-        <MetricCard title="Asistencia Último Culto" value={600} icon={Church} variant="info" subtitle="Domingo 1 Mar" />
-        <MetricCard title="Diezmos y Ofrendas" value="$7.3M" icon={DollarSign} variant="success" trend={{ value: "8% vs mes anterior", positive: true }} />
-        <MetricCard title="Nuevos Miembros" value={12} icon={UserPlus} variant="accent" subtitle="Este mes" />
+        <MetricCard title="Total Miembros" value={isLoading ? "..." : totalMiembros} icon={Users} variant="default" />
+        <MetricCard title="Diezmos y Ofrendas" value={isLoading ? "..." : fmt(ingresos)} icon={DollarSign} variant="success" />
+        <MetricCard title="Nuevos Miembros" value={isLoading ? "..." : nuevos} icon={UserPlus} variant="accent" subtitle="Este mes" />
+        <MetricCard title="Gastos del Mes" value={isLoading ? "..." : fmt(stats?.gastosMes || 0)} icon={Church} variant="info" />
       </div>
 
-      {/* Charts */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
         <div className="bg-card rounded-lg border p-5">
           <h3 className="font-semibold text-sm mb-4">Asistencia Semanal</h3>
@@ -51,15 +57,13 @@ export default function Dashboard() {
         </div>
       </div>
 
-      {/* Bottom section */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
-        {/* Upcoming services */}
         <div className="bg-card rounded-lg border p-5">
           <h3 className="font-semibold text-sm mb-4 flex items-center gap-2">
             <Church className="h-4 w-4 text-primary" /> Próximos Servicios
           </h3>
           <div className="space-y-3">
-            {servicios.filter(s => s.estado === 'Programado').slice(0, 3).map(s => (
+            {(stats?.servicios || []).filter(s => s.estado === 'Programado').slice(0, 3).map(s => (
               <div key={s.id} className="flex items-center justify-between py-2 border-b last:border-0">
                 <div>
                   <p className="text-sm font-medium">{s.nombre}</p>
@@ -68,28 +72,32 @@ export default function Dashboard() {
                 <StatusBadge status={s.estado} />
               </div>
             ))}
+            {(stats?.servicios || []).filter(s => s.estado === 'Programado').length === 0 && (
+              <p className="text-sm text-muted-foreground text-center py-4">Sin servicios programados</p>
+            )}
           </div>
         </div>
 
-        {/* Upcoming events */}
         <div className="bg-card rounded-lg border p-5">
           <h3 className="font-semibold text-sm mb-4 flex items-center gap-2">
             <CalendarDays className="h-4 w-4 text-accent" /> Próximos Eventos
           </h3>
           <div className="space-y-3">
-            {eventos.slice(0, 3).map(e => (
+            {(stats?.eventos || []).slice(0, 3).map(e => (
               <div key={e.id} className="flex items-center justify-between py-2 border-b last:border-0">
                 <div>
                   <p className="text-sm font-medium">{e.nombre}</p>
-                  <p className="text-xs text-muted-foreground">{e.fechaInicio} · {e.inscritos}/{e.cupos}</p>
+                  <p className="text-xs text-muted-foreground">{e.fecha_inicio}</p>
                 </div>
                 <StatusBadge status={e.estado} />
               </div>
             ))}
+            {(stats?.eventos || []).length === 0 && (
+              <p className="text-sm text-muted-foreground text-center py-4">Sin eventos próximos</p>
+            )}
           </div>
         </div>
 
-        {/* Birthdays */}
         <div className="bg-card rounded-lg border p-5">
           <h3 className="font-semibold text-sm mb-4 flex items-center gap-2">
             <Cake className="h-4 w-4 text-warning" /> Cumpleaños del Mes

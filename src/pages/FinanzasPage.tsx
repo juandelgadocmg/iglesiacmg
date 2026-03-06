@@ -3,15 +3,28 @@ import MetricCard from "@/components/shared/MetricCard";
 import DataTable from "@/components/shared/DataTable";
 import StatusBadge from "@/components/shared/StatusBadge";
 import { Button } from "@/components/ui/button";
-import { Plus, DollarSign, TrendingUp, TrendingDown, Wallet } from "lucide-react";
-import { finanzas } from "@/data/mockData";
+import { Plus, TrendingUp, TrendingDown, Wallet } from "lucide-react";
+import { useFinanzas } from "@/hooks/useDatabase";
+import { Skeleton } from "@/components/ui/skeleton";
 
 export default function FinanzasPage() {
-  const ingresos = finanzas.filter(f => f.tipo === 'Ingreso').reduce((s, f) => s + f.monto, 0);
-  const gastos = finanzas.filter(f => f.tipo === 'Gasto').reduce((s, f) => s + f.monto, 0);
+  const { data: finanzas, isLoading } = useFinanzas();
+
+  if (isLoading) {
+    return (
+      <div className="animate-fade-in space-y-4">
+        <Skeleton className="h-10 w-48" />
+        <Skeleton className="h-[400px] w-full" />
+      </div>
+    );
+  }
+
+  const data = finanzas || [];
+  const ingresos = data.filter(f => f.tipo === 'Ingreso').reduce((s, f) => s + Number(f.monto), 0);
+  const gastos = data.filter(f => f.tipo === 'Gasto').reduce((s, f) => s + Number(f.monto), 0);
   const balance = ingresos - gastos;
 
-  const fmt = (n: number) => `$${(n / 1000000).toFixed(1)}M`;
+  const fmt = (n: number) => n >= 1000000 ? `$${(n / 1000000).toFixed(1)}M` : `$${(n / 1000).toFixed(0)}K`;
 
   return (
     <div className="animate-fade-in">
@@ -22,13 +35,13 @@ export default function FinanzasPage() {
       </PageHeader>
 
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-6">
-        <MetricCard title="Ingresos del Mes" value={fmt(ingresos)} icon={TrendingUp} variant="success" />
-        <MetricCard title="Gastos del Mes" value={fmt(gastos)} icon={TrendingDown} variant="default" />
+        <MetricCard title="Ingresos" value={fmt(ingresos)} icon={TrendingUp} variant="success" />
+        <MetricCard title="Gastos" value={fmt(gastos)} icon={TrendingDown} variant="default" />
         <MetricCard title="Balance" value={fmt(balance)} icon={Wallet} variant="accent" />
       </div>
 
       <DataTable
-        data={finanzas}
+        data={data}
         searchKey="descripcion"
         searchPlaceholder="Buscar movimiento..."
         filterKey="tipo"
@@ -38,16 +51,16 @@ export default function FinanzasPage() {
           { value: "Gasto", label: "Gastos" },
         ]}
         columns={[
-          { key: "tipo", label: "Tipo", render: (f) => <StatusBadge status={f.tipo} /> },
-          { key: "categoria", label: "Categoría" },
-          { key: "descripcion", label: "Descripción" },
-          { key: "monto", label: "Monto", render: (f) => (
+          { key: "tipo", label: "Tipo", render: (f: any) => <StatusBadge status={f.tipo} /> },
+          { key: "categoria_nombre", label: "Categoría", render: (f: any) => f.categoria_nombre || "—" },
+          { key: "descripcion", label: "Descripción", render: (f: any) => f.descripcion || "—" },
+          { key: "monto", label: "Monto", render: (f: any) => (
             <span className={f.tipo === 'Ingreso' ? 'text-success font-semibold' : 'text-destructive font-semibold'}>
-              {f.tipo === 'Ingreso' ? '+' : '-'}${(f.monto / 1000).toFixed(0)}K
+              {f.tipo === 'Ingreso' ? '+' : '-'}${Number(f.monto).toLocaleString()}
             </span>
           )},
           { key: "fecha", label: "Fecha" },
-          { key: "metodoPago", label: "Método" },
+          { key: "metodo_pago", label: "Método", render: (f: any) => f.metodo_pago || "—" },
         ]}
       />
     </div>
