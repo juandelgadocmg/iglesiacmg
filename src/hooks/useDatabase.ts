@@ -1,0 +1,158 @@
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { supabase } from "@/integrations/supabase/client";
+import { Tables, TablesInsert } from "@/integrations/supabase/types";
+
+// ============ PERSONAS ============
+export function usePersonas() {
+  return useQuery({
+    queryKey: ["personas"],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("personas")
+        .select("*, grupos(nombre)")
+        .order("created_at", { ascending: false });
+      if (error) throw error;
+      return data;
+    },
+  });
+}
+
+export function useCreatePersona() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async (persona: TablesInsert<"personas">) => {
+      const { data, error } = await supabase.from("personas").insert(persona).select().single();
+      if (error) throw error;
+      return data;
+    },
+    onSuccess: () => qc.invalidateQueries({ queryKey: ["personas"] }),
+  });
+}
+
+// ============ GRUPOS ============
+export function useGrupos() {
+  return useQuery({
+    queryKey: ["grupos"],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("grupos")
+        .select("*, grupo_miembros(count), personas!grupos_lider_id_fkey(nombres, apellidos)")
+        .order("created_at", { ascending: false });
+      if (error) throw error;
+      return data;
+    },
+  });
+}
+
+// ============ SERVICIOS ============
+export function useServicios() {
+  return useQuery({
+    queryKey: ["servicios"],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("servicios")
+        .select("*")
+        .order("fecha", { ascending: false });
+      if (error) throw error;
+      return data;
+    },
+  });
+}
+
+// ============ FINANZAS ============
+export function useFinanzas() {
+  return useQuery({
+    queryKey: ["finanzas"],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("finanzas")
+        .select("*")
+        .order("fecha", { ascending: false });
+      if (error) throw error;
+      return data;
+    },
+  });
+}
+
+// ============ EVENTOS ============
+export function useEventos() {
+  return useQuery({
+    queryKey: ["eventos"],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("eventos")
+        .select("*, inscripciones(count)")
+        .order("fecha_inicio", { ascending: true });
+      if (error) throw error;
+      return data;
+    },
+  });
+}
+
+// ============ ASISTENCIA ============
+export function useAsistencia(servicioId: string | null) {
+  return useQuery({
+    queryKey: ["asistencia", servicioId],
+    enabled: !!servicioId,
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("asistencia")
+        .select("*")
+        .eq("servicio_id", servicioId!);
+      if (error) throw error;
+      return data;
+    },
+  });
+}
+
+export function useUpsertAsistencia() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async (records: { servicio_id: string; persona_id: string; presente: boolean }[]) => {
+      const { error } = await supabase
+        .from("asistencia")
+        .upsert(records, { onConflict: "servicio_id,persona_id" });
+      if (error) throw error;
+    },
+    onSuccess: () => qc.invalidateQueries({ queryKey: ["asistencia"] }),
+  });
+}
+
+// ============ DASHBOARD STATS ============
+export function useDashboardStats() {
+  return useQuery({
+    queryKey: ["dashboard-stats"],
+    queryFn: async () => {
+      const [personasRes, serviciosRes, finanzasRes, eventosRes] = await Promise.all([
+        supabase.from("personas").select("id, tipo_persona, fecha_nacimiento, created_at", { count: "exact" }),
+        supabase.from("servicios").select("*").order("fecha", { ascending: false }).limit(5),
+        supabase.from("finanzas").select("*"),
+        supabase.from("eventos").select("*, inscripciones(count)").order("fecha_inicio", { ascending: true }).limit(5),
+      ]);
+
+      const totalPersonas = personasRes.count || 0;
+      const now = new Date();
+      const thisMonth = personasRes.data?.filter(p => {
+        const d = new Date(p.created_at);
+        return d.getMonth() === now.getMonth() && d.getFullYear() === now.getFullYear();
+      }).length || 0;
+
+      const finanzasMes = finanzasRes.data?.filter(f => {
+        const d = new Date(f.fecha);
+        return d.getMonth() === now.getMonth() && d.getFullYear() === now.getFullYear();
+      }) || [];
+
+      const ingresosMes = finanzasMes.filter(f => f.tipo === "Ingreso").reduce((s, f) => s + Number(f.monto), 0);
+      const gastosMes = finanzasMes.filter(f => f.tipo === "Gasto").reduce((s, f) => s + Number(f.monto), 0);
+
+      return {
+        totalPersonas,
+        nuevosEsteMes: thisMonth,
+        ingresosMes,
+        gastosMes,
+        servicios: serviciosRes.data || [],
+        eventos: eventosRes.data || [],
+      };
+    },
+  });
+}
