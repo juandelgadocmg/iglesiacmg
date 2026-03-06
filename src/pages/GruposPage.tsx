@@ -3,9 +3,27 @@ import DataTable from "@/components/shared/DataTable";
 import StatusBadge from "@/components/shared/StatusBadge";
 import { Button } from "@/components/ui/button";
 import { Plus, Users } from "lucide-react";
-import { grupos } from "@/data/mockData";
+import { useGrupos } from "@/hooks/useDatabase";
+import { Skeleton } from "@/components/ui/skeleton";
 
 export default function GruposPage() {
+  const { data: grupos, isLoading } = useGrupos();
+
+  if (isLoading) {
+    return (
+      <div className="animate-fade-in space-y-4">
+        <Skeleton className="h-10 w-48" />
+        <Skeleton className="h-[400px] w-full" />
+      </div>
+    );
+  }
+
+  const tableData = (grupos || []).map(g => ({
+    ...g,
+    liderNombre: (g as any).personas ? `${(g as any).personas.nombres} ${(g as any).personas.apellidos}` : "—",
+    miembrosCount: (g as any).grupo_miembros?.[0]?.count || 0,
+  }));
+
   return (
     <div className="animate-fade-in">
       <PageHeader title="Grupos" description="Administración de células, ministerios y grupos internos">
@@ -15,7 +33,7 @@ export default function GruposPage() {
       </PageHeader>
 
       <DataTable
-        data={grupos}
+        data={tableData}
         searchKey="nombre"
         searchPlaceholder="Buscar grupo..."
         filterKey="tipo"
@@ -32,7 +50,7 @@ export default function GruposPage() {
         columns={[
           {
             key: "nombre", label: "Grupo",
-            render: (g) => (
+            render: (g: any) => (
               <div className="flex items-center gap-3">
                 <div className="w-8 h-8 rounded-lg bg-primary/10 flex items-center justify-center">
                   <Users className="h-4 w-4 text-primary" />
@@ -44,10 +62,10 @@ export default function GruposPage() {
               </div>
             )
           },
-          { key: "lider", label: "Líder" },
-          { key: "diaReunion", label: "Día", render: (g) => `${g.diaReunion} ${g.horaReunion}` },
-          { key: "miembros", label: "Miembros", render: (g) => <span className="font-semibold">{g.miembros}</span> },
-          { key: "estado", label: "Estado", render: (g) => <StatusBadge status={g.estado} /> },
+          { key: "liderNombre", label: "Líder" },
+          { key: "dia_reunion", label: "Día", render: (g: any) => `${g.dia_reunion || "—"} ${g.hora_reunion || ""}` },
+          { key: "miembrosCount", label: "Miembros", render: (g: any) => <span className="font-semibold">{g.miembrosCount}</span> },
+          { key: "estado", label: "Estado", render: (g: any) => <StatusBadge status={g.estado} /> },
         ]}
       />
     </div>

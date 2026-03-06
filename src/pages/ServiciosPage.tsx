@@ -3,9 +3,21 @@ import DataTable from "@/components/shared/DataTable";
 import StatusBadge from "@/components/shared/StatusBadge";
 import { Button } from "@/components/ui/button";
 import { Plus, Church } from "lucide-react";
-import { servicios } from "@/data/mockData";
+import { useServicios } from "@/hooks/useDatabase";
+import { Skeleton } from "@/components/ui/skeleton";
 
 export default function ServiciosPage() {
+  const { data: servicios, isLoading } = useServicios();
+
+  if (isLoading) {
+    return (
+      <div className="animate-fade-in space-y-4">
+        <Skeleton className="h-10 w-48" />
+        <Skeleton className="h-[400px] w-full" />
+      </div>
+    );
+  }
+
   return (
     <div className="animate-fade-in">
       <PageHeader title="Servicios" description="Gestión de cultos, reuniones y servicios de la iglesia">
@@ -15,7 +27,7 @@ export default function ServiciosPage() {
       </PageHeader>
 
       <DataTable
-        data={servicios}
+        data={servicios || []}
         searchKey="nombre"
         searchPlaceholder="Buscar servicio..."
         filterKey="estado"
@@ -28,7 +40,7 @@ export default function ServiciosPage() {
         columns={[
           {
             key: "nombre", label: "Servicio",
-            render: (s) => (
+            render: (s: any) => (
               <div className="flex items-center gap-3">
                 <div className="w-8 h-8 rounded-lg bg-info/10 flex items-center justify-center">
                   <Church className="h-4 w-4 text-info" />
@@ -40,10 +52,9 @@ export default function ServiciosPage() {
               </div>
             )
           },
-          { key: "fecha", label: "Fecha", render: (s) => `${s.fecha} · ${s.hora}` },
-          { key: "predicador", label: "Predicador" },
-          { key: "asistencia", label: "Asistencia", render: (s) => s.asistencia > 0 ? <span className="font-semibold">{s.asistencia}</span> : <span className="text-muted-foreground">—</span> },
-          { key: "estado", label: "Estado", render: (s) => <StatusBadge status={s.estado} /> },
+          { key: "fecha", label: "Fecha", render: (s: any) => `${s.fecha} · ${s.hora || ""}` },
+          { key: "predicador", label: "Predicador", render: (s: any) => s.predicador || "—" },
+          { key: "estado", label: "Estado", render: (s: any) => <StatusBadge status={s.estado} /> },
         ]}
       />
     </div>

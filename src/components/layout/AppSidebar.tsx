@@ -1,6 +1,7 @@
 import { useState } from "react";
-import { NavLink, useLocation } from "react-router-dom";
+import { NavLink, useLocation, useNavigate } from "react-router-dom";
 import { cn } from "@/lib/utils";
+import { useAuth } from "@/hooks/useAuth";
 import logo from "@/assets/logo.jpeg";
 import {
   LayoutDashboard, Users, UsersRound, Church, ClipboardCheck,
@@ -29,6 +30,13 @@ const menuItems = [
 export default function AppSidebar() {
   const [collapsed, setCollapsed] = useState(false);
   const location = useLocation();
+  const navigate = useNavigate();
+  const { signOut } = useAuth();
+
+  const handleLogout = async () => {
+    await signOut();
+    navigate("/login");
+  };
 
   return (
     <aside
@@ -37,7 +45,6 @@ export default function AppSidebar() {
         collapsed ? "w-[68px]" : "w-[250px]"
       )}
     >
-      {/* Logo */}
       <div className="flex items-center gap-3 px-4 py-5 border-b border-sidebar-border">
         <img src={logo} alt="CMG" className="w-9 h-9 rounded-lg object-cover" />
         {!collapsed && (
@@ -48,7 +55,6 @@ export default function AppSidebar() {
         )}
       </div>
 
-      {/* Navigation */}
       <nav className="flex-1 overflow-y-auto py-3 px-2 space-y-0.5">
         {menuItems.map((item) => {
           const isActive = location.pathname.startsWith(item.path);
@@ -70,7 +76,6 @@ export default function AppSidebar() {
         })}
       </nav>
 
-      {/* Footer */}
       <div className="border-t border-sidebar-border p-2">
         <button
           onClick={() => setCollapsed(!collapsed)}
@@ -79,7 +84,10 @@ export default function AppSidebar() {
           {collapsed ? <ChevronRight className="h-4 w-4" /> : <ChevronLeft className="h-4 w-4" />}
           {!collapsed && <span>Colapsar</span>}
         </button>
-        <button className="flex items-center gap-3 px-3 py-2.5 rounded-md text-[13px] text-sidebar-foreground hover:bg-sidebar-accent w-full transition-colors">
+        <button
+          onClick={handleLogout}
+          className="flex items-center gap-3 px-3 py-2.5 rounded-md text-[13px] text-sidebar-foreground hover:bg-sidebar-accent w-full transition-colors"
+        >
           <LogOut className="h-4 w-4" />
           {!collapsed && <span>Cerrar sesión</span>}
         </button>
