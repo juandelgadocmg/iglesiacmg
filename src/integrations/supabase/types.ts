@@ -14,16 +14,558 @@ export type Database = {
   }
   public: {
     Tables: {
-      [_ in never]: never
+      asistencia: {
+        Row: {
+          created_at: string
+          id: string
+          persona_id: string
+          presente: boolean
+          servicio_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          persona_id: string
+          presente?: boolean
+          servicio_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          persona_id?: string
+          presente?: boolean
+          servicio_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "asistencia_persona_id_fkey"
+            columns: ["persona_id"]
+            isOneToOne: false
+            referencedRelation: "personas"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "asistencia_servicio_id_fkey"
+            columns: ["servicio_id"]
+            isOneToOne: false
+            referencedRelation: "servicios"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      categorias_financieras: {
+        Row: {
+          created_at: string
+          id: string
+          nombre: string
+          tipo: Database["public"]["Enums"]["tipo_finanza"]
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          nombre: string
+          tipo: Database["public"]["Enums"]["tipo_finanza"]
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          nombre?: string
+          tipo?: Database["public"]["Enums"]["tipo_finanza"]
+        }
+        Relationships: []
+      }
+      donaciones: {
+        Row: {
+          created_at: string
+          descripcion: string | null
+          estado: string | null
+          fecha: string
+          id: string
+          metodo_pago: string | null
+          monto: number
+          persona_id: string | null
+          tipo: string | null
+        }
+        Insert: {
+          created_at?: string
+          descripcion?: string | null
+          estado?: string | null
+          fecha?: string
+          id?: string
+          metodo_pago?: string | null
+          monto: number
+          persona_id?: string | null
+          tipo?: string | null
+        }
+        Update: {
+          created_at?: string
+          descripcion?: string | null
+          estado?: string | null
+          fecha?: string
+          id?: string
+          metodo_pago?: string | null
+          monto?: number
+          persona_id?: string | null
+          tipo?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "donaciones_persona_id_fkey"
+            columns: ["persona_id"]
+            isOneToOne: false
+            referencedRelation: "personas"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      eventos: {
+        Row: {
+          created_at: string
+          cupos: number | null
+          descripcion: string | null
+          estado: string
+          fecha_fin: string | null
+          fecha_inicio: string
+          id: string
+          lugar: string | null
+          nombre: string
+          tipo: string | null
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          cupos?: number | null
+          descripcion?: string | null
+          estado?: string
+          fecha_fin?: string | null
+          fecha_inicio: string
+          id?: string
+          lugar?: string | null
+          nombre: string
+          tipo?: string | null
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          cupos?: number | null
+          descripcion?: string | null
+          estado?: string
+          fecha_fin?: string | null
+          fecha_inicio?: string
+          id?: string
+          lugar?: string | null
+          nombre?: string
+          tipo?: string | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      finanzas: {
+        Row: {
+          categoria_id: string | null
+          categoria_nombre: string | null
+          comprobante: string | null
+          created_at: string
+          descripcion: string | null
+          fecha: string
+          id: string
+          metodo_pago: string | null
+          monto: number
+          persona_id: string | null
+          registrado_por: string | null
+          tipo: Database["public"]["Enums"]["tipo_finanza"]
+          updated_at: string
+        }
+        Insert: {
+          categoria_id?: string | null
+          categoria_nombre?: string | null
+          comprobante?: string | null
+          created_at?: string
+          descripcion?: string | null
+          fecha: string
+          id?: string
+          metodo_pago?: string | null
+          monto: number
+          persona_id?: string | null
+          registrado_por?: string | null
+          tipo: Database["public"]["Enums"]["tipo_finanza"]
+          updated_at?: string
+        }
+        Update: {
+          categoria_id?: string | null
+          categoria_nombre?: string | null
+          comprobante?: string | null
+          created_at?: string
+          descripcion?: string | null
+          fecha?: string
+          id?: string
+          metodo_pago?: string | null
+          monto?: number
+          persona_id?: string | null
+          registrado_por?: string | null
+          tipo?: Database["public"]["Enums"]["tipo_finanza"]
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "finanzas_categoria_id_fkey"
+            columns: ["categoria_id"]
+            isOneToOne: false
+            referencedRelation: "categorias_financieras"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "finanzas_persona_id_fkey"
+            columns: ["persona_id"]
+            isOneToOne: false
+            referencedRelation: "personas"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      grupo_miembros: {
+        Row: {
+          created_at: string
+          grupo_id: string
+          id: string
+          persona_id: string
+        }
+        Insert: {
+          created_at?: string
+          grupo_id: string
+          id?: string
+          persona_id: string
+        }
+        Update: {
+          created_at?: string
+          grupo_id?: string
+          id?: string
+          persona_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "grupo_miembros_grupo_id_fkey"
+            columns: ["grupo_id"]
+            isOneToOne: false
+            referencedRelation: "grupos"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "grupo_miembros_persona_id_fkey"
+            columns: ["persona_id"]
+            isOneToOne: false
+            referencedRelation: "personas"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      grupos: {
+        Row: {
+          created_at: string
+          descripcion: string | null
+          dia_reunion: string | null
+          estado: string
+          hora_reunion: string | null
+          id: string
+          lider_id: string | null
+          nombre: string
+          tipo: Database["public"]["Enums"]["tipo_grupo"]
+          ubicacion: string | null
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          descripcion?: string | null
+          dia_reunion?: string | null
+          estado?: string
+          hora_reunion?: string | null
+          id?: string
+          lider_id?: string | null
+          nombre: string
+          tipo: Database["public"]["Enums"]["tipo_grupo"]
+          ubicacion?: string | null
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          descripcion?: string | null
+          dia_reunion?: string | null
+          estado?: string
+          hora_reunion?: string | null
+          id?: string
+          lider_id?: string | null
+          nombre?: string
+          tipo?: Database["public"]["Enums"]["tipo_grupo"]
+          ubicacion?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "grupos_lider_id_fkey"
+            columns: ["lider_id"]
+            isOneToOne: false
+            referencedRelation: "personas"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      inscripciones: {
+        Row: {
+          confirmado: boolean | null
+          created_at: string
+          estado_pago: string | null
+          evento_id: string
+          id: string
+          persona_id: string
+        }
+        Insert: {
+          confirmado?: boolean | null
+          created_at?: string
+          estado_pago?: string | null
+          evento_id: string
+          id?: string
+          persona_id: string
+        }
+        Update: {
+          confirmado?: boolean | null
+          created_at?: string
+          estado_pago?: string | null
+          evento_id?: string
+          id?: string
+          persona_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "inscripciones_evento_id_fkey"
+            columns: ["evento_id"]
+            isOneToOne: false
+            referencedRelation: "eventos"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "inscripciones_persona_id_fkey"
+            columns: ["persona_id"]
+            isOneToOne: false
+            referencedRelation: "personas"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      personas: {
+        Row: {
+          apellidos: string
+          created_at: string
+          direccion: string | null
+          documento: string | null
+          email: string | null
+          estado_civil: string | null
+          estado_iglesia: Database["public"]["Enums"]["estado_iglesia"]
+          fecha_bautismo: string | null
+          fecha_conversion: string | null
+          fecha_ingreso: string | null
+          fecha_nacimiento: string | null
+          foto_url: string | null
+          grupo_id: string | null
+          id: string
+          lider_responsable: string | null
+          ministerio: string | null
+          nombres: string
+          observaciones: string | null
+          ocupacion: string | null
+          sexo: string | null
+          telefono: string | null
+          tipo_persona: Database["public"]["Enums"]["tipo_persona"]
+          updated_at: string
+        }
+        Insert: {
+          apellidos: string
+          created_at?: string
+          direccion?: string | null
+          documento?: string | null
+          email?: string | null
+          estado_civil?: string | null
+          estado_iglesia?: Database["public"]["Enums"]["estado_iglesia"]
+          fecha_bautismo?: string | null
+          fecha_conversion?: string | null
+          fecha_ingreso?: string | null
+          fecha_nacimiento?: string | null
+          foto_url?: string | null
+          grupo_id?: string | null
+          id?: string
+          lider_responsable?: string | null
+          ministerio?: string | null
+          nombres: string
+          observaciones?: string | null
+          ocupacion?: string | null
+          sexo?: string | null
+          telefono?: string | null
+          tipo_persona?: Database["public"]["Enums"]["tipo_persona"]
+          updated_at?: string
+        }
+        Update: {
+          apellidos?: string
+          created_at?: string
+          direccion?: string | null
+          documento?: string | null
+          email?: string | null
+          estado_civil?: string | null
+          estado_iglesia?: Database["public"]["Enums"]["estado_iglesia"]
+          fecha_bautismo?: string | null
+          fecha_conversion?: string | null
+          fecha_ingreso?: string | null
+          fecha_nacimiento?: string | null
+          foto_url?: string | null
+          grupo_id?: string | null
+          id?: string
+          lider_responsable?: string | null
+          ministerio?: string | null
+          nombres?: string
+          observaciones?: string | null
+          ocupacion?: string | null
+          sexo?: string | null
+          telefono?: string | null
+          tipo_persona?: Database["public"]["Enums"]["tipo_persona"]
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "fk_personas_grupo"
+            columns: ["grupo_id"]
+            isOneToOne: false
+            referencedRelation: "grupos"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      profiles: {
+        Row: {
+          avatar_url: string | null
+          created_at: string
+          display_name: string
+          id: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          avatar_url?: string | null
+          created_at?: string
+          display_name?: string
+          id?: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          avatar_url?: string | null
+          created_at?: string
+          display_name?: string
+          id?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      servicios: {
+        Row: {
+          created_at: string
+          descripcion: string | null
+          estado: string
+          fecha: string
+          hora: string | null
+          id: string
+          lugar: string | null
+          nombre: string
+          predicador: string | null
+          tipo: Database["public"]["Enums"]["tipo_servicio"]
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          descripcion?: string | null
+          estado?: string
+          fecha: string
+          hora?: string | null
+          id?: string
+          lugar?: string | null
+          nombre: string
+          predicador?: string | null
+          tipo: Database["public"]["Enums"]["tipo_servicio"]
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          descripcion?: string | null
+          estado?: string
+          fecha?: string
+          hora?: string | null
+          id?: string
+          lugar?: string | null
+          nombre?: string
+          predicador?: string | null
+          tipo?: Database["public"]["Enums"]["tipo_servicio"]
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      user_roles: {
+        Row: {
+          id: string
+          role: Database["public"]["Enums"]["app_role"]
+          user_id: string
+        }
+        Insert: {
+          id?: string
+          role: Database["public"]["Enums"]["app_role"]
+          user_id: string
+        }
+        Update: {
+          id?: string
+          role?: Database["public"]["Enums"]["app_role"]
+          user_id?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      has_role: {
+        Args: {
+          _role: Database["public"]["Enums"]["app_role"]
+          _user_id: string
+        }
+        Returns: boolean
+      }
     }
     Enums: {
-      [_ in never]: never
+      app_role:
+        | "admin"
+        | "pastor"
+        | "lider"
+        | "secretaria"
+        | "tesoreria"
+        | "maestro"
+        | "consulta"
+      estado_iglesia: "Activo" | "Inactivo" | "En proceso"
+      tipo_finanza: "Ingreso" | "Gasto"
+      tipo_grupo:
+        | "Células"
+        | "Jóvenes"
+        | "Mujeres"
+        | "Hombres"
+        | "Niños"
+        | "Alabanza"
+        | "Ujieres"
+        | "Liderazgo"
+        | "Discipulado"
+      tipo_persona: "Miembro" | "Visitante" | "Líder" | "Servidor"
+      tipo_servicio:
+        | "Culto general"
+        | "Oración"
+        | "Reunión de líderes"
+        | "Escuela bíblica"
+        | "Vigilia"
+        | "Servicio especial"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -150,6 +692,38 @@ export type CompositeTypes<
 
 export const Constants = {
   public: {
-    Enums: {},
+    Enums: {
+      app_role: [
+        "admin",
+        "pastor",
+        "lider",
+        "secretaria",
+        "tesoreria",
+        "maestro",
+        "consulta",
+      ],
+      estado_iglesia: ["Activo", "Inactivo", "En proceso"],
+      tipo_finanza: ["Ingreso", "Gasto"],
+      tipo_grupo: [
+        "Células",
+        "Jóvenes",
+        "Mujeres",
+        "Hombres",
+        "Niños",
+        "Alabanza",
+        "Ujieres",
+        "Liderazgo",
+        "Discipulado",
+      ],
+      tipo_persona: ["Miembro", "Visitante", "Líder", "Servidor"],
+      tipo_servicio: [
+        "Culto general",
+        "Oración",
+        "Reunión de líderes",
+        "Escuela bíblica",
+        "Vigilia",
+        "Servicio especial",
+      ],
+    },
   },
 } as const
