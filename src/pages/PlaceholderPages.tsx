@@ -25,9 +25,6 @@ function PlaceholderContent({ title, description, icon: Icon }: PlaceholderPageP
   );
 }
 
-export function AsistenciaPage() {
-  return <PlaceholderContent title="Asistencia" description="Control de asistencia por servicio y grupo" icon={ClipboardCheck} />;
-}
 
 export function DonacionesPage() {
   return <PlaceholderContent title="Donaciones" description="Registro y seguimiento de donaciones" icon={Heart} />;
