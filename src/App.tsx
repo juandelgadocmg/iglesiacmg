@@ -11,8 +11,9 @@ import GruposPage from "@/pages/GruposPage";
 import ServiciosPage from "@/pages/ServiciosPage";
 import FinanzasPage from "@/pages/FinanzasPage";
 import EventosPage from "@/pages/EventosPage";
+import AsistenciaPage from "@/pages/AsistenciaPage";
 import {
-  AsistenciaPage, DonacionesPage, InscripcionesPage,
+  DonacionesPage, InscripcionesPage,
   AcademiaPage, CertificadosPage, ReportesPage,
   UsuariosPage, ConfiguracionPage
 } from "@/pages/PlaceholderPages";
