@@ -1,8 +1,8 @@
 import PageHeader from "@/components/shared/PageHeader";
 import DataTable from "@/components/shared/DataTable";
 import StatusBadge from "@/components/shared/StatusBadge";
-import { Button } from "@/components/ui/button";
-import { Plus, Church } from "lucide-react";
+import ServicioFormDialog from "@/components/forms/ServicioFormDialog";
+import { Church } from "lucide-react";
 import { useServicios } from "@/hooks/useDatabase";
 import { Skeleton } from "@/components/ui/skeleton";
 
@@ -21,9 +21,7 @@ export default function ServiciosPage() {
   return (
     <div className="animate-fade-in">
       <PageHeader title="Servicios" description="Gestión de cultos, reuniones y servicios de la iglesia">
-        <Button className="gap-2 bg-primary text-primary-foreground hover:bg-primary/90">
-          <Plus className="h-4 w-4" /> Nuevo Servicio
-        </Button>
+        <ServicioFormDialog />
       </PageHeader>
 
       <DataTable
