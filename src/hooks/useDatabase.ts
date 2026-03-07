@@ -55,18 +55,6 @@ export function useCreateGrupo() {
     onSuccess: () => qc.invalidateQueries({ queryKey: ["grupos"] }),
   });
 }
-  return useQuery({
-    queryKey: ["grupos"],
-    queryFn: async () => {
-      const { data, error } = await supabase
-        .from("grupos")
-        .select("*, grupo_miembros(count), personas!grupos_lider_id_fkey(nombres, apellidos)")
-        .order("created_at", { ascending: false });
-      if (error) throw error;
-      return data;
-    },
-  });
-}
 
 // ============ SERVICIOS ============
 export function useServicios() {
