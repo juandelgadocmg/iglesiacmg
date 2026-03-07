@@ -26,9 +26,6 @@ function PlaceholderContent({ title, description, icon: Icon }: PlaceholderPageP
 }
 
 
-export function DonacionesPage() {
-  return <PlaceholderContent title="Donaciones" description="Registro y seguimiento de donaciones" icon={Heart} />;
-}
 
 export function InscripcionesPage() {
   return <PlaceholderContent title="Inscripciones" description="Formularios de inscripción a eventos" icon={FileText} />;
