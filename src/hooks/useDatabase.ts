@@ -44,6 +44,30 @@ export function useGrupos() {
   });
 }
 
+export function useCreateGrupo() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async (grupo: TablesInsert<"grupos">) => {
+      const { data, error } = await supabase.from("grupos").insert(grupo).select().single();
+      if (error) throw error;
+      return data;
+    },
+    onSuccess: () => qc.invalidateQueries({ queryKey: ["grupos"] }),
+  });
+}
+  return useQuery({
+    queryKey: ["grupos"],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("grupos")
+        .select("*, grupo_miembros(count), personas!grupos_lider_id_fkey(nombres, apellidos)")
+        .order("created_at", { ascending: false });
+      if (error) throw error;
+      return data;
+    },
+  });
+}
+
 // ============ SERVICIOS ============
 export function useServicios() {
   return useQuery({
@@ -56,6 +80,18 @@ export function useServicios() {
       if (error) throw error;
       return data;
     },
+  });
+}
+
+export function useCreateServicio() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async (servicio: TablesInsert<"servicios">) => {
+      const { data, error } = await supabase.from("servicios").insert(servicio).select().single();
+      if (error) throw error;
+      return data;
+    },
+    onSuccess: () => qc.invalidateQueries({ queryKey: ["servicios"] }),
   });
 }
 
@@ -74,6 +110,18 @@ export function useFinanzas() {
   });
 }
 
+export function useCreateFinanza() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async (finanza: TablesInsert<"finanzas">) => {
+      const { data, error } = await supabase.from("finanzas").insert(finanza).select().single();
+      if (error) throw error;
+      return data;
+    },
+    onSuccess: () => qc.invalidateQueries({ queryKey: ["finanzas"] }),
+  });
+}
+
 // ============ EVENTOS ============
 export function useEventos() {
   return useQuery({
@@ -86,6 +134,45 @@ export function useEventos() {
       if (error) throw error;
       return data;
     },
+  });
+}
+
+export function useCreateEvento() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async (evento: TablesInsert<"eventos">) => {
+      const { data, error } = await supabase.from("eventos").insert(evento).select().single();
+      if (error) throw error;
+      return data;
+    },
+    onSuccess: () => qc.invalidateQueries({ queryKey: ["eventos"] }),
+  });
+}
+
+// ============ DONACIONES ============
+export function useDonaciones() {
+  return useQuery({
+    queryKey: ["donaciones"],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("donaciones")
+        .select("*, personas(nombres, apellidos)")
+        .order("fecha", { ascending: false });
+      if (error) throw error;
+      return data;
+    },
+  });
+}
+
+export function useCreateDonacion() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async (donacion: TablesInsert<"donaciones">) => {
+      const { data, error } = await supabase.from("donaciones").insert(donacion).select().single();
+      if (error) throw error;
+      return data;
+    },
+    onSuccess: () => qc.invalidateQueries({ queryKey: ["donaciones"] }),
   });
 }
 
