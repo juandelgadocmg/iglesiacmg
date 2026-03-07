@@ -3,7 +3,6 @@ import DataTable from "@/components/shared/DataTable";
 import StatusBadge from "@/components/shared/StatusBadge";
 import PersonaFormDialog from "@/components/forms/PersonaFormDialog";
 import { usePersonas } from "@/hooks/useDatabase";
-import { usePersonas } from "@/hooks/useDatabase";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Skeleton } from "@/components/ui/skeleton";
 
