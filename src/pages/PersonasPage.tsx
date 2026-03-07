@@ -1,8 +1,8 @@
 import PageHeader from "@/components/shared/PageHeader";
 import DataTable from "@/components/shared/DataTable";
 import StatusBadge from "@/components/shared/StatusBadge";
-import { Button } from "@/components/ui/button";
-import { Plus } from "lucide-react";
+import PersonaFormDialog from "@/components/forms/PersonaFormDialog";
+import { usePersonas } from "@/hooks/useDatabase";
 import { usePersonas } from "@/hooks/useDatabase";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -27,9 +27,7 @@ export default function PersonasPage() {
   return (
     <div className="animate-fade-in">
       <PageHeader title="Personas" description="Gestión de miembros, visitantes, líderes y servidores">
-        <Button className="gap-2 bg-primary text-primary-foreground hover:bg-primary/90">
-          <Plus className="h-4 w-4" /> Nueva Persona
-        </Button>
+        <PersonaFormDialog />
       </PageHeader>
 
       <DataTable

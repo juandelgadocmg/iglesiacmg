@@ -1,8 +1,8 @@
 import PageHeader from "@/components/shared/PageHeader";
 import DataTable from "@/components/shared/DataTable";
 import StatusBadge from "@/components/shared/StatusBadge";
-import { Button } from "@/components/ui/button";
-import { Plus, CalendarDays } from "lucide-react";
+import EventoFormDialog from "@/components/forms/EventoFormDialog";
+import { CalendarDays } from "lucide-react";
 import { useEventos } from "@/hooks/useDatabase";
 import { Skeleton } from "@/components/ui/skeleton";
 
@@ -26,9 +26,7 @@ export default function EventosPage() {
   return (
     <div className="animate-fade-in">
       <PageHeader title="Eventos" description="Gestión de actividades especiales de la iglesia">
-        <Button className="gap-2 bg-primary text-primary-foreground hover:bg-primary/90">
-          <Plus className="h-4 w-4" /> Nuevo Evento
-        </Button>
+        <EventoFormDialog />
       </PageHeader>
 
       <DataTable

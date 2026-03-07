@@ -2,8 +2,8 @@ import PageHeader from "@/components/shared/PageHeader";
 import MetricCard from "@/components/shared/MetricCard";
 import DataTable from "@/components/shared/DataTable";
 import StatusBadge from "@/components/shared/StatusBadge";
-import { Button } from "@/components/ui/button";
-import { Plus, TrendingUp, TrendingDown, Wallet } from "lucide-react";
+import FinanzaFormDialog from "@/components/forms/FinanzaFormDialog";
+import { TrendingUp, TrendingDown, Wallet } from "lucide-react";
 import { useFinanzas } from "@/hooks/useDatabase";
 import { Skeleton } from "@/components/ui/skeleton";
 
@@ -29,9 +29,7 @@ export default function FinanzasPage() {
   return (
     <div className="animate-fade-in">
       <PageHeader title="Finanzas" description="Panel financiero de la iglesia">
-        <Button className="gap-2 bg-primary text-primary-foreground hover:bg-primary/90">
-          <Plus className="h-4 w-4" /> Nuevo Registro
-        </Button>
+        <FinanzaFormDialog />
       </PageHeader>
 
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-6">
