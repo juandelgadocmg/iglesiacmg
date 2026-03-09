@@ -1,13 +1,19 @@
+import { useState } from "react";
 import PageHeader from "@/components/shared/PageHeader";
 import DataTable from "@/components/shared/DataTable";
 import StatusBadge from "@/components/shared/StatusBadge";
 import GrupoFormDialog from "@/components/forms/GrupoFormDialog";
-import { Users } from "lucide-react";
-import { useGrupos } from "@/hooks/useDatabase";
+import DeleteConfirmDialog from "@/components/shared/DeleteConfirmDialog";
+import { Users, Pencil } from "lucide-react";
+import { useGrupos, useDeleteGrupo } from "@/hooks/useDatabase";
+import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
+import { toast } from "sonner";
 
 export default function GruposPage() {
   const { data: grupos, isLoading } = useGrupos();
+  const deleteGrupo = useDeleteGrupo();
+  const [editing, setEditing] = useState<any>(null);
 
   if (isLoading) {
     return (
@@ -24,11 +30,20 @@ export default function GruposPage() {
     miembrosCount: (g as any).grupo_miembros?.[0]?.count || 0,
   }));
 
+  const handleDelete = async (id: string) => {
+    try {
+      await deleteGrupo.mutateAsync(id);
+      toast.success("Grupo eliminado");
+    } catch { toast.error("Error al eliminar"); }
+  };
+
   return (
     <div className="animate-fade-in">
       <PageHeader title="Grupos" description="Administración de células, ministerios y grupos internos">
         <GrupoFormDialog />
       </PageHeader>
+
+      {editing && <GrupoFormDialog initialData={editing} onClose={() => setEditing(null)} />}
 
       <DataTable
         data={tableData}
@@ -64,6 +79,17 @@ export default function GruposPage() {
           { key: "dia_reunion", label: "Día", render: (g: any) => `${g.dia_reunion || "—"} ${g.hora_reunion || ""}` },
           { key: "miembrosCount", label: "Miembros", render: (g: any) => <span className="font-semibold">{g.miembrosCount}</span> },
           { key: "estado", label: "Estado", render: (g: any) => <StatusBadge status={g.estado} /> },
+          {
+            key: "actions", label: "",
+            render: (g: any) => (
+              <div className="flex items-center gap-1" onClick={e => e.stopPropagation()}>
+                <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => setEditing({ ...g })}>
+                  <Pencil className="h-4 w-4" />
+                </Button>
+                <DeleteConfirmDialog onConfirm={() => handleDelete(g.id)} title="¿Eliminar grupo?" description={`Se eliminará el grupo "${g.nombre}" permanentemente.`} />
+              </div>
+            )
+          },
         ]}
       />
     </div>

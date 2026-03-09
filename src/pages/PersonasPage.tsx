@@ -1,13 +1,20 @@
+import { useState } from "react";
 import PageHeader from "@/components/shared/PageHeader";
 import DataTable from "@/components/shared/DataTable";
 import StatusBadge from "@/components/shared/StatusBadge";
 import PersonaFormDialog from "@/components/forms/PersonaFormDialog";
-import { usePersonas } from "@/hooks/useDatabase";
+import DeleteConfirmDialog from "@/components/shared/DeleteConfirmDialog";
+import { usePersonas, useDeletePersona } from "@/hooks/useDatabase";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
+import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
+import { Pencil } from "lucide-react";
+import { toast } from "sonner";
 
 export default function PersonasPage() {
   const { data: personas, isLoading } = usePersonas();
+  const deletePersona = useDeletePersona();
+  const [editing, setEditing] = useState<any>(null);
 
   if (isLoading) {
     return (
@@ -23,11 +30,20 @@ export default function PersonasPage() {
     grupoNombre: (p as any).grupos?.nombre || "",
   }));
 
+  const handleDelete = async (id: string) => {
+    try {
+      await deletePersona.mutateAsync(id);
+      toast.success("Persona eliminada");
+    } catch { toast.error("Error al eliminar"); }
+  };
+
   return (
     <div className="animate-fade-in">
       <PageHeader title="Personas" description="Gestión de miembros, visitantes, líderes y servidores">
         <PersonaFormDialog />
       </PageHeader>
+
+      {editing && <PersonaFormDialog initialData={editing} onClose={() => setEditing(null)} />}
 
       <DataTable
         data={tableData}
@@ -60,6 +76,17 @@ export default function PersonasPage() {
           { key: "tipo_persona", label: "Tipo", render: (p: any) => <StatusBadge status={p.tipo_persona} /> },
           { key: "grupoNombre", label: "Grupo", render: (p: any) => p.grupoNombre || <span className="text-muted-foreground">—</span> },
           { key: "estado_iglesia", label: "Estado", render: (p: any) => <StatusBadge status={p.estado_iglesia} /> },
+          {
+            key: "actions", label: "",
+            render: (p: any) => (
+              <div className="flex items-center gap-1" onClick={e => e.stopPropagation()}>
+                <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => setEditing({ ...p })}>
+                  <Pencil className="h-4 w-4" />
+                </Button>
+                <DeleteConfirmDialog onConfirm={() => handleDelete(p.id)} title="¿Eliminar persona?" description={`Se eliminará a ${p.nombres} ${p.apellidos} permanentemente.`} />
+              </div>
+            )
+          },
         ]}
       />
     </div>

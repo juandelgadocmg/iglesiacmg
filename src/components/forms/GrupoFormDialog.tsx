@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -6,13 +6,20 @@ import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
 import { Plus } from "lucide-react";
-import { useCreateGrupo, usePersonas } from "@/hooks/useDatabase";
+import { useCreateGrupo, useUpdateGrupo, usePersonas } from "@/hooks/useDatabase";
 import { toast } from "sonner";
 
-export default function GrupoFormDialog() {
+interface Props { initialData?: any; onClose?: () => void; }
+
+export default function GrupoFormDialog({ initialData, onClose }: Props) {
+  const isEdit = !!initialData;
   const [open, setOpen] = useState(false);
   const createGrupo = useCreateGrupo();
+  const updateGrupo = useUpdateGrupo();
   const { data: personas } = usePersonas();
+
+  useEffect(() => { if (initialData) setOpen(true); }, [initialData]);
+  const handleClose = () => { setOpen(false); onClose?.(); };
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
@@ -20,43 +27,52 @@ export default function GrupoFormDialog() {
     const nombre = (fd.get("nombre") as string)?.trim();
     if (!nombre) { toast.error("El nombre es obligatorio"); return; }
 
+    const payload = {
+      nombre,
+      tipo: (fd.get("tipo") as any),
+      descripcion: (fd.get("descripcion") as string) || null,
+      lider_id: (fd.get("lider_id") as string) || null,
+      dia_reunion: (fd.get("dia_reunion") as string) || null,
+      hora_reunion: (fd.get("hora_reunion") as string) || null,
+      ubicacion: (fd.get("ubicacion") as string) || null,
+    };
+
     try {
-      await createGrupo.mutateAsync({
-        nombre,
-        tipo: (fd.get("tipo") as any),
-        descripcion: (fd.get("descripcion") as string) || null,
-        lider_id: (fd.get("lider_id") as string) || null,
-        dia_reunion: (fd.get("dia_reunion") as string) || null,
-        hora_reunion: (fd.get("hora_reunion") as string) || null,
-        ubicacion: (fd.get("ubicacion") as string) || null,
-      });
-      toast.success("Grupo creado exitosamente");
-      setOpen(false);
+      if (isEdit) {
+        await updateGrupo.mutateAsync({ id: initialData.id, ...payload });
+        toast.success("Grupo actualizado");
+      } else {
+        await createGrupo.mutateAsync(payload);
+        toast.success("Grupo creado exitosamente");
+      }
+      handleClose();
     } catch (err: any) {
-      toast.error("Error al crear grupo", { description: err.message });
+      toast.error("Error", { description: err.message });
     }
   };
 
+  const isPending = createGrupo.isPending || updateGrupo.isPending;
+
   return (
-    <Dialog open={open} onOpenChange={setOpen}>
-      <DialogTrigger asChild>
-        <Button className="gap-2 bg-primary text-primary-foreground hover:bg-primary/90">
-          <Plus className="h-4 w-4" /> Nuevo Grupo
-        </Button>
-      </DialogTrigger>
+    <Dialog open={open} onOpenChange={(v) => { if (!v) handleClose(); else setOpen(true); }}>
+      {!isEdit && (
+        <DialogTrigger asChild>
+          <Button className="gap-2 bg-primary text-primary-foreground hover:bg-primary/90">
+            <Plus className="h-4 w-4" /> Nuevo Grupo
+          </Button>
+        </DialogTrigger>
+      )}
       <DialogContent className="max-w-lg max-h-[90vh] overflow-y-auto">
-        <DialogHeader>
-          <DialogTitle>Crear Nuevo Grupo</DialogTitle>
-        </DialogHeader>
+        <DialogHeader><DialogTitle>{isEdit ? "Editar Grupo" : "Crear Nuevo Grupo"}</DialogTitle></DialogHeader>
         <form onSubmit={handleSubmit} className="space-y-4">
           <div className="space-y-2">
             <Label htmlFor="nombre">Nombre del grupo *</Label>
-            <Input id="nombre" name="nombre" required maxLength={100} />
+            <Input id="nombre" name="nombre" required maxLength={100} defaultValue={initialData?.nombre || ""} />
           </div>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div className="space-y-2">
               <Label htmlFor="tipo">Tipo *</Label>
-              <Select name="tipo" defaultValue="Células">
+              <Select name="tipo" defaultValue={initialData?.tipo || "Células"}>
                 <SelectTrigger><SelectValue /></SelectTrigger>
                 <SelectContent>
                   {["Células","Jóvenes","Mujeres","Hombres","Niños","Alabanza","Ujieres","Liderazgo","Discipulado"].map(t => (
@@ -67,7 +83,7 @@ export default function GrupoFormDialog() {
             </div>
             <div className="space-y-2">
               <Label htmlFor="lider_id">Líder</Label>
-              <Select name="lider_id">
+              <Select name="lider_id" defaultValue={initialData?.lider_id || ""}>
                 <SelectTrigger><SelectValue placeholder="Seleccionar líder" /></SelectTrigger>
                 <SelectContent>
                   {(personas || []).map(p => (
@@ -78,7 +94,7 @@ export default function GrupoFormDialog() {
             </div>
             <div className="space-y-2">
               <Label htmlFor="dia_reunion">Día de reunión</Label>
-              <Select name="dia_reunion">
+              <Select name="dia_reunion" defaultValue={initialData?.dia_reunion || ""}>
                 <SelectTrigger><SelectValue placeholder="Seleccionar" /></SelectTrigger>
                 <SelectContent>
                   {["Lunes","Martes","Miércoles","Jueves","Viernes","Sábado","Domingo"].map(d => (
@@ -89,22 +105,20 @@ export default function GrupoFormDialog() {
             </div>
             <div className="space-y-2">
               <Label htmlFor="hora_reunion">Hora</Label>
-              <Input id="hora_reunion" name="hora_reunion" type="time" />
+              <Input id="hora_reunion" name="hora_reunion" type="time" defaultValue={initialData?.hora_reunion || ""} />
             </div>
           </div>
           <div className="space-y-2">
             <Label htmlFor="ubicacion">Ubicación</Label>
-            <Input id="ubicacion" name="ubicacion" maxLength={255} />
+            <Input id="ubicacion" name="ubicacion" maxLength={255} defaultValue={initialData?.ubicacion || ""} />
           </div>
           <div className="space-y-2">
             <Label htmlFor="descripcion">Descripción</Label>
-            <Textarea id="descripcion" name="descripcion" maxLength={500} rows={3} />
+            <Textarea id="descripcion" name="descripcion" maxLength={500} rows={3} defaultValue={initialData?.descripcion || ""} />
           </div>
           <div className="flex justify-end gap-2 pt-2">
-            <Button type="button" variant="outline" onClick={() => setOpen(false)}>Cancelar</Button>
-            <Button type="submit" disabled={createGrupo.isPending}>
-              {createGrupo.isPending ? "Guardando..." : "Guardar Grupo"}
-            </Button>
+            <Button type="button" variant="outline" onClick={handleClose}>Cancelar</Button>
+            <Button type="submit" disabled={isPending}>{isPending ? "Guardando..." : isEdit ? "Actualizar" : "Guardar Grupo"}</Button>
           </div>
         </form>
       </DialogContent>

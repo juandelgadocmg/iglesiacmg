@@ -29,6 +29,28 @@ export function useCreatePersona() {
   });
 }
 
+export function useUpdatePersona() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async ({ id, ...updates }: { id: string } & Partial<TablesInsert<"personas">>) => {
+      const { error } = await supabase.from("personas").update(updates).eq("id", id);
+      if (error) throw error;
+    },
+    onSuccess: () => qc.invalidateQueries({ queryKey: ["personas"] }),
+  });
+}
+
+export function useDeletePersona() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async (id: string) => {
+      const { error } = await supabase.from("personas").delete().eq("id", id);
+      if (error) throw error;
+    },
+    onSuccess: () => qc.invalidateQueries({ queryKey: ["personas"] }),
+  });
+}
+
 // ============ GRUPOS ============
 export function useGrupos() {
   return useQuery({
@@ -51,6 +73,28 @@ export function useCreateGrupo() {
       const { data, error } = await supabase.from("grupos").insert(grupo).select().single();
       if (error) throw error;
       return data;
+    },
+    onSuccess: () => qc.invalidateQueries({ queryKey: ["grupos"] }),
+  });
+}
+
+export function useUpdateGrupo() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async ({ id, ...updates }: { id: string } & Partial<TablesInsert<"grupos">>) => {
+      const { error } = await supabase.from("grupos").update(updates).eq("id", id);
+      if (error) throw error;
+    },
+    onSuccess: () => qc.invalidateQueries({ queryKey: ["grupos"] }),
+  });
+}
+
+export function useDeleteGrupo() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async (id: string) => {
+      const { error } = await supabase.from("grupos").delete().eq("id", id);
+      if (error) throw error;
     },
     onSuccess: () => qc.invalidateQueries({ queryKey: ["grupos"] }),
   });
@@ -83,6 +127,28 @@ export function useCreateServicio() {
   });
 }
 
+export function useUpdateServicio() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async ({ id, ...updates }: { id: string } & Partial<TablesInsert<"servicios">>) => {
+      const { error } = await supabase.from("servicios").update(updates).eq("id", id);
+      if (error) throw error;
+    },
+    onSuccess: () => qc.invalidateQueries({ queryKey: ["servicios"] }),
+  });
+}
+
+export function useDeleteServicio() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async (id: string) => {
+      const { error } = await supabase.from("servicios").delete().eq("id", id);
+      if (error) throw error;
+    },
+    onSuccess: () => qc.invalidateQueries({ queryKey: ["servicios"] }),
+  });
+}
+
 // ============ FINANZAS ============
 export function useFinanzas() {
   return useQuery({
@@ -110,6 +176,28 @@ export function useCreateFinanza() {
   });
 }
 
+export function useUpdateFinanza() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async ({ id, ...updates }: { id: string } & Partial<TablesInsert<"finanzas">>) => {
+      const { error } = await supabase.from("finanzas").update(updates).eq("id", id);
+      if (error) throw error;
+    },
+    onSuccess: () => qc.invalidateQueries({ queryKey: ["finanzas"] }),
+  });
+}
+
+export function useDeleteFinanza() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async (id: string) => {
+      const { error } = await supabase.from("finanzas").delete().eq("id", id);
+      if (error) throw error;
+    },
+    onSuccess: () => qc.invalidateQueries({ queryKey: ["finanzas"] }),
+  });
+}
+
 // ============ EVENTOS ============
 export function useEventos() {
   return useQuery({
@@ -132,6 +220,28 @@ export function useCreateEvento() {
       const { data, error } = await supabase.from("eventos").insert(evento).select().single();
       if (error) throw error;
       return data;
+    },
+    onSuccess: () => qc.invalidateQueries({ queryKey: ["eventos"] }),
+  });
+}
+
+export function useUpdateEvento() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async ({ id, ...updates }: { id: string } & Partial<TablesInsert<"eventos">>) => {
+      const { error } = await supabase.from("eventos").update(updates).eq("id", id);
+      if (error) throw error;
+    },
+    onSuccess: () => qc.invalidateQueries({ queryKey: ["eventos"] }),
+  });
+}
+
+export function useDeleteEvento() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async (id: string) => {
+      const { error } = await supabase.from("eventos").delete().eq("id", id);
+      if (error) throw error;
     },
     onSuccess: () => qc.invalidateQueries({ queryKey: ["eventos"] }),
   });
