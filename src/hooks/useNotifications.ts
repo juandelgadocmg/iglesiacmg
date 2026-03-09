@@ -1,0 +1,128 @@
+import { useMemo } from "react";
+import { useQuery } from "@tanstack/react-query";
+import { supabase } from "@/integrations/supabase/client";
+import { differenceInDays, parseISO, format } from "date-fns";
+import { es } from "date-fns/locale";
+
+export interface AppNotification {
+  id: string;
+  type: "event" | "birthday" | "service";
+  title: string;
+  description: string;
+  date: string;
+  daysLeft: number;
+  icon: "calendar" | "cake" | "church";
+}
+
+export function useNotifications() {
+  const { data: personas } = useQuery({
+    queryKey: ["notif-personas"],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("personas")
+        .select("id, nombres, apellidos, fecha_nacimiento");
+      if (error) throw error;
+      return data;
+    },
+    staleTime: 5 * 60 * 1000,
+  });
+
+  const { data: eventos } = useQuery({
+    queryKey: ["notif-eventos"],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("eventos")
+        .select("id, nombre, fecha_inicio, lugar")
+        .gte("fecha_inicio", new Date().toISOString().split("T")[0])
+        .order("fecha_inicio", { ascending: true })
+        .limit(10);
+      if (error) throw error;
+      return data;
+    },
+    staleTime: 5 * 60 * 1000,
+  });
+
+  const { data: servicios } = useQuery({
+    queryKey: ["notif-servicios"],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("servicios")
+        .select("id, nombre, fecha, hora")
+        .eq("estado", "Programado")
+        .gte("fecha", new Date().toISOString().split("T")[0])
+        .order("fecha", { ascending: true })
+        .limit(5);
+      if (error) throw error;
+      return data;
+    },
+    staleTime: 5 * 60 * 1000,
+  });
+
+  const notifications = useMemo<AppNotification[]>(() => {
+    const items: AppNotification[] = [];
+    const now = new Date();
+    const currentYear = now.getFullYear();
+
+    // Upcoming birthdays (within 7 days)
+    (personas || []).forEach((p) => {
+      if (!p.fecha_nacimiento) return;
+      try {
+        const bday = parseISO(p.fecha_nacimiento);
+        const thisYearBday = new Date(currentYear, bday.getMonth(), bday.getDate());
+        if (thisYearBday < now) thisYearBday.setFullYear(currentYear + 1);
+        const days = differenceInDays(thisYearBday, now);
+        if (days >= 0 && days <= 7) {
+          items.push({
+            id: `bday-${p.id}`,
+            type: "birthday",
+            title: `🎂 ${p.nombres} ${p.apellidos}`,
+            description: days === 0 ? "¡Cumple años hoy!" : `Cumple años en ${days} día${days > 1 ? "s" : ""}`,
+            date: format(thisYearBday, "dd MMM", { locale: es }),
+            daysLeft: days,
+            icon: "cake",
+          });
+        }
+      } catch {}
+    });
+
+    // Upcoming events (within 14 days)
+    (eventos || []).forEach((e) => {
+      try {
+        const days = differenceInDays(parseISO(e.fecha_inicio), now);
+        if (days >= 0 && days <= 14) {
+          items.push({
+            id: `event-${e.id}`,
+            type: "event",
+            title: e.nombre,
+            description: days === 0 ? "¡Es hoy!" : `En ${days} día${days > 1 ? "s" : ""} · ${e.lugar || ""}`,
+            date: e.fecha_inicio,
+            daysLeft: days,
+            icon: "calendar",
+          });
+        }
+      } catch {}
+    });
+
+    // Upcoming services (within 7 days)
+    (servicios || []).forEach((s) => {
+      try {
+        const days = differenceInDays(parseISO(s.fecha), now);
+        if (days >= 0 && days <= 7) {
+          items.push({
+            id: `svc-${s.id}`,
+            type: "service",
+            title: s.nombre,
+            description: days === 0 ? `Hoy a las ${s.hora || ""}` : `En ${days} día${days > 1 ? "s" : ""} · ${s.hora || ""}`,
+            date: s.fecha,
+            daysLeft: days,
+            icon: "church",
+          });
+        }
+      } catch {}
+    });
+
+    return items.sort((a, b) => a.daysLeft - b.daysLeft);
+  }, [personas, eventos, servicios]);
+
+  return { notifications, count: notifications.length };
+}
