@@ -4,8 +4,12 @@ import MetricCard from "@/components/shared/MetricCard";
 import { useDashboardStats } from "@/hooks/useDatabase";
 import { useCursos, useCertificados, useAllMatriculas } from "@/hooks/useAcademia";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Users, DollarSign, TrendingUp, TrendingDown, GraduationCap, Award, CalendarDays, Heart } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
+import { Users, DollarSign, TrendingUp, TrendingDown, GraduationCap, Award, CalendarDays, Heart, Download, FileText, FileSpreadsheet } from "lucide-react";
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart, Pie, Cell, LineChart, Line } from "recharts";
+import { exportFinancialSummaryPDF, exportToExcel } from "@/lib/exportUtils";
+import { toast } from "sonner";
 
 const COLORS = ["hsl(var(--primary))", "hsl(var(--accent))", "hsl(var(--muted-foreground))", "hsl(142 76% 36%)", "hsl(38 92% 50%)"];
 
@@ -50,9 +54,62 @@ export default function ReportesPage() {
     );
   }
 
+  const handleExportPDF = () => {
+    exportFinancialSummaryPDF({
+      ingresosMes: stats?.ingresosMes || 0,
+      gastosMes: stats?.gastosMes || 0,
+      totalPersonas: stats?.totalPersonas || 0,
+      nuevosEsteMes: stats?.nuevosEsteMes || 0,
+      certificadosTotal: certificados?.length || 0,
+      cursosActivos: cursos?.filter(c => c.estado === "Activo").length || 0,
+      alumnosMatriculados: matriculas?.length || 0,
+      proximosEventos: stats?.eventos?.length || 0,
+    });
+    toast.success("Reporte PDF generado");
+  };
+
+  const handleExportExcel = () => {
+    const resumenData = [
+      { concepto: "Ingresos del mes", valor: stats?.ingresosMes || 0 },
+      { concepto: "Gastos del mes", valor: stats?.gastosMes || 0 },
+      { concepto: "Balance", valor: (stats?.ingresosMes || 0) - (stats?.gastosMes || 0) },
+      { concepto: "Total personas", valor: stats?.totalPersonas || 0 },
+      { concepto: "Nuevos este mes", valor: stats?.nuevosEsteMes || 0 },
+      { concepto: "Certificados emitidos", valor: certificados?.length || 0 },
+      { concepto: "Cursos activos", valor: cursos?.filter(c => c.estado === "Activo").length || 0 },
+      { concepto: "Alumnos matriculados", valor: matriculas?.length || 0 },
+    ];
+    exportToExcel({
+      title: "Reporte General",
+      columns: [
+        { header: "Concepto", key: "concepto" },
+        { header: "Valor", key: "valor" },
+      ],
+      data: resumenData,
+      filename: "reporte-general",
+    });
+    toast.success("Reporte Excel generado");
+  };
+
   return (
     <div className="animate-fade-in">
-      <PageHeader title="Reportes" description="Resumen y estadísticas de la iglesia" />
+      <PageHeader title="Reportes" description="Resumen y estadísticas de la iglesia">
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <Button variant="outline">
+              <Download className="h-4 w-4 mr-2" /> Exportar
+            </Button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent align="end">
+            <DropdownMenuItem onClick={handleExportPDF}>
+              <FileText className="h-4 w-4 mr-2" /> Exportar a PDF
+            </DropdownMenuItem>
+            <DropdownMenuItem onClick={handleExportExcel}>
+              <FileSpreadsheet className="h-4 w-4 mr-2" /> Exportar a Excel
+            </DropdownMenuItem>
+          </DropdownMenuContent>
+        </DropdownMenu>
+      </PageHeader>
 
       {/* KPIs */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
