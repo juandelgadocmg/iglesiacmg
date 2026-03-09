@@ -13,6 +13,7 @@ import { useServicios, usePersonas, useAsistencia, useUpsertAsistencia } from "@
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
 import { Skeleton } from "@/components/ui/skeleton";
+import ExportDropdown from "@/components/shared/ExportDropdown";
 
 export default function AsistenciaPage() {
   const { data: servicios, isLoading: loadingServicios } = useServicios();
