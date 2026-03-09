@@ -1,9 +1,9 @@
-import { Search, Bell, ChevronRight } from "lucide-react";
+import { Search, ChevronRight } from "lucide-react";
 import { useLocation } from "react-router-dom";
 import { Input } from "@/components/ui/input";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
-import { Badge } from "@/components/ui/badge";
 import { useAuth } from "@/hooks/useAuth";
+import NotificationDropdown from "@/components/layout/NotificationDropdown";
 
 const breadcrumbMap: Record<string, string> = {
   dashboard: "Dashboard",
