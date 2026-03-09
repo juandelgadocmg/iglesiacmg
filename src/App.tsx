@@ -38,19 +38,19 @@ const App = () => (
             <Route path="/login" element={<LoginPage />} />
             <Route element={<ProtectedRoute><AppLayout /></ProtectedRoute>}>
               <Route path="/dashboard" element={<Dashboard />} />
-              <Route path="/personas" element={<PersonasPage />} />
-              <Route path="/grupos" element={<GruposPage />} />
-              <Route path="/servicios" element={<ServiciosPage />} />
-              <Route path="/asistencia" element={<AsistenciaPage />} />
-              <Route path="/finanzas" element={<FinanzasPage />} />
-              <Route path="/donaciones" element={<DonacionesPage />} />
-              <Route path="/eventos" element={<EventosPage />} />
-              <Route path="/inscripciones" element={<InscripcionesPage />} />
-              <Route path="/academia" element={<AcademiaPage />} />
-              <Route path="/certificados" element={<CertificadosPage />} />
-              <Route path="/reportes" element={<ReportesPage />} />
-              <Route path="/usuarios" element={<UsuariosPage />} />
-              <Route path="/configuracion" element={<ConfiguracionPage />} />
+              <Route path="/personas" element={<RoleGuard><PersonasPage /></RoleGuard>} />
+              <Route path="/grupos" element={<RoleGuard><GruposPage /></RoleGuard>} />
+              <Route path="/servicios" element={<RoleGuard><ServiciosPage /></RoleGuard>} />
+              <Route path="/asistencia" element={<RoleGuard><AsistenciaPage /></RoleGuard>} />
+              <Route path="/finanzas" element={<RoleGuard><FinanzasPage /></RoleGuard>} />
+              <Route path="/donaciones" element={<RoleGuard><DonacionesPage /></RoleGuard>} />
+              <Route path="/eventos" element={<RoleGuard><EventosPage /></RoleGuard>} />
+              <Route path="/inscripciones" element={<RoleGuard><InscripcionesPage /></RoleGuard>} />
+              <Route path="/academia" element={<RoleGuard><AcademiaPage /></RoleGuard>} />
+              <Route path="/certificados" element={<RoleGuard><CertificadosPage /></RoleGuard>} />
+              <Route path="/reportes" element={<RoleGuard><ReportesPage /></RoleGuard>} />
+              <Route path="/usuarios" element={<RoleGuard><UsuariosPage /></RoleGuard>} />
+              <Route path="/configuracion" element={<RoleGuard><ConfiguracionPage /></RoleGuard>} />
             </Route>
             <Route path="*" element={<NotFound />} />
           </Routes>
