@@ -9,7 +9,7 @@ export function usePersonas() {
     queryFn: async () => {
       const { data, error } = await supabase
         .from("personas")
-        .select("*, grupos(nombre)")
+        .select("*, grupos!fk_personas_grupo(nombre)")
         .order("created_at", { ascending: false });
       if (error) throw error;
       return data;
