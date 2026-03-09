@@ -61,7 +61,7 @@ export default function AppSidebar() {
       </div>
 
       <nav className="flex-1 overflow-y-auto py-3 px-2 space-y-0.5">
-        {menuItems.map((item) => {
+        {visibleItems.map((item) => {
           const isActive = location.pathname.startsWith(item.path);
           return (
             <NavLink
