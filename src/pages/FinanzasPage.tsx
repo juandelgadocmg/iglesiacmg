@@ -10,6 +10,7 @@ import { useFinanzas, useDeleteFinanza } from "@/hooks/useDatabase";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { toast } from "sonner";
+import ExportDropdown from "@/components/shared/ExportDropdown";
 
 export default function FinanzasPage() {
   const { data: finanzas, isLoading } = useFinanzas();
