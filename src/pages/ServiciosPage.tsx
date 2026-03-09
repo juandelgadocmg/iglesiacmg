@@ -9,6 +9,7 @@ import { useServicios, useDeleteServicio } from "@/hooks/useDatabase";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { toast } from "sonner";
+import ExportDropdown from "@/components/shared/ExportDropdown";
 
 export default function ServiciosPage() {
   const { data: servicios, isLoading } = useServicios();
@@ -34,6 +35,19 @@ export default function ServiciosPage() {
   return (
     <div className="animate-fade-in">
       <PageHeader title="Servicios" description="Gestión de cultos, reuniones y servicios de la iglesia">
+        <ExportDropdown
+          title="Servicios"
+          filename="servicios"
+          columns={[
+            { header: "Nombre", key: "nombre" },
+            { header: "Tipo", key: "tipo" },
+            { header: "Fecha", key: "fecha" },
+            { header: "Hora", key: "hora" },
+            { header: "Predicador", key: "predicador" },
+            { header: "Estado", key: "estado" },
+          ]}
+          data={servicios || []}
+        />
         <ServicioFormDialog />
       </PageHeader>
 

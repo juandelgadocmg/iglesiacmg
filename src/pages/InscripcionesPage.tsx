@@ -11,6 +11,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { CheckCircle, XCircle, Trash2, FileText } from "lucide-react";
 import { toast } from "sonner";
+import ExportDropdown from "@/components/shared/ExportDropdown";
 
 export default function InscripcionesPage() {
   const { data: eventos, isLoading: loadingEventos } = useEventos();
@@ -70,6 +71,20 @@ export default function InscripcionesPage() {
   return (
     <div className="animate-fade-in">
       <PageHeader title="Inscripciones" description="Gestión de inscripciones a eventos">
+        {selectedEvento && tableData.length > 0 && (
+          <ExportDropdown
+            title={`Inscripciones - ${eventoActual?.nombre || ""}`}
+            filename={`inscripciones-${eventoActual?.nombre || "evento"}`}
+            columns={[
+              { header: "Persona", key: "personaNombre" },
+              { header: "Evento", key: "eventoNombre" },
+              { header: "Confirmado", key: "confirmado" },
+              { header: "Estado Pago", key: "estado_pago" },
+              { header: "Fecha Inscripción", key: "created_at" },
+            ]}
+            data={tableData}
+          />
+        )}
         {selectedEvento && <InscripcionFormDialog eventoId={selectedEvento} />}
       </PageHeader>
 

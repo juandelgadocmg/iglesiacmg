@@ -6,6 +6,7 @@ import DonacionFormDialog from "@/components/forms/DonacionFormDialog";
 import { Heart, TrendingUp, DollarSign } from "lucide-react";
 import { useDonaciones } from "@/hooks/useDatabase";
 import { Skeleton } from "@/components/ui/skeleton";
+import ExportDropdown from "@/components/shared/ExportDropdown";
 
 export default function DonacionesPage() {
   const { data: donaciones, isLoading } = useDonaciones();
@@ -31,6 +32,19 @@ export default function DonacionesPage() {
   return (
     <div className="animate-fade-in">
       <PageHeader title="Donaciones" description="Registro y seguimiento de donaciones">
+        <ExportDropdown
+          title="Donaciones"
+          filename="donaciones"
+          columns={[
+            { header: "Donante", key: "donante" },
+            { header: "Tipo", key: "tipo" },
+            { header: "Monto", key: "monto" },
+            { header: "Fecha", key: "fecha" },
+            { header: "Método", key: "metodo_pago" },
+            { header: "Estado", key: "estado" },
+          ]}
+          data={tableData}
+        />
         <DonacionFormDialog />
       </PageHeader>
 
