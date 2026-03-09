@@ -22,6 +22,7 @@ import CertificadosPage from "@/pages/CertificadosPage";
 import ReportesPage from "@/pages/ReportesPage";
 import UsuariosPage from "@/pages/UsuariosPage";
 import ConfiguracionPage from "@/pages/ConfiguracionPage";
+import ResetPasswordPage from "@/pages/ResetPasswordPage";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -36,6 +37,7 @@ const App = () => (
           <Routes>
             <Route path="/" element={<Navigate to="/login" replace />} />
             <Route path="/login" element={<LoginPage />} />
+            <Route path="/reset-password" element={<ResetPasswordPage />} />
             <Route element={<ProtectedRoute><AppLayout /></ProtectedRoute>}>
               <Route path="/dashboard" element={<Dashboard />} />
               <Route path="/personas" element={<RoleGuard><PersonasPage /></RoleGuard>} />
