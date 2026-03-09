@@ -127,6 +127,28 @@ export function useCreateServicio() {
   });
 }
 
+export function useUpdateServicio() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async ({ id, ...updates }: { id: string } & Partial<TablesInsert<"servicios">>) => {
+      const { error } = await supabase.from("servicios").update(updates).eq("id", id);
+      if (error) throw error;
+    },
+    onSuccess: () => qc.invalidateQueries({ queryKey: ["servicios"] }),
+  });
+}
+
+export function useDeleteServicio() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async (id: string) => {
+      const { error } = await supabase.from("servicios").delete().eq("id", id);
+      if (error) throw error;
+    },
+    onSuccess: () => qc.invalidateQueries({ queryKey: ["servicios"] }),
+  });
+}
+
 // ============ FINANZAS ============
 export function useFinanzas() {
   return useQuery({
