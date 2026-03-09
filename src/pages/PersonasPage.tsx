@@ -10,6 +10,7 @@ import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Pencil } from "lucide-react";
 import { toast } from "sonner";
+import ExportDropdown from "@/components/shared/ExportDropdown";
 
 export default function PersonasPage() {
   const { data: personas, isLoading } = usePersonas();
