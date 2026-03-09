@@ -2,6 +2,8 @@ import { useState } from "react";
 import { NavLink, useLocation, useNavigate } from "react-router-dom";
 import { cn } from "@/lib/utils";
 import { useAuth } from "@/hooks/useAuth";
+import { useUserRoles } from "@/hooks/useUserRoles";
+import { canAccess } from "@/lib/permissions";
 import logo from "@/assets/logo.jpeg";
 import {
   LayoutDashboard, Users, UsersRound, Church, ClipboardCheck,
@@ -32,6 +34,9 @@ export default function AppSidebar() {
   const location = useLocation();
   const navigate = useNavigate();
   const { signOut } = useAuth();
+  const { roles } = useUserRoles();
+
+  const visibleItems = menuItems.filter((item) => canAccess(roles, item.path));
 
   const handleLogout = async () => {
     await signOut();
@@ -56,7 +61,7 @@ export default function AppSidebar() {
       </div>
 
       <nav className="flex-1 overflow-y-auto py-3 px-2 space-y-0.5">
-        {menuItems.map((item) => {
+        {visibleItems.map((item) => {
           const isActive = location.pathname.startsWith(item.path);
           return (
             <NavLink
