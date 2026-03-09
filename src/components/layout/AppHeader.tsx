@@ -49,12 +49,7 @@ export default function AppHeader() {
           <Input placeholder="Buscar..." className="pl-9 w-64 h-9 bg-muted/50 border-0 text-sm" />
         </div>
 
-        <button className="relative p-2 rounded-md hover:bg-muted transition-colors">
-          <Bell className="h-[18px] w-[18px] text-muted-foreground" />
-          <Badge className="absolute -top-0.5 -right-0.5 h-4 w-4 p-0 flex items-center justify-center text-[10px] bg-accent text-accent-foreground border-0">
-            3
-          </Badge>
-        </button>
+        <NotificationDropdown />
 
         <div className="flex items-center gap-2.5 pl-3 border-l">
           <Avatar className="h-8 w-8">
