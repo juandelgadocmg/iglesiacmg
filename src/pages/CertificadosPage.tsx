@@ -27,9 +27,42 @@ export default function CertificadosPage() {
     cursoNombre: (c as any).cursos?.nombre || "",
   }));
 
+  const exportColumns = [
+    { header: "Código", key: "codigo" },
+    { header: "Persona", key: "personaNombre" },
+    { header: "Curso", key: "cursoNombre" },
+    { header: "Fecha emisión", key: "fecha_emision" },
+  ];
+
+  const handleExportPDF = () => {
+    exportToPDF({ title: "Certificados Emitidos", columns: exportColumns, data: tableData, filename: "certificados" });
+    toast.success("PDF generado");
+  };
+
+  const handleExportExcel = () => {
+    exportToExcel({ title: "Certificados", columns: exportColumns, data: tableData, filename: "certificados" });
+    toast.success("Excel generado");
+  };
+
   return (
     <div className="animate-fade-in">
-      <PageHeader title="Certificados" description="Certificados emitidos por la academia" />
+      <PageHeader title="Certificados" description="Certificados emitidos por la academia">
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <Button variant="outline">
+              <Download className="h-4 w-4 mr-2" /> Exportar
+            </Button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent align="end">
+            <DropdownMenuItem onClick={handleExportPDF}>
+              <FileText className="h-4 w-4 mr-2" /> Exportar a PDF
+            </DropdownMenuItem>
+            <DropdownMenuItem onClick={handleExportExcel}>
+              <FileSpreadsheet className="h-4 w-4 mr-2" /> Exportar a Excel
+            </DropdownMenuItem>
+          </DropdownMenuContent>
+        </DropdownMenu>
+      </PageHeader>
 
       <div className="bg-card border rounded-lg px-4 py-3 mb-6 flex items-center gap-3">
         <div className="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center">
