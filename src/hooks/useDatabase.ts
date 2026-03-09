@@ -176,6 +176,28 @@ export function useCreateFinanza() {
   });
 }
 
+export function useUpdateFinanza() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async ({ id, ...updates }: { id: string } & Partial<TablesInsert<"finanzas">>) => {
+      const { error } = await supabase.from("finanzas").update(updates).eq("id", id);
+      if (error) throw error;
+    },
+    onSuccess: () => qc.invalidateQueries({ queryKey: ["finanzas"] }),
+  });
+}
+
+export function useDeleteFinanza() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async (id: string) => {
+      const { error } = await supabase.from("finanzas").delete().eq("id", id);
+      if (error) throw error;
+    },
+    onSuccess: () => qc.invalidateQueries({ queryKey: ["finanzas"] }),
+  });
+}
+
 // ============ EVENTOS ============
 export function useEventos() {
   return useQuery({
