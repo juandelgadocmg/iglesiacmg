@@ -34,6 +34,9 @@ export default function AppSidebar() {
   const location = useLocation();
   const navigate = useNavigate();
   const { signOut } = useAuth();
+  const { roles } = useUserRoles();
+
+  const visibleItems = menuItems.filter((item) => canAccess(roles, item.path));
 
   const handleLogout = async () => {
     await signOut();
