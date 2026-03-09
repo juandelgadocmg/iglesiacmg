@@ -27,9 +27,6 @@ function PlaceholderContent({ title, description, icon: Icon }: PlaceholderPageP
 
 
 
-export function InscripcionesPage() {
-  return <PlaceholderContent title="Inscripciones" description="Formularios de inscripción a eventos" icon={FileText} />;
-}
 
 export function AcademiaPage() {
   return <PlaceholderContent title="Academia" description="Sistema de formación bíblica" icon={GraduationCap} />;
