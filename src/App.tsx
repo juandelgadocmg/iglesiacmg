@@ -20,7 +20,7 @@ import AcademiaPage from "@/pages/AcademiaPage";
 import CertificadosPage from "@/pages/CertificadosPage";
 import ReportesPage from "@/pages/ReportesPage";
 import UsuariosPage from "@/pages/UsuariosPage";
-import { ConfiguracionPage } from "@/pages/PlaceholderPages";
+import ConfiguracionPage from "@/pages/ConfiguracionPage";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();

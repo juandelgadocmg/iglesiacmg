@@ -126,6 +126,66 @@ export type Database = {
           },
         ]
       }
+      configuracion_iglesia: {
+        Row: {
+          ciudad: string | null
+          color_primario: string | null
+          created_at: string
+          descripcion: string | null
+          direccion: string | null
+          email: string | null
+          horario_servicios: string | null
+          id: string
+          logo_url: string | null
+          moneda: string | null
+          nombre_iglesia: string
+          pais: string | null
+          pastor_principal: string | null
+          sitio_web: string | null
+          telefono: string | null
+          updated_at: string
+          zona_horaria: string | null
+        }
+        Insert: {
+          ciudad?: string | null
+          color_primario?: string | null
+          created_at?: string
+          descripcion?: string | null
+          direccion?: string | null
+          email?: string | null
+          horario_servicios?: string | null
+          id?: string
+          logo_url?: string | null
+          moneda?: string | null
+          nombre_iglesia?: string
+          pais?: string | null
+          pastor_principal?: string | null
+          sitio_web?: string | null
+          telefono?: string | null
+          updated_at?: string
+          zona_horaria?: string | null
+        }
+        Update: {
+          ciudad?: string | null
+          color_primario?: string | null
+          created_at?: string
+          descripcion?: string | null
+          direccion?: string | null
+          email?: string | null
+          horario_servicios?: string | null
+          id?: string
+          logo_url?: string | null
+          moneda?: string | null
+          nombre_iglesia?: string
+          pais?: string | null
+          pastor_principal?: string | null
+          sitio_web?: string | null
+          telefono?: string | null
+          updated_at?: string
+          zona_horaria?: string | null
+        }
+        Relationships: []
+      }
       cursos: {
         Row: {
           created_at: string
