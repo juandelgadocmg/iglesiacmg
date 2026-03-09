@@ -164,6 +164,63 @@ export function useCreateDonacion() {
   });
 }
 
+// ============ INSCRIPCIONES ============
+export function useInscripciones(eventoId: string | null) {
+  return useQuery({
+    queryKey: ["inscripciones", eventoId],
+    enabled: !!eventoId,
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("inscripciones")
+        .select("*, personas(nombres, apellidos), eventos(nombre)")
+        .eq("evento_id", eventoId!)
+        .order("created_at", { ascending: false });
+      if (error) throw error;
+      return data;
+    },
+  });
+}
+
+export function useCreateInscripcion() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async (inscripcion: TablesInsert<"inscripciones">) => {
+      const { data, error } = await supabase.from("inscripciones").insert(inscripcion).select().single();
+      if (error) throw error;
+      return data;
+    },
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["inscripciones"] });
+      qc.invalidateQueries({ queryKey: ["eventos"] });
+    },
+  });
+}
+
+export function useUpdateInscripcion() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async ({ id, ...updates }: { id: string; confirmado?: boolean; estado_pago?: string }) => {
+      const { error } = await supabase.from("inscripciones").update(updates).eq("id", id);
+      if (error) throw error;
+    },
+    onSuccess: () => qc.invalidateQueries({ queryKey: ["inscripciones"] }),
+  });
+}
+
+export function useDeleteInscripcion() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async (id: string) => {
+      const { error } = await supabase.from("inscripciones").delete().eq("id", id);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["inscripciones"] });
+      qc.invalidateQueries({ queryKey: ["eventos"] });
+    },
+  });
+}
+
 // ============ ASISTENCIA ============
 export function useAsistencia(servicioId: string | null) {
   return useQuery({
