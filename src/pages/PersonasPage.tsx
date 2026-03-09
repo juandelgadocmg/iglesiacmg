@@ -41,6 +41,20 @@ export default function PersonasPage() {
   return (
     <div className="animate-fade-in">
       <PageHeader title="Personas" description="Gestión de miembros, visitantes, líderes y servidores">
+        <ExportDropdown
+          title="Personas"
+          filename="personas"
+          columns={[
+            { header: "Nombres", key: "nombres" },
+            { header: "Apellidos", key: "apellidos" },
+            { header: "Teléfono", key: "telefono" },
+            { header: "Email", key: "email" },
+            { header: "Tipo", key: "tipo_persona" },
+            { header: "Grupo", key: "grupoNombre" },
+            { header: "Estado", key: "estado_iglesia" },
+          ]}
+          data={tableData}
+        />
         <PersonaFormDialog />
       </PageHeader>
 

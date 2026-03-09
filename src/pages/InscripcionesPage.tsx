@@ -71,6 +71,20 @@ export default function InscripcionesPage() {
   return (
     <div className="animate-fade-in">
       <PageHeader title="Inscripciones" description="Gestión de inscripciones a eventos">
+        {selectedEvento && tableData.length > 0 && (
+          <ExportDropdown
+            title={`Inscripciones - ${eventoActual?.nombre || ""}`}
+            filename={`inscripciones-${eventoActual?.nombre || "evento"}`}
+            columns={[
+              { header: "Persona", key: "personaNombre" },
+              { header: "Evento", key: "eventoNombre" },
+              { header: "Confirmado", key: "confirmado" },
+              { header: "Estado Pago", key: "estado_pago" },
+              { header: "Fecha Inscripción", key: "created_at" },
+            ]}
+            data={tableData}
+          />
+        )}
         {selectedEvento && <InscripcionFormDialog eventoId={selectedEvento} />}
       </PageHeader>
 

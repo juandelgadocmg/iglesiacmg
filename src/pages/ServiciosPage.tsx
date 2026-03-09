@@ -35,6 +35,19 @@ export default function ServiciosPage() {
   return (
     <div className="animate-fade-in">
       <PageHeader title="Servicios" description="Gestión de cultos, reuniones y servicios de la iglesia">
+        <ExportDropdown
+          title="Servicios"
+          filename="servicios"
+          columns={[
+            { header: "Nombre", key: "nombre" },
+            { header: "Tipo", key: "tipo" },
+            { header: "Fecha", key: "fecha" },
+            { header: "Hora", key: "hora" },
+            { header: "Predicador", key: "predicador" },
+            { header: "Estado", key: "estado" },
+          ]}
+          data={servicios || []}
+        />
         <ServicioFormDialog />
       </PageHeader>
 

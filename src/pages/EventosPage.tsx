@@ -40,6 +40,21 @@ export default function EventosPage() {
   return (
     <div className="animate-fade-in">
       <PageHeader title="Eventos" description="Gestión de actividades especiales de la iglesia">
+        <ExportDropdown
+          title="Eventos"
+          filename="eventos"
+          columns={[
+            { header: "Nombre", key: "nombre" },
+            { header: "Tipo", key: "tipo" },
+            { header: "Fecha Inicio", key: "fecha_inicio" },
+            { header: "Fecha Fin", key: "fecha_fin" },
+            { header: "Lugar", key: "lugar" },
+            { header: "Cupos", key: "cupos" },
+            { header: "Inscritos", key: "inscritosCount" },
+            { header: "Estado", key: "estado" },
+          ]}
+          data={tableData}
+        />
         <EventoFormDialog />
       </PageHeader>
 

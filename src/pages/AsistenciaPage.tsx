@@ -96,7 +96,26 @@ export default function AsistenciaPage() {
 
   return (
     <div className="animate-fade-in space-y-6">
-      <PageHeader title="Asistencia" description="Control de asistencia por servicio" />
+      <PageHeader title="Asistencia" description="Control de asistencia por servicio">
+        {effectiveService && (
+          <ExportDropdown
+            title={`Asistencia - ${currentService?.nombre || ""}`}
+            filename={`asistencia-${currentService?.nombre || "servicio"}`}
+            columns={[
+              { header: "Nombres", key: "nombres" },
+              { header: "Apellidos", key: "apellidos" },
+              { header: "Tipo", key: "tipo_persona" },
+              { header: "Presente", key: "presente" },
+            ]}
+            data={filteredPersonas.map(p => ({
+              nombres: p.nombres,
+              apellidos: p.apellidos,
+              tipo_persona: p.tipo_persona,
+              presente: localAttendance[p.id] ? "Sí" : "No",
+            }))}
+          />
+        )}
+      </PageHeader>
 
       {/* Service selector */}
       <div className="bg-card rounded-lg border p-4 flex flex-col sm:flex-row items-start sm:items-center gap-4">

@@ -41,6 +41,20 @@ export default function GruposPage() {
   return (
     <div className="animate-fade-in">
       <PageHeader title="Grupos" description="Administración de células, ministerios y grupos internos">
+        <ExportDropdown
+          title="Grupos"
+          filename="grupos"
+          columns={[
+            { header: "Nombre", key: "nombre" },
+            { header: "Tipo", key: "tipo" },
+            { header: "Líder", key: "liderNombre" },
+            { header: "Día Reunión", key: "dia_reunion" },
+            { header: "Hora", key: "hora_reunion" },
+            { header: "Miembros", key: "miembrosCount" },
+            { header: "Estado", key: "estado" },
+          ]}
+          data={tableData}
+        />
         <GrupoFormDialog />
       </PageHeader>
 

@@ -32,6 +32,19 @@ export default function DonacionesPage() {
   return (
     <div className="animate-fade-in">
       <PageHeader title="Donaciones" description="Registro y seguimiento de donaciones">
+        <ExportDropdown
+          title="Donaciones"
+          filename="donaciones"
+          columns={[
+            { header: "Donante", key: "donante" },
+            { header: "Tipo", key: "tipo" },
+            { header: "Monto", key: "monto" },
+            { header: "Fecha", key: "fecha" },
+            { header: "Método", key: "metodo_pago" },
+            { header: "Estado", key: "estado" },
+          ]}
+          data={tableData}
+        />
         <DonacionFormDialog />
       </PageHeader>
 

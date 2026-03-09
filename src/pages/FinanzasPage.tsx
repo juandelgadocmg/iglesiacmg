@@ -42,6 +42,19 @@ export default function FinanzasPage() {
   return (
     <div className="animate-fade-in">
       <PageHeader title="Finanzas" description="Panel financiero de la iglesia">
+        <ExportDropdown
+          title="Finanzas"
+          filename="finanzas"
+          columns={[
+            { header: "Tipo", key: "tipo" },
+            { header: "Categoría", key: "categoria_nombre" },
+            { header: "Descripción", key: "descripcion" },
+            { header: "Monto", key: "monto" },
+            { header: "Fecha", key: "fecha" },
+            { header: "Método", key: "metodo_pago" },
+          ]}
+          data={data}
+        />
         <FinanzaFormDialog />
       </PageHeader>
 
