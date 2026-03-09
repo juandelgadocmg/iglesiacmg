@@ -19,9 +19,8 @@ import InscripcionesPage from "@/pages/InscripcionesPage";
 import AcademiaPage from "@/pages/AcademiaPage";
 import CertificadosPage from "@/pages/CertificadosPage";
 import ReportesPage from "@/pages/ReportesPage";
-import {
-  UsuariosPage, ConfiguracionPage
-} from "@/pages/PlaceholderPages";
+import UsuariosPage from "@/pages/UsuariosPage";
+import { ConfiguracionPage } from "@/pages/PlaceholderPages";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();

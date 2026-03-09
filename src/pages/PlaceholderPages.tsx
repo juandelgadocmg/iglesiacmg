@@ -1,5 +1,5 @@
 import PageHeader from "@/components/shared/PageHeader";
-import { UserCog, Settings } from "lucide-react";
+import { Settings } from "lucide-react";
 
 interface PlaceholderPageProps {
   title: string;
@@ -22,10 +22,6 @@ function PlaceholderContent({ title, description, icon: Icon }: PlaceholderPageP
       </div>
     </div>
   );
-}
-
-export function UsuariosPage() {
-  return <PlaceholderContent title="Usuarios y Roles" description="Gestión de usuarios y permisos del sistema" icon={UserCog} />;
 }
 
 export function ConfiguracionPage() {
