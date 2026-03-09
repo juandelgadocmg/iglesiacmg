@@ -29,6 +29,28 @@ export function useCreatePersona() {
   });
 }
 
+export function useUpdatePersona() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async ({ id, ...updates }: { id: string } & Partial<TablesInsert<"personas">>) => {
+      const { error } = await supabase.from("personas").update(updates).eq("id", id);
+      if (error) throw error;
+    },
+    onSuccess: () => qc.invalidateQueries({ queryKey: ["personas"] }),
+  });
+}
+
+export function useDeletePersona() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async (id: string) => {
+      const { error } = await supabase.from("personas").delete().eq("id", id);
+      if (error) throw error;
+    },
+    onSuccess: () => qc.invalidateQueries({ queryKey: ["personas"] }),
+  });
+}
+
 // ============ GRUPOS ============
 export function useGrupos() {
   return useQuery({
