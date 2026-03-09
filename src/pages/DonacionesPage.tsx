@@ -6,6 +6,7 @@ import DonacionFormDialog from "@/components/forms/DonacionFormDialog";
 import { Heart, TrendingUp, DollarSign } from "lucide-react";
 import { useDonaciones } from "@/hooks/useDatabase";
 import { Skeleton } from "@/components/ui/skeleton";
+import ExportDropdown from "@/components/shared/ExportDropdown";
 
 export default function DonacionesPage() {
   const { data: donaciones, isLoading } = useDonaciones();
