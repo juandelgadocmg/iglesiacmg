@@ -225,6 +225,28 @@ export function useCreateEvento() {
   });
 }
 
+export function useUpdateEvento() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async ({ id, ...updates }: { id: string } & Partial<TablesInsert<"eventos">>) => {
+      const { error } = await supabase.from("eventos").update(updates).eq("id", id);
+      if (error) throw error;
+    },
+    onSuccess: () => qc.invalidateQueries({ queryKey: ["eventos"] }),
+  });
+}
+
+export function useDeleteEvento() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async (id: string) => {
+      const { error } = await supabase.from("eventos").delete().eq("id", id);
+      if (error) throw error;
+    },
+    onSuccess: () => qc.invalidateQueries({ queryKey: ["eventos"] }),
+  });
+}
+
 // ============ DONACIONES ============
 export function useDonaciones() {
   return useQuery({
