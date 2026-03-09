@@ -9,6 +9,7 @@ import { useEventos, useDeleteEvento } from "@/hooks/useDatabase";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { toast } from "sonner";
+import ExportDropdown from "@/components/shared/ExportDropdown";
 
 export default function EventosPage() {
   const { data: eventos, isLoading } = useEventos();
