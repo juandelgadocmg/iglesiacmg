@@ -56,10 +56,10 @@ export default function ReportesPage() {
 
       {/* KPIs */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
-        <MetricCard title="Total Personas" value={stats?.totalPersonas || 0} icon={<Users className="h-5 w-5" />} description={`+${stats?.nuevosEsteMes || 0} este mes`} />
-        <MetricCard title="Ingresos del mes" value={`$${(stats?.ingresosMes || 0).toLocaleString()}`} icon={<TrendingUp className="h-5 w-5" />} description="Total ingresos" />
-        <MetricCard title="Gastos del mes" value={`$${(stats?.gastosMes || 0).toLocaleString()}`} icon={<TrendingDown className="h-5 w-5" />} description="Total gastos" />
-        <MetricCard title="Certificados" value={certificados?.length || 0} icon={<Award className="h-5 w-5" />} description="Emitidos total" />
+        <MetricCard title="Total Personas" value={stats?.totalPersonas || 0} icon={Users} subtitle={`+${stats?.nuevosEsteMes || 0} este mes`} />
+        <MetricCard title="Ingresos del mes" value={`$${(stats?.ingresosMes || 0).toLocaleString()}`} icon={TrendingUp} subtitle="Total ingresos" variant="success" />
+        <MetricCard title="Gastos del mes" value={`$${(stats?.gastosMes || 0).toLocaleString()}`} icon={TrendingDown} subtitle="Total gastos" variant="accent" />
+        <MetricCard title="Certificados" value={certificados?.length || 0} icon={Award} subtitle="Emitidos total" variant="info" />
       </div>
 
       {/* Charts */}
