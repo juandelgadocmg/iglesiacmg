@@ -4,8 +4,12 @@ import MetricCard from "@/components/shared/MetricCard";
 import { useDashboardStats } from "@/hooks/useDatabase";
 import { useCursos, useCertificados, useAllMatriculas } from "@/hooks/useAcademia";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Users, DollarSign, TrendingUp, TrendingDown, GraduationCap, Award, CalendarDays, Heart } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
+import { Users, DollarSign, TrendingUp, TrendingDown, GraduationCap, Award, CalendarDays, Heart, Download, FileText, FileSpreadsheet } from "lucide-react";
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart, Pie, Cell, LineChart, Line } from "recharts";
+import { exportFinancialSummaryPDF, exportToExcel } from "@/lib/exportUtils";
+import { toast } from "sonner";
 
 const COLORS = ["hsl(var(--primary))", "hsl(var(--accent))", "hsl(var(--muted-foreground))", "hsl(142 76% 36%)", "hsl(38 92% 50%)"];
 
