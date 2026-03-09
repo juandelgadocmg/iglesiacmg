@@ -78,6 +78,28 @@ export function useCreateGrupo() {
   });
 }
 
+export function useUpdateGrupo() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async ({ id, ...updates }: { id: string } & Partial<TablesInsert<"grupos">>) => {
+      const { error } = await supabase.from("grupos").update(updates).eq("id", id);
+      if (error) throw error;
+    },
+    onSuccess: () => qc.invalidateQueries({ queryKey: ["grupos"] }),
+  });
+}
+
+export function useDeleteGrupo() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async (id: string) => {
+      const { error } = await supabase.from("grupos").delete().eq("id", id);
+      if (error) throw error;
+    },
+    onSuccess: () => qc.invalidateQueries({ queryKey: ["grupos"] }),
+  });
+}
+
 // ============ SERVICIOS ============
 export function useServicios() {
   return useQuery({
