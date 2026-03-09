@@ -2,6 +2,8 @@ import { useState } from "react";
 import { NavLink, useLocation, useNavigate } from "react-router-dom";
 import { cn } from "@/lib/utils";
 import { useAuth } from "@/hooks/useAuth";
+import { useUserRoles } from "@/hooks/useUserRoles";
+import { canAccess } from "@/lib/permissions";
 import logo from "@/assets/logo.jpeg";
 import {
   LayoutDashboard, Users, UsersRound, Church, ClipboardCheck,
