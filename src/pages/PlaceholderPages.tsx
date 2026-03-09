@@ -1,6 +1,5 @@
 import PageHeader from "@/components/shared/PageHeader";
-import { ClipboardCheck, Heart, FileText, GraduationCap, Award, BarChart3, UserCog, Settings } from "lucide-react";
-import { Link } from "react-router-dom";
+import { UserCog, Settings } from "lucide-react";
 
 interface PlaceholderPageProps {
   title: string;
@@ -18,26 +17,11 @@ function PlaceholderContent({ title, description, icon: Icon }: PlaceholderPageP
         </div>
         <h3 className="font-semibold text-lg mb-2">Módulo en desarrollo</h3>
         <p className="text-muted-foreground text-sm max-w-md mx-auto">
-          Este módulo está preparado para ser implementado. La estructura y navegación ya están listas.
+          Este módulo está preparado para ser implementado.
         </p>
       </div>
     </div>
   );
-}
-
-
-
-
-export function AcademiaPage() {
-  return <PlaceholderContent title="Academia" description="Sistema de formación bíblica" icon={GraduationCap} />;
-}
-
-export function CertificadosPage() {
-  return <PlaceholderContent title="Certificados" description="Generación y gestión de certificados" icon={Award} />;
-}
-
-export function ReportesPage() {
-  return <PlaceholderContent title="Reportes" description="Reportes visuales y exportables" icon={BarChart3} />;
 }
 
 export function UsuariosPage() {

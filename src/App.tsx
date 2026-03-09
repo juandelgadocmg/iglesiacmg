@@ -16,8 +16,10 @@ import EventosPage from "@/pages/EventosPage";
 import AsistenciaPage from "@/pages/AsistenciaPage";
 import DonacionesPage from "@/pages/DonacionesPage";
 import InscripcionesPage from "@/pages/InscripcionesPage";
+import AcademiaPage from "@/pages/AcademiaPage";
+import CertificadosPage from "@/pages/CertificadosPage";
+import ReportesPage from "@/pages/ReportesPage";
 import {
-  AcademiaPage, CertificadosPage, ReportesPage,
   UsuariosPage, ConfiguracionPage
 } from "@/pages/PlaceholderPages";
 import NotFound from "./pages/NotFound";

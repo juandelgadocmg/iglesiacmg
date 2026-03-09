@@ -74,6 +74,100 @@ export type Database = {
         }
         Relationships: []
       }
+      certificados: {
+        Row: {
+          codigo: string
+          created_at: string
+          curso_id: string
+          fecha_emision: string
+          id: string
+          matricula_id: string
+          persona_id: string
+        }
+        Insert: {
+          codigo?: string
+          created_at?: string
+          curso_id: string
+          fecha_emision?: string
+          id?: string
+          matricula_id: string
+          persona_id: string
+        }
+        Update: {
+          codigo?: string
+          created_at?: string
+          curso_id?: string
+          fecha_emision?: string
+          id?: string
+          matricula_id?: string
+          persona_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "certificados_curso_id_fkey"
+            columns: ["curso_id"]
+            isOneToOne: false
+            referencedRelation: "cursos"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "certificados_matricula_id_fkey"
+            columns: ["matricula_id"]
+            isOneToOne: true
+            referencedRelation: "matriculas"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "certificados_persona_id_fkey"
+            columns: ["persona_id"]
+            isOneToOne: false
+            referencedRelation: "personas"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      cursos: {
+        Row: {
+          created_at: string
+          cupos: number | null
+          descripcion: string | null
+          duracion_semanas: number | null
+          estado: string
+          fecha_fin: string | null
+          fecha_inicio: string | null
+          id: string
+          instructor: string | null
+          nombre: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          cupos?: number | null
+          descripcion?: string | null
+          duracion_semanas?: number | null
+          estado?: string
+          fecha_fin?: string | null
+          fecha_inicio?: string | null
+          id?: string
+          instructor?: string | null
+          nombre: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          cupos?: number | null
+          descripcion?: string | null
+          duracion_semanas?: number | null
+          estado?: string
+          fecha_fin?: string | null
+          fecha_inicio?: string | null
+          id?: string
+          instructor?: string | null
+          nombre?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       donaciones: {
         Row: {
           created_at: string
@@ -344,6 +438,51 @@ export type Database = {
           },
           {
             foreignKeyName: "inscripciones_persona_id_fkey"
+            columns: ["persona_id"]
+            isOneToOne: false
+            referencedRelation: "personas"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      matriculas: {
+        Row: {
+          created_at: string
+          curso_id: string
+          estado: string
+          fecha_matricula: string
+          id: string
+          nota_final: number | null
+          persona_id: string
+        }
+        Insert: {
+          created_at?: string
+          curso_id: string
+          estado?: string
+          fecha_matricula?: string
+          id?: string
+          nota_final?: number | null
+          persona_id: string
+        }
+        Update: {
+          created_at?: string
+          curso_id?: string
+          estado?: string
+          fecha_matricula?: string
+          id?: string
+          nota_final?: number | null
+          persona_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "matriculas_curso_id_fkey"
+            columns: ["curso_id"]
+            isOneToOne: false
+            referencedRelation: "cursos"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "matriculas_persona_id_fkey"
             columns: ["persona_id"]
             isOneToOne: false
             referencedRelation: "personas"
