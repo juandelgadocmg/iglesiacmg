@@ -2,8 +2,12 @@ import PageHeader from "@/components/shared/PageHeader";
 import DataTable from "@/components/shared/DataTable";
 import { useCertificados } from "@/hooks/useAcademia";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Award } from "lucide-react";
+import { Award, Download, FileText, FileSpreadsheet } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
+import { exportToPDF, exportToExcel } from "@/lib/exportUtils";
+import { toast } from "sonner";
 
 export default function CertificadosPage() {
   const { data: certificados, isLoading } = useCertificados();
