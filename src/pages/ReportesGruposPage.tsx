@@ -229,30 +229,17 @@ export default function ReportesGruposPage() {
                       </Button>
                     </>
                   )}
-                  <Button size="sm" variant="ghost" className="ml-auto text-destructive" onClick={() => setDeleteId(r.id)}>
-                    <Trash2 className="h-3.5 w-3.5" />
-                  </Button>
-                </div>
-              </div>
-            );
-          })}
-        </div>
-      )}
-
-      <ReporteGrupoFormDialog open={showForm} onOpenChange={setShowForm} />
-      <DeleteConfirmDialog
-        open={!!deleteId}
-        onOpenChange={(open) => !open && setDeleteId(null)}
-        onConfirm={async () => {
-          if (deleteId) {
-            await deleteReporte.mutateAsync(deleteId);
-            toast.success("Reporte eliminado.");
-            setDeleteId(null);
-          }
-        }}
-        title="¿Eliminar reporte?"
-        description="Esta acción no se puede deshacer."
-      />
+                  <DeleteConfirmDialog
+                    onConfirm={async () => {
+                      await deleteReporte.mutateAsync(r.id);
+                      toast.success("Reporte eliminado.");
+                    }}
+                    trigger={
+                      <Button size="sm" variant="ghost" className="ml-auto text-destructive">
+                        <Trash2 className="h-3.5 w-3.5" />
+                      </Button>
+                    }
+                  />
     </div>
   );
 }
