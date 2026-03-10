@@ -20,6 +20,7 @@ import InscripcionesPage from "@/pages/InscripcionesPage";
 import AcademiaPage from "@/pages/AcademiaPage";
 import CertificadosPage from "@/pages/CertificadosPage";
 import ReportesPage from "@/pages/ReportesPage";
+import ReportesGruposPage from "@/pages/ReportesGruposPage";
 import UsuariosPage from "@/pages/UsuariosPage";
 import ConfiguracionPage from "@/pages/ConfiguracionPage";
 import ResetPasswordPage from "@/pages/ResetPasswordPage";
@@ -51,6 +52,7 @@ const App = () => (
               <Route path="/academia" element={<RoleGuard><AcademiaPage /></RoleGuard>} />
               <Route path="/certificados" element={<RoleGuard><CertificadosPage /></RoleGuard>} />
               <Route path="/reportes" element={<RoleGuard><ReportesPage /></RoleGuard>} />
+              <Route path="/reportes-grupos" element={<RoleGuard><ReportesGruposPage /></RoleGuard>} />
               <Route path="/usuarios" element={<RoleGuard><UsuariosPage /></RoleGuard>} />
               <Route path="/configuracion" element={<RoleGuard><ConfiguracionPage /></RoleGuard>} />
             </Route>
