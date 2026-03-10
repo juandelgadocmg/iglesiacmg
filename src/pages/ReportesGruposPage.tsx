@@ -33,7 +33,6 @@ export default function ReportesGruposPage() {
   const [search, setSearch] = useState("");
   const [tab, setTab] = useState("Todos");
   const [showForm, setShowForm] = useState(false);
-  const [deleteId, setDeleteId] = useState<string | null>(null);
   const [dateRange, setDateRange] = useState<DateRange | undefined>();
 
   const { data: reportes, isLoading } = useReportesGrupos();
