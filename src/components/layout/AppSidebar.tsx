@@ -9,7 +9,7 @@ import {
   LayoutDashboard, Users, UsersRound, Church, ClipboardCheck,
   DollarSign, Heart, CalendarDays, FileText, GraduationCap,
   Award, BarChart3, Settings, UserCog, ChevronLeft, ChevronRight,
-  LogOut
+  LogOut, ClipboardList
 } from "lucide-react";
 
 const menuItems = [
