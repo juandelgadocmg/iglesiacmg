@@ -240,6 +240,14 @@ export default function ReportesGruposPage() {
                       </Button>
                     }
                   />
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      )}
+
+      <ReporteGrupoFormDialog open={showForm} onOpenChange={setShowForm} />
     </div>
   );
 }
