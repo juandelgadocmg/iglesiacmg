@@ -25,6 +25,7 @@ const menuItems = [
   { label: "Academia", icon: GraduationCap, path: "/academia" },
   { label: "Certificados", icon: Award, path: "/certificados" },
   { label: "Reportes", icon: BarChart3, path: "/reportes" },
+  { label: "Reportes Grupos", icon: ClipboardList, path: "/reportes-grupos" },
   { label: "Usuarios", icon: UserCog, path: "/usuarios" },
   { label: "Configuración", icon: Settings, path: "/configuracion" },
 ];
