@@ -63,6 +63,17 @@ export default function LoginPage() {
     setLoading(false);
   };
 
+  const handleGoogleLogin = async () => {
+    setGoogleLoading(true);
+    const { error } = await lovable.auth.signInWithOAuth("google", {
+      redirect_uri: window.location.origin,
+    });
+    if (error) {
+      toast.error("Error al iniciar sesión con Google");
+      setGoogleLoading(false);
+    }
+  };
+
   const titles: Record<ViewMode, string> = {
     login: "Bienvenido de vuelta",
     signup: "Crear Cuenta",
