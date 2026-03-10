@@ -8,6 +8,8 @@ import { useAuth } from "@/hooks/useAuth";
 import { toast } from "sonner";
 import { Mail, Lock, ArrowRight, KeyRound, ArrowLeft, UserPlus, LogIn } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
+import { lovable } from "@/integrations/lovable/index";
+import { Separator } from "@/components/ui/separator";
 
 type ViewMode = "login" | "signup" | "forgot";
 
