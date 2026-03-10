@@ -663,6 +663,65 @@ export type Database = {
         }
         Relationships: []
       }
+      reportes_grupos: {
+        Row: {
+          created_at: string
+          estado: string
+          fecha: string
+          fecha_verificacion: string | null
+          grupo_id: string
+          id: string
+          ingreso_verificado_sobre: number | null
+          lider_id: string | null
+          mensaje: string
+          observaciones: string | null
+          ofrenda_casa_paz: number | null
+          total_reportado: number | null
+          updated_at: string
+          verificado_por: string | null
+        }
+        Insert: {
+          created_at?: string
+          estado?: string
+          fecha?: string
+          fecha_verificacion?: string | null
+          grupo_id: string
+          id?: string
+          ingreso_verificado_sobre?: number | null
+          lider_id?: string | null
+          mensaje?: string
+          observaciones?: string | null
+          ofrenda_casa_paz?: number | null
+          total_reportado?: number | null
+          updated_at?: string
+          verificado_por?: string | null
+        }
+        Update: {
+          created_at?: string
+          estado?: string
+          fecha?: string
+          fecha_verificacion?: string | null
+          grupo_id?: string
+          id?: string
+          ingreso_verificado_sobre?: number | null
+          lider_id?: string | null
+          mensaje?: string
+          observaciones?: string | null
+          ofrenda_casa_paz?: number | null
+          total_reportado?: number | null
+          updated_at?: string
+          verificado_por?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "reportes_grupos_grupo_id_fkey"
+            columns: ["grupo_id"]
+            isOneToOne: false
+            referencedRelation: "grupos"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       servicios: {
         Row: {
           created_at: string
