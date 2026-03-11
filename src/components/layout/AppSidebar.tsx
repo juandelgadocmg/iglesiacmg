@@ -27,6 +27,7 @@ const menuItems = [
   { label: "Reportes", icon: BarChart3, path: "/reportes" },
   { label: "Reportes Grupos", icon: ClipboardList, path: "/reportes-grupos" },
   { label: "Mapa Grupos", icon: MapPin, path: "/mapa-grupos" },
+  { label: "Gráfico Ministerio", icon: GitBranch, path: "/grafico-ministerio" },
   { label: "Usuarios", icon: UserCog, path: "/usuarios" },
   { label: "Configuración", icon: Settings, path: "/configuracion" },
 ];

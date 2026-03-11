@@ -56,6 +56,7 @@ const App = () => (
               <Route path="/reportes" element={<RoleGuard><ReportesPage /></RoleGuard>} />
               <Route path="/reportes-grupos" element={<RoleGuard><ReportesGruposPage /></RoleGuard>} />
               <Route path="/mapa-grupos" element={<RoleGuard><MapaGruposPage /></RoleGuard>} />
+              <Route path="/grafico-ministerio" element={<RoleGuard><GraficoMinisterioPage /></RoleGuard>} />
               <Route path="/usuarios" element={<RoleGuard><UsuariosPage /></RoleGuard>} />
               <Route path="/configuracion" element={<RoleGuard><ConfiguracionPage /></RoleGuard>} />
             </Route>
