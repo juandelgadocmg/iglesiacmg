@@ -1,4 +1,4 @@
-import { useState, useMemo } from "react";
+import { useState, useMemo, useCallback } from "react";
 import PageHeader from "@/components/shared/PageHeader";
 import MetricCard from "@/components/shared/MetricCard";
 import CursoFormDialog from "@/components/forms/CursoFormDialog";
@@ -9,12 +9,15 @@ import AulaFormDialog from "@/components/forms/AulaFormDialog";
 import CorteFormDialog from "@/components/forms/CorteFormDialog";
 import ItemCalificableFormDialog from "@/components/forms/ItemCalificableFormDialog";
 import DeleteConfirmDialog from "@/components/shared/DeleteConfirmDialog";
+import ExportDropdown from "@/components/shared/ExportDropdown";
 import {
   useEscuelas, useAllMatriculas, useCertificados, usePeriodos,
   useMaterias, useMatriculas, useUpdateMatricula, useCreateCertificado,
   useUpdatePeriodo, useDeleteMateria, useAllPeriodos,
   useAulas, useUpdateAula, useDeleteAula,
   useCortes, useAllItemsByCorte, useDeleteCorte, useDeleteItemCalificable,
+  useCalificacionesByMateriaCorte, useBulkUpsertCalificaciones,
+  useAsistenciaMaterias, useUpsertAsistenciaMateria,
 } from "@/hooks/useAcademia";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Badge } from "@/components/ui/badge";
@@ -28,11 +31,14 @@ import {
   Search, UserCheck, ChevronRight, FileText, Lock, Unlock,
   MoreVertical, Trash2, BookText, ArrowLeft, Building2,
   BarChart3, Eye, ClipboardCheck, CheckCircle2, XCircle,
+  Save, Check, X,
 } from "lucide-react";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { toast } from "sonner";
 import { format, parseISO } from "date-fns";
 import { es } from "date-fns/locale";
+import { exportToExcel } from "@/lib/exportUtils";
+import { cn } from "@/lib/utils";
 
 const ESTADO_PERIODO: Record<string, { icon: any; color: string }> = {
   Abierto: { icon: Unlock, color: "bg-success/10 text-success border-success/20" },
@@ -177,6 +183,303 @@ function PeriodosView({ escuela, periodos, allMatriculas, onBack, onSelectPeriod
   );
 }
 
+// ========== GRADING GRID ==========
+function GradingGrid({ cortes, materias, periodoId }: any) {
+  const [selectedCorte, setSelectedCorte] = useState<string | null>(null);
+  const [selectedMateria, setSelectedMateria] = useState<string | null>(null);
+  const { data: items } = useAllItemsByCorte(selectedCorte);
+  const { data: matriculas } = useMatriculas(periodoId);
+  const { data: calificaciones } = useCalificacionesByMateriaCorte(selectedCorte, selectedMateria);
+  const bulkUpsert = useBulkUpsertCalificaciones();
+  const deleteItem = useDeleteItemCalificable();
+
+  const materiaItems = useMemo(() => {
+    if (!items || !selectedMateria) return [];
+    return items.filter((i: any) => i.materia_id === selectedMateria);
+  }, [items, selectedMateria]);
+
+  const activeStudents = useMemo(() => {
+    return (matriculas || []).filter((m: any) => m.estado === "Activo");
+  }, [matriculas]);
+
+  // Build a map: `${matricula_id}_${item_id}` -> nota
+  const [localGrades, setLocalGrades] = useState<Record<string, string>>({});
+  const [initialized, setInitialized] = useState<string | null>(null);
+
+  const gradeKey = `${selectedCorte}_${selectedMateria}`;
+  if (calificaciones && initialized !== gradeKey) {
+    const map: Record<string, string> = {};
+    calificaciones.forEach((c: any) => {
+      map[`${c.matricula_id}_${c.item_id}`] = c.nota != null ? String(c.nota) : "";
+    });
+    setLocalGrades(map);
+    setInitialized(gradeKey);
+  }
+
+  const handleGradeChange = (matriculaId: string, itemId: string, value: string) => {
+    setLocalGrades(prev => ({ ...prev, [`${matriculaId}_${itemId}`]: value }));
+  };
+
+  const saveGrades = async () => {
+    const records: { item_id: string; matricula_id: string; nota: number | null }[] = [];
+    activeStudents.forEach((m: any) => {
+      materiaItems.forEach((item: any) => {
+        const val = localGrades[`${m.id}_${item.id}`];
+        if (val !== undefined && val !== "") {
+          records.push({ item_id: item.id, matricula_id: m.id, nota: parseFloat(val) });
+        } else if (val === "") {
+          records.push({ item_id: item.id, matricula_id: m.id, nota: null });
+        }
+      });
+    });
+    if (!records.length) return;
+    try {
+      await bulkUpsert.mutateAsync(records);
+      toast.success("Calificaciones guardadas");
+    } catch { toast.error("Error al guardar"); }
+  };
+
+  const exportGrades = () => {
+    if (!materiaItems.length || !activeStudents.length) return;
+    const columns = [
+      { header: "Estudiante", key: "estudiante" },
+      ...materiaItems.map((i: any) => ({ header: i.nombre, key: i.id })),
+    ];
+    const data = activeStudents.map((m: any) => {
+      const row: any = { estudiante: `${m.personas?.nombres} ${m.personas?.apellidos}` };
+      materiaItems.forEach((item: any) => {
+        row[item.id] = localGrades[`${m.id}_${item.id}`] || "";
+      });
+      return row;
+    });
+    exportToExcel({ title: "Calificaciones", columns, data, filename: "calificaciones" });
+  };
+
+  return (
+    <div className="space-y-4">
+      <div className="flex flex-wrap gap-2">
+        {(cortes || []).map((c: any) => (
+          <Button key={c.id} size="sm" variant={selectedCorte === c.id ? "default" : "outline"}
+            onClick={() => { setSelectedCorte(c.id); setSelectedMateria(null); setInitialized(null); }}>
+            {c.nombre} ({c.porcentaje}%)
+          </Button>
+        ))}
+        {!cortes?.length && <p className="text-sm text-muted-foreground">Configura cortes en la pestaña "Información general" primero.</p>}
+      </div>
+
+      {selectedCorte && (
+        <div className="rounded-xl border bg-card p-4">
+          <label className="text-xs font-medium text-muted-foreground mb-1 block">Materia:</label>
+          <Select value={selectedMateria || ""} onValueChange={(v) => { setSelectedMateria(v); setInitialized(null); }}>
+            <SelectTrigger className="h-9"><SelectValue placeholder="Seleccionar materia" /></SelectTrigger>
+            <SelectContent>
+              {(materias || []).map((m: any) => (
+                <SelectItem key={m.id} value={m.id}>{m.nombre}</SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
+      )}
+
+      {selectedCorte && selectedMateria && (
+        <>
+          <div className="flex items-center justify-between">
+            <div className="flex gap-2">
+              <ItemCalificableFormDialog corteId={selectedCorte} materiaId={selectedMateria} />
+            </div>
+            <div className="flex gap-2">
+              <Button size="sm" variant="outline" onClick={exportGrades} disabled={!materiaItems.length}>
+                Exportar Excel
+              </Button>
+              <Button size="sm" onClick={saveGrades} disabled={bulkUpsert.isPending} className="gap-1.5">
+                <Save className="h-3.5 w-3.5" /> {bulkUpsert.isPending ? "Guardando..." : "Guardar notas"}
+              </Button>
+            </div>
+          </div>
+
+          {!materiaItems.length ? (
+            <p className="text-xs text-muted-foreground text-center py-6">No hay ítems calificables. Agrega uno primero.</p>
+          ) : !activeStudents.length ? (
+            <p className="text-xs text-muted-foreground text-center py-6">No hay estudiantes activos matriculados.</p>
+          ) : (
+            <div className="rounded-xl border bg-card overflow-hidden">
+              <div className="overflow-x-auto">
+                <table className="w-full text-sm">
+                  <thead>
+                    <tr className="border-b bg-muted/30">
+                      <th className="text-left p-3 font-medium text-muted-foreground sticky left-0 bg-muted/30 min-w-[200px]">Estudiante</th>
+                      {materiaItems.map((item: any) => (
+                        <th key={item.id} className="text-center p-3 font-medium text-muted-foreground min-w-[100px]">
+                          <div>{item.nombre}</div>
+                          <div className="text-[10px] font-normal">{item.porcentaje != null ? `${item.porcentaje}%` : ""}</div>
+                        </th>
+                      ))}
+                      <th className="text-center p-3 font-medium text-muted-foreground min-w-[80px]">Promedio</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {activeStudents.map((m: any) => {
+                      const initials = `${m.personas?.nombres?.[0] || ""}${m.personas?.apellidos?.[0] || ""}`.toUpperCase();
+                      const grades = materiaItems.map((item: any) => {
+                        const val = localGrades[`${m.id}_${item.id}`];
+                        return val ? parseFloat(val) : null;
+                      });
+                      const validGrades = grades.filter((g): g is number => g !== null);
+                      const avg = validGrades.length ? (validGrades.reduce((s, v) => s + v, 0) / validGrades.length).toFixed(1) : "—";
+                      return (
+                        <tr key={m.id} className="border-b last:border-0 hover:bg-muted/20">
+                          <td className="p-3 sticky left-0 bg-card">
+                            <div className="flex items-center gap-2">
+                              <Avatar className="h-7 w-7">
+                                <AvatarImage src={m.personas?.foto_url || undefined} />
+                                <AvatarFallback className="text-[10px] font-semibold">{initials}</AvatarFallback>
+                              </Avatar>
+                              <span className="text-sm font-medium truncate">{m.personas?.nombres} {m.personas?.apellidos}</span>
+                            </div>
+                          </td>
+                          {materiaItems.map((item: any) => (
+                            <td key={item.id} className="p-2 text-center">
+                              <Input
+                                type="number"
+                                min={0}
+                                max={5}
+                                step={0.1}
+                                className="h-8 w-20 mx-auto text-center text-sm"
+                                value={localGrades[`${m.id}_${item.id}`] ?? ""}
+                                onChange={(e) => handleGradeChange(m.id, item.id, e.target.value)}
+                              />
+                            </td>
+                          ))}
+                          <td className="p-3 text-center font-semibold">{avg}</td>
+                        </tr>
+                      );
+                    })}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          )}
+        </>
+      )}
+    </div>
+  );
+}
+
+// ========== ASISTENCIA MATERIA TAB ==========
+function AsistenciaMateriaTab({ materias, periodoId }: any) {
+  const [selectedMateria, setSelectedMateria] = useState<string | null>(null);
+  const [fecha, setFecha] = useState(format(new Date(), "yyyy-MM-dd"));
+  const { data: matriculas } = useMatriculas(periodoId);
+  const { data: asistenciaData } = useAsistenciaMaterias(selectedMateria, fecha);
+  const upsertAsistencia = useUpsertAsistenciaMateria();
+  const [localAtt, setLocalAtt] = useState<Record<string, boolean>>({});
+  const [initialized, setInitialized] = useState<string | null>(null);
+
+  const activeStudents = useMemo(() => (matriculas || []).filter((m: any) => m.estado === "Activo"), [matriculas]);
+
+  const attKey = `${selectedMateria}_${fecha}`;
+  if (asistenciaData && initialized !== attKey) {
+    const map: Record<string, boolean> = {};
+    asistenciaData.forEach((a: any) => { map[a.matricula_id] = a.presente; });
+    setLocalAtt(map);
+    setInitialized(attKey);
+  }
+
+  const toggleAtt = (id: string) => setLocalAtt(prev => ({ ...prev, [id]: !prev[id] }));
+  const markAll = (v: boolean) => {
+    const map: Record<string, boolean> = {};
+    activeStudents.forEach((m: any) => { map[m.id] = v; });
+    setLocalAtt(map);
+  };
+
+  const saveAtt = async () => {
+    if (!selectedMateria) return;
+    const records = activeStudents.map((m: any) => ({
+      materia_id: selectedMateria,
+      matricula_id: m.id,
+      fecha,
+      presente: !!localAtt[m.id],
+    }));
+    try {
+      await upsertAsistencia.mutateAsync(records);
+      toast.success("Asistencia guardada");
+    } catch { toast.error("Error al guardar"); }
+  };
+
+  const totalPresent = Object.values(localAtt).filter(Boolean).length;
+
+  return (
+    <div className="space-y-4">
+      <div className="flex flex-wrap gap-3">
+        <div className="flex-1 min-w-[200px]">
+          <label className="text-xs font-medium text-muted-foreground mb-1 block">Materia:</label>
+          <Select value={selectedMateria || ""} onValueChange={(v) => { setSelectedMateria(v); setInitialized(null); }}>
+            <SelectTrigger className="h-9"><SelectValue placeholder="Seleccionar materia" /></SelectTrigger>
+            <SelectContent>
+              {(materias || []).map((m: any) => (
+                <SelectItem key={m.id} value={m.id}>{m.nombre}</SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
+        <div>
+          <label className="text-xs font-medium text-muted-foreground mb-1 block">Fecha:</label>
+          <Input type="date" value={fecha} onChange={(e) => { setFecha(e.target.value); setInitialized(null); }} className="h-9 w-44" />
+        </div>
+      </div>
+
+      {selectedMateria && (
+        <>
+          <div className="flex items-center gap-2 justify-between">
+            <div className="flex gap-3 text-sm">
+              <span className="text-success font-medium">Presentes: {totalPresent}</span>
+              <span className="text-muted-foreground">Ausentes: {activeStudents.length - totalPresent}</span>
+            </div>
+            <div className="flex gap-2">
+              <Button variant="outline" size="sm" onClick={() => markAll(true)} className="text-xs gap-1"><Check className="h-3.5 w-3.5" /> Todos</Button>
+              <Button variant="outline" size="sm" onClick={() => markAll(false)} className="text-xs gap-1"><X className="h-3.5 w-3.5" /> Ninguno</Button>
+              <Button size="sm" onClick={saveAtt} disabled={upsertAsistencia.isPending} className="gap-1.5">
+                <Save className="h-3.5 w-3.5" /> Guardar
+              </Button>
+            </div>
+          </div>
+
+          <div className="rounded-xl border bg-card divide-y">
+            {!activeStudents.length ? (
+              <p className="text-xs text-muted-foreground text-center py-8">No hay estudiantes activos.</p>
+            ) : (
+              activeStudents.map((m: any) => {
+                const isPresent = !!localAtt[m.id];
+                const initials = `${m.personas?.nombres?.[0] || ""}${m.personas?.apellidos?.[0] || ""}`.toUpperCase();
+                return (
+                  <div key={m.id} className="flex items-center justify-between px-4 py-3 hover:bg-muted/20 cursor-pointer" onClick={() => toggleAtt(m.id)}>
+                    <div className="flex items-center gap-3">
+                      <Avatar className="h-8 w-8">
+                        <AvatarImage src={m.personas?.foto_url || undefined} />
+                        <AvatarFallback className="text-xs font-semibold">{initials}</AvatarFallback>
+                      </Avatar>
+                      <span className="text-sm font-medium">{m.personas?.nombres} {m.personas?.apellidos}</span>
+                    </div>
+                    <button
+                      onClick={(e) => { e.stopPropagation(); toggleAtt(m.id); }}
+                      className={cn(
+                        "w-9 h-9 rounded-full flex items-center justify-center transition-all shrink-0",
+                        isPresent ? "bg-success text-success-foreground" : "bg-muted text-muted-foreground"
+                      )}
+                    >
+                      {isPresent ? <Check className="h-4 w-4" /> : <X className="h-4 w-4" />}
+                    </button>
+                  </div>
+                );
+              })
+            )}
+          </div>
+        </>
+      )}
+    </div>
+  );
+}
+
 // ========== PERIODO DETAIL VIEW ==========
 function PeriodoDetailView({ escuela, periodo, onBackToPeriodos }: any) {
   const { data: materias, isLoading: loadingMaterias } = useMaterias(periodo.id);
@@ -187,7 +490,6 @@ function PeriodoDetailView({ escuela, periodo, onBackToPeriodos }: any) {
   const deleteMateria = useDeleteMateria();
   const deleteCorte = useDeleteCorte();
   const [activeTab, setActiveTab] = useState<string>("info");
-  const [selectedMateriaForItems, setSelectedMateriaForItems] = useState<string | null>(null);
 
   const handleEstadoMatricula = async (id: string, estado: string) => {
     try { await updateMatricula.mutateAsync({ id, estado }); toast.success("Estado actualizado"); }
@@ -201,10 +503,35 @@ function PeriodoDetailView({ escuela, periodo, onBackToPeriodos }: any) {
 
   const totalPorcentajeCortes = (cortes || []).reduce((sum: number, c: any) => sum + (Number(c.porcentaje) || 0), 0);
 
+  const exportMatriculas = () => {
+    if (!matriculas?.length) return;
+    exportToExcel({
+      title: "Matrículas",
+      columns: [
+        { header: "Nombres", key: "nombres" },
+        { header: "Apellidos", key: "apellidos" },
+        { header: "Fecha Matrícula", key: "fecha_matricula" },
+        { header: "Estado", key: "estado" },
+        { header: "Nota Final", key: "nota_final" },
+        { header: "Materia", key: "materia" },
+      ],
+      data: matriculas.map((m: any) => ({
+        nombres: m.personas?.nombres || "",
+        apellidos: m.personas?.apellidos || "",
+        fecha_matricula: m.fecha_matricula,
+        estado: m.estado,
+        nota_final: m.nota_final ?? "",
+        materia: m.materias?.nombre || "",
+      })),
+      filename: `matriculas-${periodo.nombre}`,
+    });
+  };
+
   const tabs = [
     { id: "info", label: "Información general", icon: Eye },
     { id: "estudiantes", label: "Alumnos", icon: Users },
     { id: "calificaciones", label: "Calificaciones", icon: BarChart3 },
+    { id: "asistencia", label: "Asistencia", icon: ClipboardCheck },
     { id: "materias", label: "Materias", icon: BookText },
   ];
 
@@ -265,7 +592,7 @@ function PeriodoDetailView({ escuela, periodo, onBackToPeriodos }: any) {
               <CorteFormDialog periodoId={periodo.id} />
             </div>
             {!cortes?.length ? (
-              <p className="text-xs text-muted-foreground text-center py-4">No hay cortes configurados. Debe existir mínimo 1 corte por período.</p>
+              <p className="text-xs text-muted-foreground text-center py-4">No hay cortes configurados.</p>
             ) : (
               <>
                 <div className="space-y-2">
@@ -293,58 +620,64 @@ function PeriodoDetailView({ escuela, periodo, onBackToPeriodos }: any) {
 
       {/* ESTUDIANTES TAB */}
       {activeTab === "estudiantes" && (
-        <div className="space-y-2">
-          {!matriculas?.length ? (
-            <div className="rounded-xl border bg-card p-12 text-center text-muted-foreground">
-              <Users className="h-12 w-12 mx-auto mb-3 opacity-40" />
-              <p className="text-sm">No hay estudiantes matriculados.</p>
-            </div>
-          ) : (
-            matriculas.map((m: any) => {
-              const initials = `${m.personas?.nombres?.[0] || ""}${m.personas?.apellidos?.[0] || ""}`.toUpperCase();
-              return (
-                <div key={m.id} className="flex items-center gap-3 p-3 rounded-xl border bg-card hover:shadow-sm transition-shadow">
-                  <Avatar className="h-10 w-10">
-                    <AvatarImage src={m.personas?.foto_url || undefined} />
-                    <AvatarFallback className="text-xs font-semibold">{initials}</AvatarFallback>
-                  </Avatar>
-                  <div className="flex-1 min-w-0">
-                    <p className="text-sm font-semibold text-foreground truncate">{m.personas?.nombres} {m.personas?.apellidos}</p>
-                    <p className="text-xs text-muted-foreground">
-                      {format(parseISO(m.fecha_matricula), "d MMM yyyy", { locale: es })}
-                      {m.materias?.nombre && <> · {m.materias.nombre}</>}
-                      {m.nota_final != null && <> · Nota: <strong>{m.nota_final}</strong></>}
-                    </p>
+        <div className="space-y-4">
+          <div className="flex justify-end">
+            <Button size="sm" variant="outline" onClick={exportMatriculas} disabled={!matriculas?.length}>
+              Exportar Matrículas a Excel
+            </Button>
+          </div>
+          <div className="space-y-2">
+            {!matriculas?.length ? (
+              <div className="rounded-xl border bg-card p-12 text-center text-muted-foreground">
+                <Users className="h-12 w-12 mx-auto mb-3 opacity-40" />
+                <p className="text-sm">No hay estudiantes matriculados.</p>
+              </div>
+            ) : (
+              matriculas.map((m: any) => {
+                const initials = `${m.personas?.nombres?.[0] || ""}${m.personas?.apellidos?.[0] || ""}`.toUpperCase();
+                return (
+                  <div key={m.id} className="flex items-center gap-3 p-3 rounded-xl border bg-card hover:shadow-sm transition-shadow">
+                    <Avatar className="h-10 w-10">
+                      <AvatarImage src={m.personas?.foto_url || undefined} />
+                      <AvatarFallback className="text-xs font-semibold">{initials}</AvatarFallback>
+                    </Avatar>
+                    <div className="flex-1 min-w-0">
+                      <p className="text-sm font-semibold text-foreground truncate">{m.personas?.nombres} {m.personas?.apellidos}</p>
+                      <p className="text-xs text-muted-foreground">
+                        {format(parseISO(m.fecha_matricula), "d MMM yyyy", { locale: es })}
+                        {m.materias?.nombre && <> · {m.materias.nombre}</>}
+                        {m.nota_final != null && <> · Nota: <strong>{m.nota_final}</strong></>}
+                      </p>
+                    </div>
+                    <Select value={m.estado} onValueChange={(v) => handleEstadoMatricula(m.id, v)}>
+                      <SelectTrigger className="h-8 w-28 text-xs" onClick={(e) => e.stopPropagation()}><SelectValue /></SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="Activo">Activo</SelectItem>
+                        <SelectItem value="Completado">Completado</SelectItem>
+                        <SelectItem value="Retirado">Retirado</SelectItem>
+                      </SelectContent>
+                    </Select>
+                    {m.estado === "Completado" && (
+                      <Button size="sm" variant="outline" className="gap-1 text-xs shrink-0" onClick={() => handleEmitirCertificado(m)}>
+                        <Award className="h-3.5 w-3.5" /> Certificado
+                      </Button>
+                    )}
                   </div>
-                  <Select value={m.estado} onValueChange={(v) => handleEstadoMatricula(m.id, v)}>
-                    <SelectTrigger className="h-8 w-28 text-xs" onClick={(e) => e.stopPropagation()}><SelectValue /></SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="Activo">Activo</SelectItem>
-                      <SelectItem value="Completado">Completado</SelectItem>
-                      <SelectItem value="Retirado">Retirado</SelectItem>
-                    </SelectContent>
-                  </Select>
-                  {m.estado === "Completado" && (
-                    <Button size="sm" variant="outline" className="gap-1 text-xs shrink-0" onClick={() => handleEmitirCertificado(m)}>
-                      <Award className="h-3.5 w-3.5" /> Certificado
-                    </Button>
-                  )}
-                </div>
-              );
-            })
-          )}
+                );
+              })
+            )}
+          </div>
         </div>
       )}
 
-      {/* CALIFICACIONES TAB */}
+      {/* CALIFICACIONES TAB - Grading Grid */}
       {activeTab === "calificaciones" && (
-        <CalificacionesTab
-          cortes={cortes}
-          materias={materias}
-          periodoId={periodo.id}
-          selectedMateria={selectedMateriaForItems}
-          setSelectedMateria={setSelectedMateriaForItems}
-        />
+        <GradingGrid cortes={cortes} materias={materias} periodoId={periodo.id} />
+      )}
+
+      {/* ASISTENCIA TAB */}
+      {activeTab === "asistencia" && (
+        <AsistenciaMateriaTab materias={materias} periodoId={periodo.id} />
       )}
 
       {/* MATERIAS TAB */}
@@ -377,117 +710,6 @@ function PeriodoDetailView({ escuela, periodo, onBackToPeriodos }: any) {
             </div>
           )}
         </div>
-      )}
-    </div>
-  );
-}
-
-// ========== CALIFICACIONES TAB ==========
-function CalificacionesTab({ cortes, materias, periodoId, selectedMateria, setSelectedMateria }: any) {
-  const [selectedCorte, setSelectedCorte] = useState<string | null>(null);
-  const activeCorte = (cortes || []).find((c: any) => c.id === selectedCorte);
-  const { data: items } = useAllItemsByCorte(selectedCorte);
-  const deleteItem = useDeleteItemCalificable();
-
-  const materiaItems = useMemo(() => {
-    if (!items || !selectedMateria) return [];
-    return items.filter((i: any) => i.materia_id === selectedMateria);
-  }, [items, selectedMateria]);
-
-  return (
-    <div className="space-y-4">
-      {/* Select corte */}
-      <div className="flex flex-wrap gap-2">
-        {(cortes || []).map((c: any) => (
-          <Button key={c.id} size="sm" variant={selectedCorte === c.id ? "default" : "outline"}
-            onClick={() => { setSelectedCorte(c.id); setSelectedMateria(null); }}>
-            {c.nombre} ({c.porcentaje}%)
-          </Button>
-        ))}
-        {!cortes?.length && <p className="text-sm text-muted-foreground">Configura cortes en la pestaña "Información general" primero.</p>}
-      </div>
-
-      {selectedCorte && activeCorte && (
-        <>
-          <div className="rounded-xl border bg-card p-4">
-            <div className="flex items-center justify-between mb-2">
-              <div>
-                <h3 className="font-bold text-foreground">{activeCorte.nombre}</h3>
-                <p className="text-xs text-muted-foreground">
-                  Porcentaje: {activeCorte.porcentaje}%
-                  {activeCorte.fecha_inicio && <> · {format(parseISO(activeCorte.fecha_inicio), "d MMM yyyy", { locale: es })}{activeCorte.fecha_fin ? ` al ${format(parseISO(activeCorte.fecha_fin), "d MMM yyyy", { locale: es })}` : ""}</>}
-                </p>
-              </div>
-            </div>
-
-            {/* Select materia */}
-            <div className="mt-3">
-              <label className="text-xs font-medium text-muted-foreground mb-1 block">Seleccionar materia:</label>
-              <Select value={selectedMateria || ""} onValueChange={setSelectedMateria}>
-                <SelectTrigger className="h-9"><SelectValue placeholder="Seleccionar materia" /></SelectTrigger>
-                <SelectContent>
-                  {(materias || []).map((m: any) => (
-                    <SelectItem key={m.id} value={m.id}>{m.nombre}</SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-          </div>
-
-          {/* Items calificables table */}
-          {selectedMateria && (
-            <div className="rounded-xl border bg-card overflow-hidden">
-              <div className="flex items-center justify-between p-4 border-b">
-                <h4 className="text-sm font-semibold">ÍTEMS CALIFICABLES</h4>
-                <ItemCalificableFormDialog corteId={selectedCorte} materiaId={selectedMateria} />
-              </div>
-              {!materiaItems.length ? (
-                <p className="text-xs text-muted-foreground text-center py-6">No hay ítems calificables.</p>
-              ) : (
-                <div className="overflow-x-auto">
-                  <table className="w-full text-sm">
-                    <thead>
-                      <tr className="border-b bg-muted/30">
-                        <th className="text-left p-3 font-medium text-muted-foreground">Nombre</th>
-                        <th className="text-center p-3 font-medium text-muted-foreground">Fecha Inicio</th>
-                        <th className="text-center p-3 font-medium text-muted-foreground">Fecha Fin</th>
-                        <th className="text-center p-3 font-medium text-muted-foreground">%</th>
-                        <th className="text-center p-3 font-medium text-muted-foreground">Tipo</th>
-                        <th className="text-center p-3 font-medium text-muted-foreground w-10"></th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {materiaItems.map((item: any) => (
-                        <tr key={item.id} className="border-b last:border-0 hover:bg-muted/20">
-                          <td className="p-3 font-medium">{item.nombre}</td>
-                          <td className="p-3 text-center text-muted-foreground">{item.fecha_inicio ? format(parseISO(item.fecha_inicio), "yyyy-MM-dd") : "—"}</td>
-                          <td className="p-3 text-center text-muted-foreground">{item.fecha_fin ? format(parseISO(item.fecha_fin), "yyyy-MM-dd") : "—"}</td>
-                          <td className="p-3 text-center">{item.porcentaje != null ? `${item.porcentaje}%` : "—"}</td>
-                          <td className="p-3 text-center">
-                            <Badge variant="outline" className="text-[10px]">{item.tipo}</Badge>
-                          </td>
-                          <td className="p-3 text-center">
-                            <DeleteConfirmDialog title="Eliminar ítem" description={`¿Eliminar "${item.nombre}"?`} onConfirm={() => deleteItem.mutateAsync(item.id)} />
-                          </td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                </div>
-              )}
-              {materiaItems.length > 0 && (
-                <div className="p-3 border-t text-xs text-muted-foreground">
-                  {(() => {
-                    const total = materiaItems.reduce((s: number, i: any) => s + (Number(i.porcentaje) || 0), 0);
-                    return total === 100
-                      ? <span className="text-success flex items-center gap-1"><CheckCircle2 className="h-3 w-3" /> Porcentajes completo (100%).</span>
-                      : <span className="text-destructive flex items-center gap-1"><XCircle className="h-3 w-3" /> Porcentaje total: {total}%.</span>;
-                  })()}
-                </div>
-              )}
-            </div>
-          )}
-        </>
       )}
     </div>
   );

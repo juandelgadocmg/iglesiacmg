@@ -15,7 +15,7 @@ import GruposPage from "@/pages/GruposPage";
 import ServiciosPage from "@/pages/ServiciosPage";
 import FinanzasPage from "@/pages/FinanzasPage";
 import EventosPage from "@/pages/EventosPage";
-import AsistenciaPage from "@/pages/AsistenciaPage";
+
 import AcademiaPage from "@/pages/AcademiaPage";
 import CertificadosPage from "@/pages/CertificadosPage";
 import ReportesPage from "@/pages/ReportesPage";
@@ -44,7 +44,7 @@ const App = () => (
               <Route path="/personas/:id" element={<RoleGuard><PersonaPerfilPage /></RoleGuard>} />
               <Route path="/grupos" element={<RoleGuard><GruposPage /></RoleGuard>} />
               <Route path="/servicios" element={<RoleGuard><ServiciosPage /></RoleGuard>} />
-              <Route path="/asistencia" element={<RoleGuard><AsistenciaPage /></RoleGuard>} />
+              
               <Route path="/finanzas" element={<RoleGuard><FinanzasPage /></RoleGuard>} />
               <Route path="/eventos" element={<RoleGuard><EventosPage /></RoleGuard>} />
               <Route path="/academia" element={<RoleGuard><AcademiaPage /></RoleGuard>} />

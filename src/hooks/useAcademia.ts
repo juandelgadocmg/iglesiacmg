@@ -383,6 +383,31 @@ export function useCalificaciones(itemId: string | null) {
   });
 }
 
+// Fetch all calificaciones for items within a corte+materia combo
+export function useCalificacionesByMateriaCorte(corteId: string | null, materiaId: string | null) {
+  return useQuery({
+    queryKey: ["calificaciones-grid", corteId, materiaId],
+    enabled: !!corteId && !!materiaId,
+    queryFn: async () => {
+      // First get items for this corte+materia
+      const { data: items, error: itemsErr } = await supabase
+        .from("items_calificables")
+        .select("id")
+        .eq("corte_id", corteId!)
+        .eq("materia_id", materiaId!);
+      if (itemsErr) throw itemsErr;
+      if (!items?.length) return [];
+      const itemIds = items.map(i => i.id);
+      const { data, error } = await supabase
+        .from("calificaciones")
+        .select("*")
+        .in("item_id", itemIds);
+      if (error) throw error;
+      return data;
+    },
+  });
+}
+
 export function useUpsertCalificacion() {
   const qc = useQueryClient();
   return useMutation({
@@ -395,7 +420,26 @@ export function useUpsertCalificacion() {
       if (error) throw error;
       return data;
     },
-    onSuccess: () => qc.invalidateQueries({ queryKey: ["calificaciones"] }),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["calificaciones"] });
+      qc.invalidateQueries({ queryKey: ["calificaciones-grid"] });
+    },
+  });
+}
+
+export function useBulkUpsertCalificaciones() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async (records: { item_id: string; matricula_id: string; nota?: number | null; observacion?: string }[]) => {
+      const { error } = await supabase
+        .from("calificaciones")
+        .upsert(records, { onConflict: "item_id,matricula_id" });
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["calificaciones"] });
+      qc.invalidateQueries({ queryKey: ["calificaciones-grid"] });
+    },
   });
 }
 
@@ -488,6 +532,43 @@ export function useCreateCertificado() {
       return data;
     },
     onSuccess: () => qc.invalidateQueries({ queryKey: ["certificados"] }),
+  });
+}
+
+// ============ ASISTENCIA MATERIAS ============
+export function useAsistenciaMaterias(materiaId: string | null, fecha?: string) {
+  return useQuery({
+    queryKey: ["asistencia-materias", materiaId, fecha],
+    enabled: !!materiaId,
+    queryFn: async () => {
+      let q = supabase
+        .from("asistencia_materias")
+        .select("*")
+        .eq("materia_id", materiaId!);
+      if (fecha) q = q.eq("fecha", fecha);
+      const { data, error } = await q.order("created_at");
+      if (error) throw error;
+      return data;
+    },
+  });
+}
+
+export function useUpsertAsistenciaMateria() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async (records: { materia_id: string; matricula_id: string; fecha: string; presente: boolean }[]) => {
+      // Delete existing for this materia+fecha, then insert
+      if (records.length === 0) return;
+      const { materia_id, fecha } = records[0];
+      await supabase
+        .from("asistencia_materias")
+        .delete()
+        .eq("materia_id", materia_id)
+        .eq("fecha", fecha);
+      const { error } = await supabase.from("asistencia_materias").insert(records);
+      if (error) throw error;
+    },
+    onSuccess: () => qc.invalidateQueries({ queryKey: ["asistencia-materias"] }),
   });
 }
 

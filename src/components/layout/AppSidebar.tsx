@@ -6,7 +6,7 @@ import { useUserRoles } from "@/hooks/useUserRoles";
 import { canAccess } from "@/lib/permissions";
 import logo from "@/assets/logo.jpeg";
 import {
-  LayoutDashboard, Users, UsersRound, Church, ClipboardCheck,
+  LayoutDashboard, Users, UsersRound, Church,
   DollarSign, CalendarDays, GraduationCap,
   Award, BarChart3, Settings, UserCog, ChevronLeft, ChevronRight,
   LogOut, HandHeart
@@ -17,7 +17,6 @@ const menuItems = [
   { label: "Personas", icon: Users, path: "/personas" },
   { label: "Grupos", icon: UsersRound, path: "/grupos" },
   { label: "Servicios", icon: Church, path: "/servicios" },
-  { label: "Asistencia", icon: ClipboardCheck, path: "/asistencia" },
   { label: "Finanzas", icon: DollarSign, path: "/finanzas" },
   { label: "Eventos", icon: CalendarDays, path: "/eventos" },
   { label: "Academia", icon: GraduationCap, path: "/academia" },
