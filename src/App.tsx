@@ -10,6 +10,7 @@ import AppLayout from "@/components/layout/AppLayout";
 import LoginPage from "@/pages/LoginPage";
 import Dashboard from "@/pages/Dashboard";
 import PersonasPage from "@/pages/PersonasPage";
+import PersonaPerfilPage from "@/pages/PersonaPerfilPage";
 import GruposPage from "@/pages/GruposPage";
 import ServiciosPage from "@/pages/ServiciosPage";
 import FinanzasPage from "@/pages/FinanzasPage";
