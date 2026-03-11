@@ -17,7 +17,6 @@ const menuItems = [
   { label: "Personas", icon: Users, path: "/personas" },
   { label: "Grupos", icon: UsersRound, path: "/grupos" },
   { label: "Servicios", icon: Church, path: "/servicios" },
-  { label: "Asistencia", icon: ClipboardCheck, path: "/asistencia" },
   { label: "Finanzas", icon: DollarSign, path: "/finanzas" },
   { label: "Eventos", icon: CalendarDays, path: "/eventos" },
   { label: "Academia", icon: GraduationCap, path: "/academia" },

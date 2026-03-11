@@ -44,7 +44,7 @@ const App = () => (
               <Route path="/personas/:id" element={<RoleGuard><PersonaPerfilPage /></RoleGuard>} />
               <Route path="/grupos" element={<RoleGuard><GruposPage /></RoleGuard>} />
               <Route path="/servicios" element={<RoleGuard><ServiciosPage /></RoleGuard>} />
-              <Route path="/asistencia" element={<RoleGuard><AsistenciaPage /></RoleGuard>} />
+              
               <Route path="/finanzas" element={<RoleGuard><FinanzasPage /></RoleGuard>} />
               <Route path="/eventos" element={<RoleGuard><EventosPage /></RoleGuard>} />
               <Route path="/academia" element={<RoleGuard><AcademiaPage /></RoleGuard>} />
