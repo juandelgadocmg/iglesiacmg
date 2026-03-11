@@ -1,0 +1,106 @@
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { supabase } from "@/integrations/supabase/client";
+
+export function usePersonaDetalle(id: string | undefined) {
+  return useQuery({
+    queryKey: ["persona-detalle", id],
+    enabled: !!id,
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("personas")
+        .select("*, grupos!fk_personas_grupo(id, nombre, tipo)")
+        .eq("id", id!)
+        .single();
+      if (error) throw error;
+      return data;
+    },
+  });
+}
+
+export function useProcesos() {
+  return useQuery({
+    queryKey: ["procesos-crecimiento"],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("procesos_crecimiento")
+        .select("*")
+        .order("orden", { ascending: true });
+      if (error) throw error;
+      return data;
+    },
+  });
+}
+
+export function usePersonaProcesos(personaId: string | undefined) {
+  return useQuery({
+    queryKey: ["persona-procesos", personaId],
+    enabled: !!personaId,
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("persona_procesos")
+        .select("*")
+        .eq("persona_id", personaId!);
+      if (error) throw error;
+      return data;
+    },
+  });
+}
+
+export function useToggleProceso() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async ({ personaId, procesoId, realizado }: { personaId: string; procesoId: string; realizado: boolean }) => {
+      if (realizado) {
+        const { error } = await supabase
+          .from("persona_procesos")
+          .upsert({
+            persona_id: personaId,
+            proceso_id: procesoId,
+            estado: "Realizado",
+            fecha_completado: new Date().toISOString().split("T")[0],
+          }, { onConflict: "persona_id,proceso_id" });
+        if (error) throw error;
+      } else {
+        const { error } = await supabase
+          .from("persona_procesos")
+          .delete()
+          .eq("persona_id", personaId)
+          .eq("proceso_id", procesoId);
+        if (error) throw error;
+      }
+    },
+    onSuccess: (_, vars) => qc.invalidateQueries({ queryKey: ["persona-procesos", vars.personaId] }),
+  });
+}
+
+export function usePersonaAsistencia(personaId: string | undefined) {
+  return useQuery({
+    queryKey: ["persona-asistencia", personaId],
+    enabled: !!personaId,
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("asistencia")
+        .select("*, servicios(nombre, fecha, tipo)")
+        .eq("persona_id", personaId!)
+        .order("created_at", { ascending: false })
+        .limit(20);
+      if (error) throw error;
+      return data;
+    },
+  });
+}
+
+export function usePersonaGrupoMiembros(personaId: string | undefined) {
+  return useQuery({
+    queryKey: ["persona-grupo-miembros", personaId],
+    enabled: !!personaId,
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("grupo_miembros")
+        .select("*, grupos(nombre, tipo)")
+        .eq("persona_id", personaId!);
+      if (error) throw error;
+      return data;
+    },
+  });
+}

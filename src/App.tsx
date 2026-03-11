@@ -41,6 +41,7 @@ const App = () => (
             <Route element={<ProtectedRoute><AppLayout /></ProtectedRoute>}>
               <Route path="/dashboard" element={<Dashboard />} />
               <Route path="/personas" element={<RoleGuard><PersonasPage /></RoleGuard>} />
+              <Route path="/personas/:id" element={<RoleGuard><PersonaPerfilPage /></RoleGuard>} />
               <Route path="/grupos" element={<RoleGuard><GruposPage /></RoleGuard>} />
               <Route path="/servicios" element={<RoleGuard><ServiciosPage /></RoleGuard>} />
               <Route path="/asistencia" element={<RoleGuard><AsistenciaPage /></RoleGuard>} />
