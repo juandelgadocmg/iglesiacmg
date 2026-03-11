@@ -15,7 +15,7 @@ import GruposPage from "@/pages/GruposPage";
 import ServiciosPage from "@/pages/ServiciosPage";
 import FinanzasPage from "@/pages/FinanzasPage";
 import EventosPage from "@/pages/EventosPage";
-import AsistenciaPage from "@/pages/AsistenciaPage";
+
 import AcademiaPage from "@/pages/AcademiaPage";
 import CertificadosPage from "@/pages/CertificadosPage";
 import ReportesPage from "@/pages/ReportesPage";
