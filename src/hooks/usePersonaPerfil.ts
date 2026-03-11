@@ -104,3 +104,48 @@ export function usePersonaGrupoMiembros(personaId: string | undefined) {
     },
   });
 }
+
+// ============ RELACIONES FAMILIARES ============
+
+export function useRelacionesFamiliares(personaId: string | undefined) {
+  return useQuery({
+    queryKey: ["relaciones-familiares", personaId],
+    enabled: !!personaId,
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("relaciones_familiares" as any)
+        .select("*, familiar:familiar_id(id, nombres, apellidos, foto_url, tipo_persona)")
+        .eq("persona_id", personaId!);
+      if (error) throw error;
+      return data as any[];
+    },
+  });
+}
+
+export function useCreateRelacion() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async (rel: { persona_id: string; familiar_id?: string | null; familiar_nombre?: string | null; parentesco: string }) => {
+      const { data, error } = await supabase
+        .from("relaciones_familiares" as any)
+        .insert(rel as any)
+        .select()
+        .single();
+      if (error) throw error;
+      return data;
+    },
+    onSuccess: (_, vars) => qc.invalidateQueries({ queryKey: ["relaciones-familiares", vars.persona_id] }),
+  });
+}
+
+export function useDeleteRelacion() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async ({ id, personaId }: { id: string; personaId: string }) => {
+      const { error } = await supabase.from("relaciones_familiares" as any).delete().eq("id", id);
+      if (error) throw error;
+      return personaId;
+    },
+    onSuccess: (personaId) => qc.invalidateQueries({ queryKey: ["relaciones-familiares", personaId] }),
+  });
+}
