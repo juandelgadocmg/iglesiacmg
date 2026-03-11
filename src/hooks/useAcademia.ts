@@ -35,7 +35,7 @@ export function useCreateEscuela() {
 export function useUpdateEscuela() {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: async ({ id, ...updates }: { id: string; nombre?: string; descripcion?: string; estado?: string }) => {
+    mutationFn: async ({ id, ...updates }: { id: string; [key: string]: any }) => {
       const { error } = await supabase.from("cursos").update(updates).eq("id", id);
       if (error) throw error;
     },
@@ -140,6 +140,55 @@ export function useDeletePeriodo() {
   });
 }
 
+// ============ AULAS ============
+export function useAulas() {
+  return useQuery({
+    queryKey: ["aulas"],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("aulas")
+        .select("*")
+        .order("nombre");
+      if (error) throw error;
+      return data;
+    },
+  });
+}
+
+export function useCreateAula() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async (aula: { nombre: string; direccion?: string; sede?: string }) => {
+      const { data, error } = await supabase.from("aulas").insert(aula).select().single();
+      if (error) throw error;
+      return data;
+    },
+    onSuccess: () => qc.invalidateQueries({ queryKey: ["aulas"] }),
+  });
+}
+
+export function useUpdateAula() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async ({ id, ...updates }: { id: string; activo?: boolean; nombre?: string; direccion?: string; sede?: string }) => {
+      const { error } = await supabase.from("aulas").update(updates).eq("id", id);
+      if (error) throw error;
+    },
+    onSuccess: () => qc.invalidateQueries({ queryKey: ["aulas"] }),
+  });
+}
+
+export function useDeleteAula() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async (id: string) => {
+      const { error } = await supabase.from("aulas").delete().eq("id", id);
+      if (error) throw error;
+    },
+    onSuccess: () => qc.invalidateQueries({ queryKey: ["aulas"] }),
+  });
+}
+
 // ============ MATERIAS ============
 export function useMaterias(periodoId: string | null) {
   return useQuery({
@@ -148,7 +197,7 @@ export function useMaterias(periodoId: string | null) {
     queryFn: async () => {
       const { data, error } = await supabase
         .from("materias")
-        .select("*")
+        .select("*, personas(nombres, apellidos), aulas(nombre)")
         .eq("periodo_id", periodoId!)
         .order("created_at", { ascending: false });
       if (error) throw error;
@@ -166,11 +215,24 @@ export function useCreateMateria() {
       descripcion?: string;
       horario?: string;
       maestro_nombre?: string;
+      maestro_id?: string;
       aula?: string;
+      aula_id?: string;
     }) => {
       const { data, error } = await supabase.from("materias").insert(materia).select().single();
       if (error) throw error;
       return data;
+    },
+    onSuccess: () => qc.invalidateQueries({ queryKey: ["materias"] }),
+  });
+}
+
+export function useUpdateMateria() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async ({ id, ...updates }: { id: string; [key: string]: any }) => {
+      const { error } = await supabase.from("materias").update(updates).eq("id", id);
+      if (error) throw error;
     },
     onSuccess: () => qc.invalidateQueries({ queryKey: ["materias"] }),
   });
@@ -184,6 +246,156 @@ export function useDeleteMateria() {
       if (error) throw error;
     },
     onSuccess: () => qc.invalidateQueries({ queryKey: ["materias"] }),
+  });
+}
+
+// ============ CORTES ============
+export function useCortes(periodoId: string | null) {
+  return useQuery({
+    queryKey: ["cortes", periodoId],
+    enabled: !!periodoId,
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("cortes_academicos")
+        .select("*")
+        .eq("periodo_id", periodoId!)
+        .order("numero");
+      if (error) throw error;
+      return data;
+    },
+  });
+}
+
+export function useCreateCorte() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async (corte: {
+      periodo_id: string;
+      nombre: string;
+      numero?: number;
+      porcentaje?: number;
+      fecha_inicio?: string;
+      fecha_fin?: string;
+    }) => {
+      const { data, error } = await supabase.from("cortes_academicos").insert(corte).select().single();
+      if (error) throw error;
+      return data;
+    },
+    onSuccess: () => qc.invalidateQueries({ queryKey: ["cortes"] }),
+  });
+}
+
+export function useDeleteCorte() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async (id: string) => {
+      const { error } = await supabase.from("cortes_academicos").delete().eq("id", id);
+      if (error) throw error;
+    },
+    onSuccess: () => qc.invalidateQueries({ queryKey: ["cortes"] }),
+  });
+}
+
+// ============ ITEMS CALIFICABLES ============
+export function useItemsCalificables(corteId: string | null, materiaId: string | null) {
+  return useQuery({
+    queryKey: ["items-calificables", corteId, materiaId],
+    enabled: !!corteId && !!materiaId,
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("items_calificables")
+        .select("*")
+        .eq("corte_id", corteId!)
+        .eq("materia_id", materiaId!)
+        .order("created_at");
+      if (error) throw error;
+      return data;
+    },
+  });
+}
+
+export function useAllItemsByCorte(corteId: string | null) {
+  return useQuery({
+    queryKey: ["items-calificables-corte", corteId],
+    enabled: !!corteId,
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("items_calificables")
+        .select("*, materias(nombre)")
+        .eq("corte_id", corteId!)
+        .order("created_at");
+      if (error) throw error;
+      return data;
+    },
+  });
+}
+
+export function useCreateItemCalificable() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async (item: {
+      corte_id: string;
+      materia_id: string;
+      nombre: string;
+      tipo?: string;
+      porcentaje?: number;
+      fecha_inicio?: string;
+      fecha_fin?: string;
+    }) => {
+      const { data, error } = await supabase.from("items_calificables").insert(item).select().single();
+      if (error) throw error;
+      return data;
+    },
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["items-calificables"] });
+      qc.invalidateQueries({ queryKey: ["items-calificables-corte"] });
+    },
+  });
+}
+
+export function useDeleteItemCalificable() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async (id: string) => {
+      const { error } = await supabase.from("items_calificables").delete().eq("id", id);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["items-calificables"] });
+      qc.invalidateQueries({ queryKey: ["items-calificables-corte"] });
+    },
+  });
+}
+
+// ============ CALIFICACIONES ============
+export function useCalificaciones(itemId: string | null) {
+  return useQuery({
+    queryKey: ["calificaciones", itemId],
+    enabled: !!itemId,
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("calificaciones")
+        .select("*, matriculas(persona_id, personas(nombres, apellidos))")
+        .eq("item_id", itemId!);
+      if (error) throw error;
+      return data;
+    },
+  });
+}
+
+export function useUpsertCalificacion() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async (cal: { item_id: string; matricula_id: string; nota?: number; observacion?: string }) => {
+      const { data, error } = await supabase
+        .from("calificaciones")
+        .upsert(cal, { onConflict: "item_id,matricula_id" })
+        .select()
+        .single();
+      if (error) throw error;
+      return data;
+    },
+    onSuccess: () => qc.invalidateQueries({ queryKey: ["calificaciones"] }),
   });
 }
 
