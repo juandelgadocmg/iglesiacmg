@@ -9,7 +9,7 @@ import {
   LayoutDashboard, Users, UsersRound, Church, ClipboardCheck,
   DollarSign, Heart, CalendarDays, FileText, GraduationCap,
   Award, BarChart3, Settings, UserCog, ChevronLeft, ChevronRight,
-  LogOut, ClipboardList, MapPin
+  LogOut, ClipboardList, MapPin, GitBranch
 } from "lucide-react";
 
 const menuItems = [
@@ -27,6 +27,7 @@ const menuItems = [
   { label: "Reportes", icon: BarChart3, path: "/reportes" },
   { label: "Reportes Grupos", icon: ClipboardList, path: "/reportes-grupos" },
   { label: "Mapa Grupos", icon: MapPin, path: "/mapa-grupos" },
+  { label: "Gráfico Ministerio", icon: GitBranch, path: "/grafico-ministerio" },
   { label: "Usuarios", icon: UserCog, path: "/usuarios" },
   { label: "Configuración", icon: Settings, path: "/configuracion" },
 ];

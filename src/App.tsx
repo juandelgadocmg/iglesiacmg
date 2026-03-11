@@ -22,6 +22,7 @@ import CertificadosPage from "@/pages/CertificadosPage";
 import ReportesPage from "@/pages/ReportesPage";
 import ReportesGruposPage from "@/pages/ReportesGruposPage";
 import MapaGruposPage from "@/pages/MapaGruposPage";
+import GraficoMinisterioPage from "@/pages/GraficoMinisterioPage";
 import UsuariosPage from "@/pages/UsuariosPage";
 import ConfiguracionPage from "@/pages/ConfiguracionPage";
 import ResetPasswordPage from "@/pages/ResetPasswordPage";
@@ -55,6 +56,7 @@ const App = () => (
               <Route path="/reportes" element={<RoleGuard><ReportesPage /></RoleGuard>} />
               <Route path="/reportes-grupos" element={<RoleGuard><ReportesGruposPage /></RoleGuard>} />
               <Route path="/mapa-grupos" element={<RoleGuard><MapaGruposPage /></RoleGuard>} />
+              <Route path="/grafico-ministerio" element={<RoleGuard><GraficoMinisterioPage /></RoleGuard>} />
               <Route path="/usuarios" element={<RoleGuard><UsuariosPage /></RoleGuard>} />
               <Route path="/configuracion" element={<RoleGuard><ConfiguracionPage /></RoleGuard>} />
             </Route>
