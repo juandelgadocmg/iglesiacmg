@@ -26,6 +26,7 @@ const menuItems = [
   { label: "Certificados", icon: Award, path: "/certificados" },
   { label: "Reportes", icon: BarChart3, path: "/reportes" },
   { label: "Reportes Grupos", icon: ClipboardList, path: "/reportes-grupos" },
+  { label: "Mapa Grupos", icon: MapPin, path: "/mapa-grupos" },
   { label: "Usuarios", icon: UserCog, path: "/usuarios" },
   { label: "Configuración", icon: Settings, path: "/configuracion" },
 ];
