@@ -511,6 +511,47 @@ export type Database = {
           },
         ]
       }
+      materias: {
+        Row: {
+          aula: string | null
+          created_at: string
+          descripcion: string | null
+          horario: string | null
+          id: string
+          maestro_nombre: string | null
+          nombre: string
+          periodo_id: string
+        }
+        Insert: {
+          aula?: string | null
+          created_at?: string
+          descripcion?: string | null
+          horario?: string | null
+          id?: string
+          maestro_nombre?: string | null
+          nombre: string
+          periodo_id: string
+        }
+        Update: {
+          aula?: string | null
+          created_at?: string
+          descripcion?: string | null
+          horario?: string | null
+          id?: string
+          maestro_nombre?: string | null
+          nombre?: string
+          periodo_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "materias_periodo_id_fkey"
+            columns: ["periodo_id"]
+            isOneToOne: false
+            referencedRelation: "periodos_academicos"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       matriculas: {
         Row: {
           created_at: string
@@ -518,7 +559,9 @@ export type Database = {
           estado: string
           fecha_matricula: string
           id: string
+          materia_id: string | null
           nota_final: number | null
+          periodo_id: string | null
           persona_id: string
         }
         Insert: {
@@ -527,7 +570,9 @@ export type Database = {
           estado?: string
           fecha_matricula?: string
           id?: string
+          materia_id?: string | null
           nota_final?: number | null
+          periodo_id?: string | null
           persona_id: string
         }
         Update: {
@@ -536,7 +581,9 @@ export type Database = {
           estado?: string
           fecha_matricula?: string
           id?: string
+          materia_id?: string | null
           nota_final?: number | null
+          periodo_id?: string | null
           persona_id?: string
         }
         Relationships: [
@@ -548,10 +595,71 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "matriculas_materia_id_fkey"
+            columns: ["materia_id"]
+            isOneToOne: false
+            referencedRelation: "materias"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "matriculas_periodo_id_fkey"
+            columns: ["periodo_id"]
+            isOneToOne: false
+            referencedRelation: "periodos_academicos"
+            referencedColumns: ["id"]
+          },
+          {
             foreignKeyName: "matriculas_persona_id_fkey"
             columns: ["persona_id"]
             isOneToOne: false
             referencedRelation: "personas"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      periodos_academicos: {
+        Row: {
+          created_at: string
+          escuela_id: string
+          estado: string
+          fecha_fin: string | null
+          fecha_inicio: string | null
+          fecha_matricula_fin: string | null
+          fecha_matricula_inicio: string | null
+          id: string
+          nombre: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          escuela_id: string
+          estado?: string
+          fecha_fin?: string | null
+          fecha_inicio?: string | null
+          fecha_matricula_fin?: string | null
+          fecha_matricula_inicio?: string | null
+          id?: string
+          nombre: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          escuela_id?: string
+          estado?: string
+          fecha_fin?: string | null
+          fecha_inicio?: string | null
+          fecha_matricula_fin?: string | null
+          fecha_matricula_inicio?: string | null
+          id?: string
+          nombre?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "periodos_academicos_escuela_id_fkey"
+            columns: ["escuela_id"]
+            isOneToOne: false
+            referencedRelation: "cursos"
             referencedColumns: ["id"]
           },
         ]
