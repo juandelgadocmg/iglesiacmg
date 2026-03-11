@@ -1,6 +1,7 @@
 import { useParams, useNavigate } from "react-router-dom";
 import { usePersonaDetalle, useProcesos, usePersonaProcesos, useToggleProceso, usePersonaAsistencia, usePersonaGrupoMiembros, useRelacionesFamiliares, useCreateRelacion, useDeleteRelacion } from "@/hooks/usePersonaPerfil";
-import { usePersonas } from "@/hooks/useDatabase";
+import { usePersonas, useUpdatePersona } from "@/hooks/useDatabase";
+import { supabase } from "@/integrations/supabase/client";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -13,13 +14,14 @@ import PersonaFormDialog from "@/components/forms/PersonaFormDialog";
 import {
   ArrowLeft, Phone, Mail, MapPin, Calendar, Church, Users, Briefcase,
   Heart, BookOpen, CheckCircle2, XCircle, Clock, User, FileText,
-  GraduationCap, Shield, Pencil, UserPlus, Trash2, Baby, HeartHandshake,
+  GraduationCap, Shield, Pencil, UserPlus, Trash2, Baby, HeartHandshake, Camera,
 } from "lucide-react";
 import { format, parseISO, differenceInYears } from "date-fns";
 import { es } from "date-fns/locale";
-import { useState, useMemo } from "react";
+import { useState, useMemo, useRef } from "react";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
+import { useQueryClient } from "@tanstack/react-query";
 
 const tipoColor: Record<string, string> = {
   Miembro: "bg-primary text-primary-foreground",
@@ -56,11 +58,49 @@ export default function PersonaPerfilPage() {
   const createRelacion = useCreateRelacion();
   const deleteRelacion = useDeleteRelacion();
   const toggleProceso = useToggleProceso();
+  const updatePersona = useUpdatePersona();
+  const queryClient = useQueryClient();
+  const fileInputRef = useRef<HTMLInputElement>(null);
   const [editing, setEditing] = useState(false);
+  const [uploadingPhoto, setUploadingPhoto] = useState(false);
   const [showAddFamiliar, setShowAddFamiliar] = useState(false);
   const [familiarSearch, setFamiliarSearch] = useState("");
   const [selectedParentesco, setSelectedParentesco] = useState("Cónyuge");
   const [manualName, setManualName] = useState("");
+
+  const handlePhotoUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file || !persona) return;
+    if (!file.type.startsWith("image/")) { toast.error("Solo se permiten imágenes"); return; }
+    if (file.size > 5 * 1024 * 1024) { toast.error("La imagen no debe superar 5MB"); return; }
+
+    setUploadingPhoto(true);
+    try {
+      const ext = file.name.split(".").pop();
+      const filePath = `personas/${persona.id}.${ext}`;
+
+      // Delete old file if exists
+      await supabase.storage.from("avatars").remove([filePath]);
+
+      const { error: uploadError } = await supabase.storage
+        .from("avatars")
+        .upload(filePath, file, { upsert: true });
+      if (uploadError) throw uploadError;
+
+      const { data: urlData } = supabase.storage.from("avatars").getPublicUrl(filePath);
+      const foto_url = `${urlData.publicUrl}?t=${Date.now()}`;
+
+      await updatePersona.mutateAsync({ id: persona.id, foto_url });
+      queryClient.invalidateQueries({ queryKey: ["persona-detalle", persona.id] });
+      queryClient.invalidateQueries({ queryKey: ["personas"] });
+      toast.success("Foto actualizada");
+    } catch (err: any) {
+      toast.error("Error al subir la foto", { description: err.message });
+    } finally {
+      setUploadingPhoto(false);
+      if (fileInputRef.current) fileInputRef.current.value = "";
+    }
+  };
 
   const procesosMap = useMemo(() =>
     new Map((personaProcesos || []).map((pp) => [pp.proceso_id, pp])),
@@ -128,12 +168,23 @@ export default function PersonaPerfilPage() {
           </Button>
 
           <div className="flex flex-col md:flex-row items-start md:items-center gap-6 ml-10 md:ml-8">
-            <Avatar className="h-24 w-24 md:h-28 md:w-28 border-4 border-primary-foreground/30 shadow-xl ring-4 ring-primary-foreground/10">
-              <AvatarImage src={persona.foto_url || undefined} />
-              <AvatarFallback className="text-2xl font-bold bg-primary-foreground/20 text-primary-foreground">
-                {persona.nombres?.[0]}{persona.apellidos?.[0]}
-              </AvatarFallback>
-            </Avatar>
+            <div className="relative group cursor-pointer" onClick={() => fileInputRef.current?.click()}>
+              <Avatar className="h-24 w-24 md:h-28 md:w-28 border-4 border-primary-foreground/30 shadow-xl ring-4 ring-primary-foreground/10">
+                <AvatarImage src={persona.foto_url || undefined} />
+                <AvatarFallback className="text-2xl font-bold bg-primary-foreground/20 text-primary-foreground">
+                  {persona.nombres?.[0]}{persona.apellidos?.[0]}
+                </AvatarFallback>
+              </Avatar>
+              <div className="absolute inset-0 rounded-full bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
+                <Camera className="h-6 w-6 text-white" />
+              </div>
+              {uploadingPhoto && (
+                <div className="absolute inset-0 rounded-full bg-black/50 flex items-center justify-center">
+                  <div className="h-6 w-6 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                </div>
+              )}
+              <input ref={fileInputRef} type="file" accept="image/*" className="hidden" onChange={handlePhotoUpload} />
+            </div>
 
             <div className="flex-1 text-primary-foreground">
               <h1 className="text-2xl md:text-3xl font-bold tracking-tight">
