@@ -21,6 +21,7 @@ import AcademiaPage from "@/pages/AcademiaPage";
 import CertificadosPage from "@/pages/CertificadosPage";
 import ReportesPage from "@/pages/ReportesPage";
 import ReportesGruposPage from "@/pages/ReportesGruposPage";
+import MapaGruposPage from "@/pages/MapaGruposPage";
 import UsuariosPage from "@/pages/UsuariosPage";
 import ConfiguracionPage from "@/pages/ConfiguracionPage";
 import ResetPasswordPage from "@/pages/ResetPasswordPage";
