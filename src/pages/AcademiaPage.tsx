@@ -9,6 +9,7 @@ import AulaFormDialog from "@/components/forms/AulaFormDialog";
 import CorteFormDialog from "@/components/forms/CorteFormDialog";
 import ItemCalificableFormDialog from "@/components/forms/ItemCalificableFormDialog";
 import DeleteConfirmDialog from "@/components/shared/DeleteConfirmDialog";
+import MateriaAttendanceTrendChart from "@/components/charts/MateriaAttendanceTrendChart";
 import ExportDropdown from "@/components/shared/ExportDropdown";
 import {
   useEscuelas, useAllMatriculas, useCertificados, usePeriodos,
