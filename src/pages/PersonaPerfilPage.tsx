@@ -1,6 +1,7 @@
 import { useParams, useNavigate } from "react-router-dom";
 import { usePersonaDetalle, useProcesos, usePersonaProcesos, useToggleProceso, usePersonaAsistencia, usePersonaGrupoMiembros, useRelacionesFamiliares, useCreateRelacion, useDeleteRelacion } from "@/hooks/usePersonaPerfil";
-import { usePersonas } from "@/hooks/useDatabase";
+import { usePersonas, useUpdatePersona } from "@/hooks/useDatabase";
+import { supabase } from "@/integrations/supabase/client";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -13,13 +14,14 @@ import PersonaFormDialog from "@/components/forms/PersonaFormDialog";
 import {
   ArrowLeft, Phone, Mail, MapPin, Calendar, Church, Users, Briefcase,
   Heart, BookOpen, CheckCircle2, XCircle, Clock, User, FileText,
-  GraduationCap, Shield, Pencil, UserPlus, Trash2, Baby, HeartHandshake,
+  GraduationCap, Shield, Pencil, UserPlus, Trash2, Baby, HeartHandshake, Camera,
 } from "lucide-react";
 import { format, parseISO, differenceInYears } from "date-fns";
 import { es } from "date-fns/locale";
-import { useState, useMemo } from "react";
+import { useState, useMemo, useRef } from "react";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
+import { useQueryClient } from "@tanstack/react-query";
 
 const tipoColor: Record<string, string> = {
   Miembro: "bg-primary text-primary-foreground",
