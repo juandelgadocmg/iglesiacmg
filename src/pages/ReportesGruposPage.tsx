@@ -193,6 +193,23 @@ export default function ReportesGruposPage() {
                   <p className="text-sm text-muted-foreground line-clamp-2">{r.observaciones}</p>
                 )}
 
+                {/* Attendance summary */}
+                {r.asistencia_count && (r.asistencia_count.presentes > 0 || r.asistencia_count.ausentes > 0) && (
+                  <div className="flex items-center gap-3 text-xs">
+                    <span className="flex items-center gap-1 text-success font-medium">
+                      <CheckCircle2 className="h-3.5 w-3.5" /> {r.asistencia_count.presentes} presentes
+                    </span>
+                    <span className="flex items-center gap-1 text-destructive font-medium">
+                      <XCircle className="h-3.5 w-3.5" /> {r.asistencia_count.ausentes} ausentes
+                    </span>
+                    {r.asistencia_count.nuevos > 0 && (
+                      <span className="flex items-center gap-1 text-info font-medium">
+                        + {r.asistencia_count.nuevos} nuevos
+                      </span>
+                    )}
+                  </div>
+                )}
+
                 {/* Financial info */}
                 <div className="bg-muted/50 rounded-lg p-3 space-y-1.5">
                   <p className="text-xs font-medium text-muted-foreground uppercase tracking-wider">
