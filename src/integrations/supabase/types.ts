@@ -782,6 +782,51 @@ export type Database = {
         }
         Relationships: []
       }
+      reporte_asistencia: {
+        Row: {
+          created_at: string
+          es_nuevo: boolean
+          id: string
+          motivo_ausencia: string | null
+          persona_id: string
+          presente: boolean
+          reporte_id: string
+        }
+        Insert: {
+          created_at?: string
+          es_nuevo?: boolean
+          id?: string
+          motivo_ausencia?: string | null
+          persona_id: string
+          presente?: boolean
+          reporte_id: string
+        }
+        Update: {
+          created_at?: string
+          es_nuevo?: boolean
+          id?: string
+          motivo_ausencia?: string | null
+          persona_id?: string
+          presente?: boolean
+          reporte_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "reporte_asistencia_persona_id_fkey"
+            columns: ["persona_id"]
+            isOneToOne: false
+            referencedRelation: "personas"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "reporte_asistencia_reporte_id_fkey"
+            columns: ["reporte_id"]
+            isOneToOne: false
+            referencedRelation: "reportes_grupos"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       reportes_grupos: {
         Row: {
           created_at: string
