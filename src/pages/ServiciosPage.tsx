@@ -246,6 +246,9 @@ export default function ServiciosPage() {
             <MetricCard title="Tasa de Asistencia" value={`${attendanceRate}%`} icon={TrendingUp} variant="accent" />
           </div>
 
+          {/* Attendance Trend Chart */}
+          <AttendanceTrendChart />
+
           {/* Attendance list */}
           <div className="bg-card rounded-lg border">
             <div className="p-4 border-b flex flex-col sm:flex-row gap-3">
