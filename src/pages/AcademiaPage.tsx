@@ -475,6 +475,9 @@ function AsistenciaMateriaTab({ materias, periodoId }: any) {
               })
             )}
           </div>
+
+          {/* Materia Attendance Trend Chart */}
+          <MateriaAttendanceTrendChart materias={materias || []} periodoId={periodoId} />
         </>
       )}
     </div>
