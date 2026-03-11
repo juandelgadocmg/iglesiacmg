@@ -58,11 +58,49 @@ export default function PersonaPerfilPage() {
   const createRelacion = useCreateRelacion();
   const deleteRelacion = useDeleteRelacion();
   const toggleProceso = useToggleProceso();
+  const updatePersona = useUpdatePersona();
+  const queryClient = useQueryClient();
+  const fileInputRef = useRef<HTMLInputElement>(null);
   const [editing, setEditing] = useState(false);
+  const [uploadingPhoto, setUploadingPhoto] = useState(false);
   const [showAddFamiliar, setShowAddFamiliar] = useState(false);
   const [familiarSearch, setFamiliarSearch] = useState("");
   const [selectedParentesco, setSelectedParentesco] = useState("Cónyuge");
   const [manualName, setManualName] = useState("");
+
+  const handlePhotoUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file || !persona) return;
+    if (!file.type.startsWith("image/")) { toast.error("Solo se permiten imágenes"); return; }
+    if (file.size > 5 * 1024 * 1024) { toast.error("La imagen no debe superar 5MB"); return; }
+
+    setUploadingPhoto(true);
+    try {
+      const ext = file.name.split(".").pop();
+      const filePath = `personas/${persona.id}.${ext}`;
+
+      // Delete old file if exists
+      await supabase.storage.from("avatars").remove([filePath]);
+
+      const { error: uploadError } = await supabase.storage
+        .from("avatars")
+        .upload(filePath, file, { upsert: true });
+      if (uploadError) throw uploadError;
+
+      const { data: urlData } = supabase.storage.from("avatars").getPublicUrl(filePath);
+      const foto_url = `${urlData.publicUrl}?t=${Date.now()}`;
+
+      await updatePersona.mutateAsync({ id: persona.id, foto_url });
+      queryClient.invalidateQueries({ queryKey: ["persona-detalle", persona.id] });
+      queryClient.invalidateQueries({ queryKey: ["personas"] });
+      toast.success("Foto actualizada");
+    } catch (err: any) {
+      toast.error("Error al subir la foto", { description: err.message });
+    } finally {
+      setUploadingPhoto(false);
+      if (fileInputRef.current) fileInputRef.current.value = "";
+    }
+  };
 
   const procesosMap = useMemo(() =>
     new Map((personaProcesos || []).map((pp) => [pp.proceso_id, pp])),
