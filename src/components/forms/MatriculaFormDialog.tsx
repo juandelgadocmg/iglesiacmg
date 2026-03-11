@@ -15,7 +15,13 @@ const schema = z.object({
   persona_id: z.string().min(1, "Selecciona una persona"),
 });
 
-export default function MatriculaFormDialog({ cursoId }: { cursoId: string }) {
+interface Props {
+  cursoId: string;
+  periodoId?: string;
+  materiaId?: string;
+}
+
+export default function MatriculaFormDialog({ cursoId, periodoId, materiaId }: Props) {
   const [open, setOpen] = useState(false);
   const { data: personas } = usePersonas();
   const createMatricula = useCreateMatricula();
@@ -24,7 +30,12 @@ export default function MatriculaFormDialog({ cursoId }: { cursoId: string }) {
 
   const onSubmit = async (values: z.infer<typeof schema>) => {
     try {
-      await createMatricula.mutateAsync({ curso_id: cursoId, persona_id: values.persona_id });
+      await createMatricula.mutateAsync({
+        curso_id: cursoId,
+        persona_id: values.persona_id,
+        periodo_id: periodoId,
+        materia_id: materiaId,
+      });
       toast.success("Alumno matriculado");
       form.reset();
       setOpen(false);

@@ -21,7 +21,7 @@ export default function EscuelaFormDialog() {
   const createEscuela = useCreateEscuela();
   const form = useForm({ resolver: zodResolver(schema), defaultValues: { nombre: "", descripcion: "" } });
 
-  const onSubmit = async (values: z.infer<typeof schema>) => {
+  const onSubmit = async (values: { nombre: string; descripcion?: string }) => {
     try {
       await createEscuela.mutateAsync(values);
       toast.success("Escuela creada");
