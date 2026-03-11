@@ -2,6 +2,7 @@ import { useMemo } from "react";
 import { useAuth } from "@/hooks/useAuth";
 import { useDashboardStats, useFinanzas, usePersonas } from "@/hooks/useDatabase";
 import { useCursos, useAllMatriculas, useCertificados } from "@/hooks/useAcademia";
+import { usePeticiones } from "@/hooks/usePeticiones";
 import MetricCard from "@/components/shared/MetricCard";
 import StatusBadge from "@/components/shared/StatusBadge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -10,13 +11,14 @@ import { Progress } from "@/components/ui/progress";
 import { Skeleton } from "@/components/ui/skeleton";
 import {
   Users, Church, DollarSign, UserPlus, CalendarDays, Cake, TrendingUp,
-  GraduationCap, Award, Activity, ArrowUpRight, ArrowDownRight, Wallet
+  GraduationCap, Award, Activity, ArrowUpRight, ArrowDownRight, Wallet,
+  HandHeart, Clock, CheckCircle2
 } from "lucide-react";
 import {
   BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
-  AreaChart, Area, PieChart, Pie, Cell
+  PieChart, Pie, Cell, AreaChart, Area
 } from "recharts";
-import { format, parseISO, isThisMonth, differenceInDays } from "date-fns";
+import { format, parseISO, isThisMonth, differenceInDays, subMonths } from "date-fns";
 import { es } from "date-fns/locale";
 
 const PIE_COLORS = [
@@ -35,6 +37,7 @@ export default function Dashboard() {
   const { data: cursos } = useCursos();
   const { data: matriculas } = useAllMatriculas();
   const { data: certificados } = useCertificados();
+  const { data: peticiones } = usePeticiones();
 
   const totalMiembros = stats?.totalPersonas || 0;
   const nuevos = stats?.nuevosEsteMes || 0;
@@ -45,60 +48,90 @@ export default function Dashboard() {
   const fmt = (n: number) =>
     n >= 1000000 ? `$${(n / 1000000).toFixed(1)}M` : n >= 1000 ? `$${(n / 1000).toFixed(0)}K` : `$${n}`;
 
+  // Prayer stats
+  const peticionStats = useMemo(() => {
+    if (!peticiones) return { pendientes: 0, enOracion: 0, respondidas: 0 };
+    return {
+      pendientes: peticiones.filter((p: any) => p.estado === "Pendiente").length,
+      enOracion: peticiones.filter((p: any) => p.estado === "En oración").length,
+      respondidas: peticiones.filter((p: any) => p.estado === "Respondida").length,
+    };
+  }, [peticiones]);
+
   // Distribution by type
   const personasByType = useMemo(() => {
     if (!personas) return [];
     const counts: Record<string, number> = {};
-    personas.forEach((p: any) => {
-      counts[p.tipo_persona] = (counts[p.tipo_persona] || 0) + 1;
-    });
+    personas.forEach((p: any) => { counts[p.tipo_persona] = (counts[p.tipo_persona] || 0) + 1; });
     return Object.entries(counts).map(([name, value]) => ({ name, value }));
   }, [personas]);
 
   // Financial breakdown by category this month
   const finanzasByCategory = useMemo(() => {
     if (!finanzas) return [];
-    const thisMonth = finanzas.filter((f) => {
-      try { return isThisMonth(parseISO(f.fecha)); } catch { return false; }
-    });
+    const thisMonth = finanzas.filter((f) => { try { return isThisMonth(parseISO(f.fecha)); } catch { return false; } });
     const cats: Record<string, number> = {};
     thisMonth.filter(f => f.tipo === "Ingreso").forEach((f) => {
       const cat = f.categoria_nombre || "Otros";
       cats[cat] = (cats[cat] || 0) + Number(f.monto);
     });
-    return Object.entries(cats)
-      .map(([name, value]) => ({ name, value }))
-      .sort((a, b) => b.value - a.value)
-      .slice(0, 5);
+    return Object.entries(cats).map(([name, value]) => ({ name, value })).sort((a, b) => b.value - a.value).slice(0, 5);
   }, [finanzas]);
 
-  // Recent financial movements
+  // Growth trend (last 6 months)
+  const growthTrend = useMemo(() => {
+    if (!personas) return [];
+    const now = new Date();
+    const months: { month: string; count: number }[] = [];
+    for (let i = 5; i >= 0; i--) {
+      const d = subMonths(now, i);
+      const m = d.getMonth();
+      const y = d.getFullYear();
+      const count = (personas as any[]).filter(p => {
+        try {
+          const created = parseISO(p.created_at);
+          return created.getMonth() === m && created.getFullYear() === y;
+        } catch { return false; }
+      }).length;
+      months.push({ month: format(d, "MMM", { locale: es }), count });
+    }
+    return months;
+  }, [personas]);
+
+  // Recent movements
   const recentMovements = useMemo(() => {
     if (!finanzas) return [];
     return finanzas.slice(0, 6);
   }, [finanzas]);
 
-  // Upcoming birthdays (from personas with fecha_nacimiento)
+  // Recent activity feed
+  const activityFeed = useMemo(() => {
+    const items: { type: string; text: string; date: string; icon: string }[] = [];
+    if (personas) {
+      (personas as any[]).slice(0, 3).forEach(p => {
+        items.push({ type: "persona", text: `${p.nombres} ${p.apellidos} registrado/a`, date: p.created_at, icon: "user" });
+      });
+    }
+    if (finanzas) {
+      finanzas.slice(0, 3).forEach(f => {
+        items.push({ type: "finanza", text: `${f.tipo}: $${Number(f.monto).toLocaleString()} - ${f.categoria_nombre || f.descripcion || ""}`, date: f.created_at, icon: f.tipo === "Ingreso" ? "up" : "down" });
+      });
+    }
+    return items.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime()).slice(0, 8);
+  }, [personas, finanzas]);
+
+  // Upcoming birthdays
   const birthdays = useMemo(() => {
     if (!personas) return [];
     const now = new Date();
     const thisMonth = now.getMonth();
     return (personas as any[])
-      .filter((p) => {
-        if (!p.fecha_nacimiento) return false;
-        try {
-          return parseISO(p.fecha_nacimiento).getMonth() === thisMonth;
-        } catch { return false; }
-      })
-      .map((p) => ({
-        nombre: `${p.nombres} ${p.apellidos}`,
-        fecha: format(parseISO(p.fecha_nacimiento), "dd MMM", { locale: es }),
-        initials: `${p.nombres?.[0] || ""}${p.apellidos?.[0] || ""}`,
-      }))
+      .filter((p) => { if (!p.fecha_nacimiento) return false; try { return parseISO(p.fecha_nacimiento).getMonth() === thisMonth; } catch { return false; } })
+      .map((p) => ({ nombre: `${p.nombres} ${p.apellidos}`, fecha: format(parseISO(p.fecha_nacimiento), "dd MMM", { locale: es }), initials: `${p.nombres?.[0] || ""}${p.apellidos?.[0] || ""}` }))
       .slice(0, 5);
   }, [personas]);
 
-  // Upcoming events with days remaining
+  // Upcoming events
   const upcomingEvents = useMemo(() => {
     if (!stats?.eventos) return [];
     return stats.eventos.map((e: any) => {
@@ -108,7 +141,6 @@ export default function Dashboard() {
     });
   }, [stats]);
 
-  // Greeting
   const hour = new Date().getHours();
   const greeting = hour < 12 ? "Buenos días" : hour < 18 ? "Buenas tardes" : "Buenas noches";
   const displayName = user?.user_metadata?.display_name || user?.email?.split("@")[0] || "Usuario";
@@ -134,45 +166,20 @@ export default function Dashboard() {
       <div className="flex items-end justify-between">
         <div>
           <h1 className="text-2xl font-bold text-foreground">{greeting}, {displayName} 👋</h1>
-          <p className="text-sm text-muted-foreground mt-1">
-            {format(new Date(), "EEEE, d 'de' MMMM yyyy", { locale: es })}
-          </p>
+          <p className="text-sm text-muted-foreground mt-1">{format(new Date(), "EEEE, d 'de' MMMM yyyy", { locale: es })}</p>
         </div>
         <div className="hidden md:flex items-center gap-2 px-3 py-1.5 rounded-lg bg-success/10 text-success text-xs font-medium">
-          <Activity className="h-3.5 w-3.5" />
-          Sistema operativo
+          <Activity className="h-3.5 w-3.5" /> Sistema operativo
         </div>
       </div>
 
       {/* KPIs */}
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-        <MetricCard
-          title="Total Miembros"
-          value={totalMiembros}
-          icon={Users}
-          variant="default"
-          trend={nuevos > 0 ? { value: `+${nuevos} este mes`, positive: true } : undefined}
-        />
-        <MetricCard
-          title="Ingresos del Mes"
-          value={fmt(ingresos)}
-          icon={TrendingUp}
-          variant="success"
-          subtitle="Diezmos, ofrendas y más"
-        />
-        <MetricCard
-          title="Gastos del Mes"
-          value={fmt(gastos)}
-          icon={Wallet}
-          variant="accent"
-        />
-        <MetricCard
-          title="Balance"
-          value={fmt(balance)}
-          icon={DollarSign}
-          variant={balance >= 0 ? "success" : "info"}
-          trend={{ value: balance >= 0 ? "Positivo" : "Negativo", positive: balance >= 0 }}
-        />
+      <div className="grid grid-cols-2 lg:grid-cols-5 gap-4">
+        <MetricCard title="Total Miembros" value={totalMiembros} icon={Users} variant="default" trend={nuevos > 0 ? { value: `+${nuevos} este mes`, positive: true } : undefined} />
+        <MetricCard title="Ingresos" value={fmt(ingresos)} icon={TrendingUp} variant="success" subtitle="Este mes" />
+        <MetricCard title="Balance" value={fmt(balance)} icon={DollarSign} variant={balance >= 0 ? "success" : "info"} />
+        <MetricCard title="Peticiones Activas" value={peticionStats.pendientes + peticionStats.enOracion} icon={HandHeart} variant="accent" />
+        <MetricCard title="Respondidas" value={peticionStats.respondidas} icon={CheckCircle2} variant="success" />
       </div>
 
       {/* Row 2: Charts */}
@@ -181,8 +188,7 @@ export default function Dashboard() {
         <Card className="lg:col-span-2">
           <CardHeader className="pb-2">
             <CardTitle className="text-sm font-semibold flex items-center gap-2">
-              <DollarSign className="h-4 w-4 text-primary" />
-              Ingresos del Mes por Categoría
+              <DollarSign className="h-4 w-4 text-primary" /> Ingresos del Mes por Categoría
             </CardTitle>
           </CardHeader>
           <CardContent>
@@ -206,8 +212,7 @@ export default function Dashboard() {
         <Card>
           <CardHeader className="pb-2">
             <CardTitle className="text-sm font-semibold flex items-center gap-2">
-              <Users className="h-4 w-4 text-primary" />
-              Distribución de Personas
+              <Users className="h-4 w-4 text-primary" /> Distribución de Personas
             </CardTitle>
           </CardHeader>
           <CardContent>
@@ -238,47 +243,71 @@ export default function Dashboard() {
         </Card>
       </div>
 
-      {/* Row 3: Lists */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-        {/* Recent Movements */}
+      {/* Row 3: Growth trend + Activity */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+        {/* Growth Trend */}
+        <Card>
+          <CardHeader className="pb-2">
+            <CardTitle className="text-sm font-semibold flex items-center gap-2">
+              <TrendingUp className="h-4 w-4 text-success" /> Crecimiento de Membresía (6 meses)
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            {growthTrend.length > 0 ? (
+              <ResponsiveContainer width="100%" height={220}>
+                <AreaChart data={growthTrend}>
+                  <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" vertical={false} />
+                  <XAxis dataKey="month" tick={{ fontSize: 11 }} stroke="hsl(var(--muted-foreground))" />
+                  <YAxis tick={{ fontSize: 11 }} stroke="hsl(var(--muted-foreground))" allowDecimals={false} />
+                  <Tooltip contentStyle={{ borderRadius: 8, fontSize: 12, border: "1px solid hsl(var(--border))" }} />
+                  <Area type="monotone" dataKey="count" stroke="hsl(var(--success))" fill="hsl(var(--success))" fillOpacity={0.15} strokeWidth={2} name="Nuevos" />
+                </AreaChart>
+              </ResponsiveContainer>
+            ) : (
+              <div className="h-[220px] flex items-center justify-center text-muted-foreground text-sm">Sin datos</div>
+            )}
+          </CardContent>
+        </Card>
+
+        {/* Activity Feed */}
         <Card>
           <CardHeader className="pb-3">
             <CardTitle className="text-sm font-semibold flex items-center gap-2">
-              <Activity className="h-4 w-4 text-accent" />
-              Movimientos Recientes
+              <Activity className="h-4 w-4 text-accent" /> Actividad Reciente
             </CardTitle>
           </CardHeader>
           <CardContent className="p-0">
-            <div className="divide-y">
-              {recentMovements.map((m) => (
-                <div key={m.id} className="flex items-center justify-between px-6 py-3">
-                  <div className="flex items-center gap-3">
-                    <div className={`p-1.5 rounded-lg ${m.tipo === "Ingreso" ? "bg-success/10" : "bg-destructive/10"}`}>
-                      {m.tipo === "Ingreso" ? <ArrowUpRight className="h-3.5 w-3.5 text-success" /> : <ArrowDownRight className="h-3.5 w-3.5 text-destructive" />}
-                    </div>
-                    <div>
-                      <p className="text-xs font-medium text-foreground">{m.categoria_nombre || m.descripcion}</p>
-                      <p className="text-[10px] text-muted-foreground">{m.fecha}</p>
-                    </div>
+            <div className="divide-y max-h-[280px] overflow-y-auto">
+              {activityFeed.map((item, i) => (
+                <div key={i} className="flex items-center gap-3 px-6 py-3">
+                  <div className={`p-1.5 rounded-lg ${item.icon === "up" ? "bg-success/10" : item.icon === "down" ? "bg-destructive/10" : "bg-primary/10"}`}>
+                    {item.icon === "up" ? <ArrowUpRight className="h-3.5 w-3.5 text-success" /> :
+                     item.icon === "down" ? <ArrowDownRight className="h-3.5 w-3.5 text-destructive" /> :
+                     <UserPlus className="h-3.5 w-3.5 text-primary" />}
                   </div>
-                  <span className={`text-xs font-semibold ${m.tipo === "Ingreso" ? "text-success" : "text-destructive"}`}>
-                    {m.tipo === "Ingreso" ? "+" : "-"}${Number(m.monto).toLocaleString()}
-                  </span>
+                  <div className="flex-1 min-w-0">
+                    <p className="text-xs font-medium text-foreground truncate">{item.text}</p>
+                    <p className="text-[10px] text-muted-foreground">
+                      {format(parseISO(item.date), "dd MMM, HH:mm", { locale: es })}
+                    </p>
+                  </div>
                 </div>
               ))}
-              {recentMovements.length === 0 && (
-                <p className="text-sm text-muted-foreground text-center py-8">Sin movimientos</p>
+              {activityFeed.length === 0 && (
+                <p className="text-sm text-muted-foreground text-center py-8">Sin actividad reciente</p>
               )}
             </div>
           </CardContent>
         </Card>
+      </div>
 
+      {/* Row 4: Events + Services + Birthdays + Quick Stats */}
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
         {/* Upcoming Events */}
         <Card>
           <CardHeader className="pb-3">
             <CardTitle className="text-sm font-semibold flex items-center gap-2">
-              <CalendarDays className="h-4 w-4 text-info" />
-              Próximos Eventos
+              <CalendarDays className="h-4 w-4 text-info" /> Próximos Eventos
             </CardTitle>
           </CardHeader>
           <CardContent className="space-y-3">
@@ -310,14 +339,12 @@ export default function Dashboard() {
           </CardContent>
         </Card>
 
-        {/* Combined: Services + Birthdays + Quick Stats */}
+        {/* Services + Birthdays */}
         <div className="space-y-4">
-          {/* Upcoming Services */}
           <Card>
             <CardHeader className="pb-3">
               <CardTitle className="text-sm font-semibold flex items-center gap-2">
-                <Church className="h-4 w-4 text-primary" />
-                Próximos Servicios
+                <Church className="h-4 w-4 text-primary" /> Próximos Servicios
               </CardTitle>
             </CardHeader>
             <CardContent className="space-y-2">
@@ -336,12 +363,10 @@ export default function Dashboard() {
             </CardContent>
           </Card>
 
-          {/* Birthdays */}
           <Card>
             <CardHeader className="pb-3">
               <CardTitle className="text-sm font-semibold flex items-center gap-2">
-                <Cake className="h-4 w-4 text-accent" />
-                Cumpleaños del Mes
+                <Cake className="h-4 w-4 text-accent" /> Cumpleaños del Mes
               </CardTitle>
             </CardHeader>
             <CardContent>
@@ -352,9 +377,7 @@ export default function Dashboard() {
                       <Avatar className="h-7 w-7">
                         <AvatarFallback className="bg-accent/10 text-accent text-[10px] font-semibold">{b.initials}</AvatarFallback>
                       </Avatar>
-                      <div className="flex-1 min-w-0">
-                        <p className="text-xs font-medium truncate">{b.nombre}</p>
-                      </div>
+                      <div className="flex-1 min-w-0"><p className="text-xs font-medium truncate">{b.nombre}</p></div>
                       <span className="text-[10px] text-muted-foreground">{b.fecha}</span>
                     </div>
                   ))}
@@ -364,27 +387,56 @@ export default function Dashboard() {
               )}
             </CardContent>
           </Card>
+        </div>
 
-          {/* Quick Stats */}
+        {/* Quick Stats + Recent Movements */}
+        <div className="space-y-4">
           <Card>
             <CardContent className="pt-5 space-y-3">
               <div className="flex items-center justify-between">
-                <div className="flex items-center gap-2 text-xs text-muted-foreground">
-                  <GraduationCap className="h-3.5 w-3.5" /> Cursos activos
-                </div>
+                <div className="flex items-center gap-2 text-xs text-muted-foreground"><GraduationCap className="h-3.5 w-3.5" /> Cursos activos</div>
                 <span className="text-sm font-bold text-foreground">{cursos?.filter(c => c.estado === "Activo").length || 0}</span>
               </div>
               <div className="flex items-center justify-between">
-                <div className="flex items-center gap-2 text-xs text-muted-foreground">
-                  <Users className="h-3.5 w-3.5" /> Alumnos
-                </div>
+                <div className="flex items-center gap-2 text-xs text-muted-foreground"><Users className="h-3.5 w-3.5" /> Alumnos</div>
                 <span className="text-sm font-bold text-foreground">{matriculas?.length || 0}</span>
               </div>
               <div className="flex items-center justify-between">
-                <div className="flex items-center gap-2 text-xs text-muted-foreground">
-                  <Award className="h-3.5 w-3.5" /> Certificados
-                </div>
+                <div className="flex items-center gap-2 text-xs text-muted-foreground"><Award className="h-3.5 w-3.5" /> Certificados</div>
                 <span className="text-sm font-bold text-foreground">{certificados?.length || 0}</span>
+              </div>
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2 text-xs text-muted-foreground"><HandHeart className="h-3.5 w-3.5" /> Peticiones en oración</div>
+                <span className="text-sm font-bold text-foreground">{peticionStats.enOracion}</span>
+              </div>
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardHeader className="pb-3">
+              <CardTitle className="text-sm font-semibold flex items-center gap-2">
+                <Wallet className="h-4 w-4 text-accent" /> Movimientos Recientes
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="p-0">
+              <div className="divide-y">
+                {recentMovements.slice(0, 4).map((m) => (
+                  <div key={m.id} className="flex items-center justify-between px-6 py-2.5">
+                    <div className="flex items-center gap-2">
+                      <div className={`p-1 rounded-md ${m.tipo === "Ingreso" ? "bg-success/10" : "bg-destructive/10"}`}>
+                        {m.tipo === "Ingreso" ? <ArrowUpRight className="h-3 w-3 text-success" /> : <ArrowDownRight className="h-3 w-3 text-destructive" />}
+                      </div>
+                      <div>
+                        <p className="text-[11px] font-medium text-foreground">{m.categoria_nombre || m.descripcion}</p>
+                        <p className="text-[9px] text-muted-foreground">{m.fecha}</p>
+                      </div>
+                    </div>
+                    <span className={`text-[11px] font-semibold ${m.tipo === "Ingreso" ? "text-success" : "text-destructive"}`}>
+                      {m.tipo === "Ingreso" ? "+" : "-"}${Number(m.monto).toLocaleString()}
+                    </span>
+                  </div>
+                ))}
+                {recentMovements.length === 0 && <p className="text-sm text-muted-foreground text-center py-6">Sin movimientos</p>}
               </div>
             </CardContent>
           </Card>

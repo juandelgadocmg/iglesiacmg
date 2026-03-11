@@ -7,9 +7,9 @@ import { canAccess } from "@/lib/permissions";
 import logo from "@/assets/logo.jpeg";
 import {
   LayoutDashboard, Users, UsersRound, Church, ClipboardCheck,
-  DollarSign, Heart, CalendarDays, FileText, GraduationCap,
+  DollarSign, CalendarDays, GraduationCap,
   Award, BarChart3, Settings, UserCog, ChevronLeft, ChevronRight,
-  LogOut, ClipboardList, MapPin, GitBranch
+  LogOut, HandHeart
 } from "lucide-react";
 
 const menuItems = [
@@ -19,15 +19,11 @@ const menuItems = [
   { label: "Servicios", icon: Church, path: "/servicios" },
   { label: "Asistencia", icon: ClipboardCheck, path: "/asistencia" },
   { label: "Finanzas", icon: DollarSign, path: "/finanzas" },
-  { label: "Donaciones", icon: Heart, path: "/donaciones" },
   { label: "Eventos", icon: CalendarDays, path: "/eventos" },
-  { label: "Inscripciones", icon: FileText, path: "/inscripciones" },
   { label: "Academia", icon: GraduationCap, path: "/academia" },
   { label: "Certificados", icon: Award, path: "/certificados" },
+  { label: "Peticiones", icon: HandHeart, path: "/peticiones" },
   { label: "Reportes", icon: BarChart3, path: "/reportes" },
-  { label: "Reportes Grupos", icon: ClipboardList, path: "/reportes-grupos" },
-  { label: "Mapa Grupos", icon: MapPin, path: "/mapa-grupos" },
-  { label: "Gráfico Ministerio", icon: GitBranch, path: "/grafico-ministerio" },
   { label: "Usuarios", icon: UserCog, path: "/usuarios" },
   { label: "Configuración", icon: Settings, path: "/configuracion" },
 ];
