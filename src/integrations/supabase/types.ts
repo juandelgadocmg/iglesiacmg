@@ -421,7 +421,9 @@ export type Database = {
           estado: string
           hora_reunion: string | null
           id: string
+          latitud: number | null
           lider_id: string | null
+          longitud: number | null
           nombre: string
           tipo: Database["public"]["Enums"]["tipo_grupo"]
           ubicacion: string | null
@@ -434,7 +436,9 @@ export type Database = {
           estado?: string
           hora_reunion?: string | null
           id?: string
+          latitud?: number | null
           lider_id?: string | null
+          longitud?: number | null
           nombre: string
           tipo: Database["public"]["Enums"]["tipo_grupo"]
           ubicacion?: string | null
@@ -447,7 +451,9 @@ export type Database = {
           estado?: string
           hora_reunion?: string | null
           id?: string
+          latitud?: number | null
           lider_id?: string | null
+          longitud?: number | null
           nombre?: string
           tipo?: Database["public"]["Enums"]["tipo_grupo"]
           ubicacion?: string | null
