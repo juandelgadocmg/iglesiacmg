@@ -642,6 +642,56 @@ export type Database = {
           },
         ]
       }
+      peticiones_oracion: {
+        Row: {
+          created_at: string
+          descripcion: string | null
+          estado: string
+          fecha_respuesta: string | null
+          fecha_seguimiento: string | null
+          id: string
+          notas_seguimiento: string | null
+          persona_id: string | null
+          prioridad: string
+          titulo: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          descripcion?: string | null
+          estado?: string
+          fecha_respuesta?: string | null
+          fecha_seguimiento?: string | null
+          id?: string
+          notas_seguimiento?: string | null
+          persona_id?: string | null
+          prioridad?: string
+          titulo: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          descripcion?: string | null
+          estado?: string
+          fecha_respuesta?: string | null
+          fecha_seguimiento?: string | null
+          id?: string
+          notas_seguimiento?: string | null
+          persona_id?: string | null
+          prioridad?: string
+          titulo?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "peticiones_oracion_persona_id_fkey"
+            columns: ["persona_id"]
+            isOneToOne: false
+            referencedRelation: "personas"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       profiles: {
         Row: {
           avatar_url: string | null

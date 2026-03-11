@@ -15,14 +15,10 @@ import ServiciosPage from "@/pages/ServiciosPage";
 import FinanzasPage from "@/pages/FinanzasPage";
 import EventosPage from "@/pages/EventosPage";
 import AsistenciaPage from "@/pages/AsistenciaPage";
-import DonacionesPage from "@/pages/DonacionesPage";
-import InscripcionesPage from "@/pages/InscripcionesPage";
 import AcademiaPage from "@/pages/AcademiaPage";
 import CertificadosPage from "@/pages/CertificadosPage";
 import ReportesPage from "@/pages/ReportesPage";
-import ReportesGruposPage from "@/pages/ReportesGruposPage";
-import MapaGruposPage from "@/pages/MapaGruposPage";
-import GraficoMinisterioPage from "@/pages/GraficoMinisterioPage";
+import PeticionesPage from "@/pages/PeticionesPage";
 import UsuariosPage from "@/pages/UsuariosPage";
 import ConfiguracionPage from "@/pages/ConfiguracionPage";
 import ResetPasswordPage from "@/pages/ResetPasswordPage";
@@ -48,15 +44,11 @@ const App = () => (
               <Route path="/servicios" element={<RoleGuard><ServiciosPage /></RoleGuard>} />
               <Route path="/asistencia" element={<RoleGuard><AsistenciaPage /></RoleGuard>} />
               <Route path="/finanzas" element={<RoleGuard><FinanzasPage /></RoleGuard>} />
-              <Route path="/donaciones" element={<RoleGuard><DonacionesPage /></RoleGuard>} />
               <Route path="/eventos" element={<RoleGuard><EventosPage /></RoleGuard>} />
-              <Route path="/inscripciones" element={<RoleGuard><InscripcionesPage /></RoleGuard>} />
               <Route path="/academia" element={<RoleGuard><AcademiaPage /></RoleGuard>} />
               <Route path="/certificados" element={<RoleGuard><CertificadosPage /></RoleGuard>} />
               <Route path="/reportes" element={<RoleGuard><ReportesPage /></RoleGuard>} />
-              <Route path="/reportes-grupos" element={<RoleGuard><ReportesGruposPage /></RoleGuard>} />
-              <Route path="/mapa-grupos" element={<RoleGuard><MapaGruposPage /></RoleGuard>} />
-              <Route path="/grafico-ministerio" element={<RoleGuard><GraficoMinisterioPage /></RoleGuard>} />
+              <Route path="/peticiones" element={<RoleGuard><PeticionesPage /></RoleGuard>} />
               <Route path="/usuarios" element={<RoleGuard><UsuariosPage /></RoleGuard>} />
               <Route path="/configuracion" element={<RoleGuard><ConfiguracionPage /></RoleGuard>} />
             </Route>
