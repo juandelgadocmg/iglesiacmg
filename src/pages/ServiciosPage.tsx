@@ -15,6 +15,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 import ExportDropdown from "@/components/shared/ExportDropdown";
+import AttendanceTrendChart from "@/components/charts/AttendanceTrendChart";
 
 export default function ServiciosPage() {
   const { data: servicios, isLoading } = useServicios();
