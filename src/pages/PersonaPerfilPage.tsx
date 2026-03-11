@@ -402,9 +402,9 @@ export default function PersonaPerfilPage() {
                     const fam = rel.familiar;
                     const nombre = fam ? `${fam.nombres} ${fam.apellidos}` : rel.familiar_nombre || "—";
                     const parentescoIcon = rel.parentesco === "Cónyuge"
-                      ? <Heart className="h-4 w-4 text-rose-500" />
+                      ? <Heart className="h-4 w-4 text-destructive" />
                       : rel.parentesco?.includes("Hijo")
-                      ? <Baby className="h-4 w-4 text-blue-500" />
+                      ? <Baby className="h-4 w-4 text-primary" />
                       : <User className="h-4 w-4 text-muted-foreground" />;
 
                     return (
