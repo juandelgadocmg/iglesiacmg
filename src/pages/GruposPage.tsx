@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, lazy, Suspense } from "react";
 import PageHeader from "@/components/shared/PageHeader";
 import DataTable from "@/components/shared/DataTable";
 import StatusBadge from "@/components/shared/StatusBadge";
@@ -8,8 +8,14 @@ import { Users, Pencil } from "lucide-react";
 import { useGrupos, useDeleteGrupo } from "@/hooks/useDatabase";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { toast } from "sonner";
 import ExportDropdown from "@/components/shared/ExportDropdown";
+
+// Lazy load heavy sub-modules
+const ReportesGruposContent = lazy(() => import("@/pages/ReportesGruposPage"));
+const MapaGruposContent = lazy(() => import("@/pages/MapaGruposPage"));
+const GraficoMinisterioContent = lazy(() => import("@/pages/GraficoMinisterioPage"));
 
 export default function GruposPage() {
   const { data: grupos, isLoading } = useGrupos();
@@ -32,81 +38,91 @@ export default function GruposPage() {
   }));
 
   const handleDelete = async (id: string) => {
-    try {
-      await deleteGrupo.mutateAsync(id);
-      toast.success("Grupo eliminado");
-    } catch { toast.error("Error al eliminar"); }
+    try { await deleteGrupo.mutateAsync(id); toast.success("Grupo eliminado"); }
+    catch { toast.error("Error al eliminar"); }
   };
 
   return (
     <div className="animate-fade-in">
-      <PageHeader title="Grupos" description="Administración de células, ministerios y grupos internos">
-        <ExportDropdown
-          title="Grupos"
-          filename="grupos"
-          columns={[
-            { header: "Nombre", key: "nombre" },
-            { header: "Tipo", key: "tipo" },
-            { header: "Líder", key: "liderNombre" },
-            { header: "Día Reunión", key: "dia_reunion" },
-            { header: "Hora", key: "hora_reunion" },
-            { header: "Miembros", key: "miembrosCount" },
-            { header: "Estado", key: "estado" },
-          ]}
-          data={tableData}
-        />
+      <PageHeader title="Grupos" description="Administración de células, ministerios, reportes y visualizaciones">
+        <ExportDropdown title="Grupos" filename="grupos" columns={[
+          { header: "Nombre", key: "nombre" }, { header: "Tipo", key: "tipo" },
+          { header: "Líder", key: "liderNombre" }, { header: "Día", key: "dia_reunion" },
+          { header: "Miembros", key: "miembrosCount" }, { header: "Estado", key: "estado" },
+        ]} data={tableData} />
         <GrupoFormDialog />
       </PageHeader>
 
       {editing && <GrupoFormDialog initialData={editing} onClose={() => setEditing(null)} />}
 
-      <DataTable
-        data={tableData}
-        searchKey="nombre"
-        searchPlaceholder="Buscar grupo..."
-        filterKey="tipo"
-        filterPlaceholder="Tipo de grupo"
-        filterOptions={[
-          { value: "Células", label: "Células" },
-          { value: "Jóvenes", label: "Jóvenes" },
-          { value: "Mujeres", label: "Mujeres" },
-          { value: "Hombres", label: "Hombres" },
-          { value: "Alabanza", label: "Alabanza" },
-          { value: "Ujieres", label: "Ujieres" },
-          { value: "Liderazgo", label: "Liderazgo" },
-        ]}
-        columns={[
-          {
-            key: "nombre", label: "Grupo",
-            render: (g: any) => (
-              <div className="flex items-center gap-3">
-                <div className="w-8 h-8 rounded-lg bg-primary/10 flex items-center justify-center">
-                  <Users className="h-4 w-4 text-primary" />
-                </div>
-                <div>
-                  <p className="font-medium text-sm">{g.nombre}</p>
-                  <p className="text-xs text-muted-foreground">{g.tipo}</p>
-                </div>
-              </div>
-            )
-          },
-          { key: "liderNombre", label: "Líder" },
-          { key: "dia_reunion", label: "Día", render: (g: any) => `${g.dia_reunion || "—"} ${g.hora_reunion || ""}` },
-          { key: "miembrosCount", label: "Miembros", render: (g: any) => <span className="font-semibold">{g.miembrosCount}</span> },
-          { key: "estado", label: "Estado", render: (g: any) => <StatusBadge status={g.estado} /> },
-          {
-            key: "actions", label: "",
-            render: (g: any) => (
-              <div className="flex items-center gap-1" onClick={e => e.stopPropagation()}>
-                <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => setEditing({ ...g })}>
-                  <Pencil className="h-4 w-4" />
-                </Button>
-                <DeleteConfirmDialog onConfirm={() => handleDelete(g.id)} title="¿Eliminar grupo?" description={`Se eliminará el grupo "${g.nombre}" permanentemente.`} />
-              </div>
-            )
-          },
-        ]}
-      />
+      <Tabs defaultValue="lista" className="space-y-4">
+        <TabsList>
+          <TabsTrigger value="lista">Lista</TabsTrigger>
+          <TabsTrigger value="reportes">Reportes</TabsTrigger>
+          <TabsTrigger value="mapa">Mapa</TabsTrigger>
+          <TabsTrigger value="organigrama">Organigrama</TabsTrigger>
+        </TabsList>
+
+        <TabsContent value="lista">
+          <DataTable
+            data={tableData} searchKey="nombre" searchPlaceholder="Buscar grupo..."
+            filterKey="tipo" filterPlaceholder="Tipo de grupo"
+            filterOptions={[
+              { value: "Células", label: "Células" }, { value: "Jóvenes", label: "Jóvenes" },
+              { value: "Mujeres", label: "Mujeres" }, { value: "Hombres", label: "Hombres" },
+              { value: "Alabanza", label: "Alabanza" }, { value: "Ujieres", label: "Ujieres" },
+              { value: "Liderazgo", label: "Liderazgo" },
+            ]}
+            columns={[
+              {
+                key: "nombre", label: "Grupo",
+                render: (g: any) => (
+                  <div className="flex items-center gap-3">
+                    <div className="w-8 h-8 rounded-lg bg-primary/10 flex items-center justify-center">
+                      <Users className="h-4 w-4 text-primary" />
+                    </div>
+                    <div>
+                      <p className="font-medium text-sm">{g.nombre}</p>
+                      <p className="text-xs text-muted-foreground">{g.tipo}</p>
+                    </div>
+                  </div>
+                )
+              },
+              { key: "liderNombre", label: "Líder" },
+              { key: "dia_reunion", label: "Día", render: (g: any) => `${g.dia_reunion || "—"} ${g.hora_reunion || ""}` },
+              { key: "miembrosCount", label: "Miembros", render: (g: any) => <span className="font-semibold">{g.miembrosCount}</span> },
+              { key: "estado", label: "Estado", render: (g: any) => <StatusBadge status={g.estado} /> },
+              {
+                key: "actions", label: "",
+                render: (g: any) => (
+                  <div className="flex items-center gap-1" onClick={e => e.stopPropagation()}>
+                    <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => setEditing({ ...g })}><Pencil className="h-4 w-4" /></Button>
+                    <DeleteConfirmDialog onConfirm={() => handleDelete(g.id)} title="¿Eliminar grupo?" description={`Se eliminará el grupo "${g.nombre}" permanentemente.`} />
+                  </div>
+                )
+              },
+            ]}
+          />
+        </TabsContent>
+
+        <TabsContent value="reportes">
+          <Suspense fallback={<Skeleton className="h-[400px] w-full" />}>
+            <ReportesGruposContent />
+          </Suspense>
+        </TabsContent>
+
+        <TabsContent value="mapa">
+          <Suspense fallback={<Skeleton className="h-[400px] w-full" />}>
+            <MapaGruposContent />
+          </Suspense>
+        </TabsContent>
+
+        <TabsContent value="organigrama">
+          <Suspense fallback={<Skeleton className="h-[400px] w-full" />}>
+            <GraficoMinisterioContent />
+          </Suspense>
+        </TabsContent>
+      </Tabs>
     </div>
   );
 }
