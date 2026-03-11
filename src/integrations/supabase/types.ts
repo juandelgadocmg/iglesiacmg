@@ -782,6 +782,48 @@ export type Database = {
         }
         Relationships: []
       }
+      relaciones_familiares: {
+        Row: {
+          created_at: string
+          familiar_id: string | null
+          familiar_nombre: string | null
+          id: string
+          parentesco: string
+          persona_id: string
+        }
+        Insert: {
+          created_at?: string
+          familiar_id?: string | null
+          familiar_nombre?: string | null
+          id?: string
+          parentesco: string
+          persona_id: string
+        }
+        Update: {
+          created_at?: string
+          familiar_id?: string | null
+          familiar_nombre?: string | null
+          id?: string
+          parentesco?: string
+          persona_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "relaciones_familiares_familiar_id_fkey"
+            columns: ["familiar_id"]
+            isOneToOne: false
+            referencedRelation: "personas"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "relaciones_familiares_persona_id_fkey"
+            columns: ["persona_id"]
+            isOneToOne: false
+            referencedRelation: "personas"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       reporte_asistencia: {
         Row: {
           created_at: string
