@@ -141,7 +141,7 @@ export default function PersonasPage() {
       ) : (
         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
           {filtered.map((p: any) => (
-            <Card key={p.id} className="overflow-hidden hover:shadow-md transition-shadow group">
+            <Card key={p.id} className="overflow-hidden hover:shadow-md transition-shadow group cursor-pointer" onClick={() => navigate(`/personas/${p.id}`)}>
               <CardContent className="p-0">
                 {/* Header stripe */}
                 <div className={`h-2 ${tipoColor[p.tipo_persona]?.includes("primary") ? "bg-primary" : tipoColor[p.tipo_persona]?.includes("info") ? "bg-info" : tipoColor[p.tipo_persona]?.includes("accent") ? "bg-accent" : "bg-success"}`} />
