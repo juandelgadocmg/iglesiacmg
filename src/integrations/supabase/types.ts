@@ -556,6 +556,48 @@ export type Database = {
           },
         ]
       }
+      persona_procesos: {
+        Row: {
+          created_at: string
+          estado: string
+          fecha_completado: string | null
+          id: string
+          persona_id: string
+          proceso_id: string
+        }
+        Insert: {
+          created_at?: string
+          estado?: string
+          fecha_completado?: string | null
+          id?: string
+          persona_id: string
+          proceso_id: string
+        }
+        Update: {
+          created_at?: string
+          estado?: string
+          fecha_completado?: string | null
+          id?: string
+          persona_id?: string
+          proceso_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "persona_procesos_persona_id_fkey"
+            columns: ["persona_id"]
+            isOneToOne: false
+            referencedRelation: "personas"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "persona_procesos_proceso_id_fkey"
+            columns: ["proceso_id"]
+            isOneToOne: false
+            referencedRelation: "procesos_crecimiento"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       personas: {
         Row: {
           apellidos: string
@@ -691,6 +733,27 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      procesos_crecimiento: {
+        Row: {
+          created_at: string
+          id: string
+          nombre: string
+          orden: number
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          nombre: string
+          orden?: number
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          nombre?: string
+          orden?: number
+        }
+        Relationships: []
       }
       profiles: {
         Row: {
