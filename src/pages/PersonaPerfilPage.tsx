@@ -284,7 +284,180 @@ export default function PersonaPerfilPage() {
           </div>
         </TabsContent>
 
-        {/* Growth processes tab */}
+        {/* Familia tab */}
+        <TabsContent value="familia">
+          <Card>
+            <CardHeader>
+              <div className="flex items-center justify-between">
+                <CardTitle className="text-base flex items-center gap-2">
+                  <HeartHandshake className="h-4 w-4 text-primary" /> Relaciones Familiares
+                </CardTitle>
+                <Button size="sm" variant="outline" className="gap-1.5" onClick={() => setShowAddFamiliar(!showAddFamiliar)}>
+                  <UserPlus className="h-3.5 w-3.5" /> Agregar
+                </Button>
+              </div>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              {/* Add form */}
+              {showAddFamiliar && (
+                <div className="border rounded-lg p-4 bg-muted/30 space-y-3">
+                  <p className="text-sm font-medium">Nuevo familiar</p>
+                  <div className="grid sm:grid-cols-3 gap-3">
+                    <div className="space-y-1">
+                      <label className="text-xs text-muted-foreground">Parentesco</label>
+                      <select
+                        className="flex h-9 w-full rounded-md border border-input bg-background px-3 py-1 text-sm"
+                        value={selectedParentesco}
+                        onChange={(e) => setSelectedParentesco(e.target.value)}
+                      >
+                        {["Cónyuge", "Hijo/a", "Padre", "Madre", "Hermano/a", "Abuelo/a", "Tío/a", "Sobrino/a", "Primo/a", "Otro"].map((p) => (
+                          <option key={p} value={p}>{p}</option>
+                        ))}
+                      </select>
+                    </div>
+                    <div className="space-y-1 sm:col-span-2">
+                      <label className="text-xs text-muted-foreground">Buscar persona registrada</label>
+                      <input
+                        className="flex h-9 w-full rounded-md border border-input bg-background px-3 py-1 text-sm"
+                        placeholder="Escriba nombre..."
+                        value={familiarSearch}
+                        onChange={(e) => setFamiliarSearch(e.target.value)}
+                      />
+                    </div>
+                  </div>
+
+                  {/* Search results */}
+                  {familiarSearch.length >= 2 && (
+                    <div className="max-h-40 overflow-y-auto space-y-1">
+                      {(todasPersonas || [])
+                        .filter((p) =>
+                          p.id !== id &&
+                          `${p.nombres} ${p.apellidos}`.toLowerCase().includes(familiarSearch.toLowerCase())
+                        )
+                        .slice(0, 5)
+                        .map((p) => (
+                          <div
+                            key={p.id}
+                            className="flex items-center justify-between p-2 rounded-lg hover:bg-muted cursor-pointer"
+                            onClick={() => {
+                              createRelacion.mutate(
+                                { persona_id: persona.id, familiar_id: p.id, parentesco: selectedParentesco },
+                                {
+                                  onSuccess: () => {
+                                    setFamiliarSearch("");
+                                    setShowAddFamiliar(false);
+                                  },
+                                }
+                              );
+                            }}
+                          >
+                            <div className="flex items-center gap-2">
+                              <Avatar className="h-7 w-7">
+                                <AvatarFallback className="text-xs">{p.nombres?.[0]}{p.apellidos?.[0]}</AvatarFallback>
+                              </Avatar>
+                              <span className="text-sm">{p.nombres} {p.apellidos}</span>
+                            </div>
+                            <Badge variant="outline" className="text-xs">{p.tipo_persona}</Badge>
+                          </div>
+                        ))}
+                    </div>
+                  )}
+
+                  {/* Or add manually */}
+                  <div className="border-t pt-3">
+                    <label className="text-xs text-muted-foreground">O escribir nombre manual</label>
+                    <div className="flex gap-2 mt-1">
+                      <input
+                        className="flex h-9 flex-1 rounded-md border border-input bg-background px-3 py-1 text-sm"
+                        placeholder="Nombre completo"
+                        value={manualName}
+                        onChange={(e) => setManualName(e.target.value)}
+                      />
+                      <Button
+                        size="sm"
+                        disabled={!manualName.trim() || createRelacion.isPending}
+                        onClick={() => {
+                          createRelacion.mutate(
+                            { persona_id: persona.id, familiar_nombre: manualName.trim(), parentesco: selectedParentesco },
+                            {
+                              onSuccess: () => {
+                                setManualName("");
+                                setShowAddFamiliar(false);
+                              },
+                            }
+                          );
+                        }}
+                      >
+                        Agregar
+                      </Button>
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {/* Family list */}
+              {relaciones && relaciones.length > 0 ? (
+                <div className="space-y-2">
+                  {relaciones.map((rel: any) => {
+                    const fam = rel.familiar;
+                    const nombre = fam ? `${fam.nombres} ${fam.apellidos}` : rel.familiar_nombre || "—";
+                    const parentescoIcon = rel.parentesco === "Cónyuge"
+                      ? <Heart className="h-4 w-4 text-rose-500" />
+                      : rel.parentesco?.includes("Hijo")
+                      ? <Baby className="h-4 w-4 text-blue-500" />
+                      : <User className="h-4 w-4 text-muted-foreground" />;
+
+                    return (
+                      <div key={rel.id} className="flex items-center justify-between p-3 rounded-lg border bg-card hover:shadow-sm transition-shadow">
+                        <div className="flex items-center gap-3">
+                          <div className="w-10 h-10 rounded-full bg-muted flex items-center justify-center">
+                            {fam?.foto_url ? (
+                              <Avatar className="h-10 w-10">
+                                <AvatarImage src={fam.foto_url} />
+                                <AvatarFallback>{nombre[0]}</AvatarFallback>
+                              </Avatar>
+                            ) : (
+                              parentescoIcon
+                            )}
+                          </div>
+                          <div>
+                            <p className="text-sm font-medium">{nombre}</p>
+                            <p className="text-xs text-muted-foreground">{rel.parentesco}</p>
+                          </div>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          {fam && (
+                            <Button variant="ghost" size="sm" className="text-xs" onClick={() => navigate(`/personas/${fam.id}`)}>
+                              Ver perfil
+                            </Button>
+                          )}
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            className="h-8 w-8 text-destructive/70 hover:text-destructive"
+                            onClick={() => deleteRelacion.mutate({ id: rel.id, personaId: persona.id })}
+                          >
+                            <Trash2 className="h-3.5 w-3.5" />
+                          </Button>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              ) : !showAddFamiliar ? (
+                <div className="text-center py-8 text-muted-foreground">
+                  <HeartHandshake className="h-10 w-10 mx-auto mb-2 opacity-30" />
+                  <p className="text-sm">Sin relaciones familiares registradas</p>
+                  <Button variant="link" size="sm" onClick={() => setShowAddFamiliar(true)}>
+                    Agregar familiar
+                  </Button>
+                </div>
+              ) : null}
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+
         <TabsContent value="procesos">
           <Card>
             <CardHeader>
