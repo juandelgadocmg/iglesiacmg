@@ -1,5 +1,6 @@
 import { useParams, useNavigate } from "react-router-dom";
-import { usePersonaDetalle, useProcesos, usePersonaProcesos, useToggleProceso, usePersonaAsistencia, usePersonaGrupoMiembros } from "@/hooks/usePersonaPerfil";
+import { usePersonaDetalle, useProcesos, usePersonaProcesos, useToggleProceso, usePersonaAsistencia, usePersonaGrupoMiembros, useRelacionesFamiliares, useCreateRelacion, useDeleteRelacion } from "@/hooks/usePersonaPerfil";
+import { usePersonas } from "@/hooks/useDatabase";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
