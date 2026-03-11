@@ -51,8 +51,17 @@ export default function PersonaPerfilPage() {
   const { data: personaProcesos } = usePersonaProcesos(id);
   const { data: asistencias } = usePersonaAsistencia(id);
   const { data: grupoMiembros } = usePersonaGrupoMiembros(id);
+  const { data: grupoMiembros } = usePersonaGrupoMiembros(id);
+  const { data: relaciones } = useRelacionesFamiliares(id);
+  const { data: todasPersonas } = usePersonas();
+  const createRelacion = useCreateRelacion();
+  const deleteRelacion = useDeleteRelacion();
   const toggleProceso = useToggleProceso();
   const [editing, setEditing] = useState(false);
+  const [showAddFamiliar, setShowAddFamiliar] = useState(false);
+  const [familiarSearch, setFamiliarSearch] = useState("");
+  const [selectedParentesco, setSelectedParentesco] = useState("Cónyuge");
+  const [manualName, setManualName] = useState("");
 
   const procesosMap = useMemo(() =>
     new Map((personaProcesos || []).map((pp) => [pp.proceso_id, pp])),
