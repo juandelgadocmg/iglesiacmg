@@ -53,6 +53,48 @@ export type Database = {
           },
         ]
       }
+      asistencia_materias: {
+        Row: {
+          created_at: string
+          fecha: string
+          id: string
+          materia_id: string
+          matricula_id: string
+          presente: boolean
+        }
+        Insert: {
+          created_at?: string
+          fecha?: string
+          id?: string
+          materia_id: string
+          matricula_id: string
+          presente?: boolean
+        }
+        Update: {
+          created_at?: string
+          fecha?: string
+          id?: string
+          materia_id?: string
+          matricula_id?: string
+          presente?: boolean
+        }
+        Relationships: [
+          {
+            foreignKeyName: "asistencia_materias_materia_id_fkey"
+            columns: ["materia_id"]
+            isOneToOne: false
+            referencedRelation: "materias"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "asistencia_materias_matricula_id_fkey"
+            columns: ["matricula_id"]
+            isOneToOne: false
+            referencedRelation: "matriculas"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       aulas: {
         Row: {
           activo: boolean
