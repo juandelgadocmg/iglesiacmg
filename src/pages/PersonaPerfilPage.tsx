@@ -184,6 +184,7 @@ export default function PersonaPerfilPage() {
       <Tabs defaultValue="info" className="space-y-6">
         <TabsList>
           <TabsTrigger value="info" className="gap-1.5"><User className="h-3.5 w-3.5" /> Información</TabsTrigger>
+          <TabsTrigger value="familia" className="gap-1.5"><HeartHandshake className="h-3.5 w-3.5" /> Familia</TabsTrigger>
           <TabsTrigger value="procesos" className="gap-1.5"><Heart className="h-3.5 w-3.5" /> Crecimiento</TabsTrigger>
           <TabsTrigger value="asistencia" className="gap-1.5"><Clock className="h-3.5 w-3.5" /> Asistencia</TabsTrigger>
         </TabsList>
