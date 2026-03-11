@@ -33,6 +33,7 @@ const tipoColor: Record<string, string> = {
 };
 
 export default function PersonasPage() {
+  const navigate = useNavigate();
   const { data: personas, isLoading } = usePersonas();
   const deletePersona = useDeletePersona();
   const [editing, setEditing] = useState<any>(null);
