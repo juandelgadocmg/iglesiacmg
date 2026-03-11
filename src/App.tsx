@@ -10,6 +10,7 @@ import AppLayout from "@/components/layout/AppLayout";
 import LoginPage from "@/pages/LoginPage";
 import Dashboard from "@/pages/Dashboard";
 import PersonasPage from "@/pages/PersonasPage";
+import PersonaPerfilPage from "@/pages/PersonaPerfilPage";
 import GruposPage from "@/pages/GruposPage";
 import ServiciosPage from "@/pages/ServiciosPage";
 import FinanzasPage from "@/pages/FinanzasPage";
@@ -40,6 +41,7 @@ const App = () => (
             <Route element={<ProtectedRoute><AppLayout /></ProtectedRoute>}>
               <Route path="/dashboard" element={<Dashboard />} />
               <Route path="/personas" element={<RoleGuard><PersonasPage /></RoleGuard>} />
+              <Route path="/personas/:id" element={<RoleGuard><PersonaPerfilPage /></RoleGuard>} />
               <Route path="/grupos" element={<RoleGuard><GruposPage /></RoleGuard>} />
               <Route path="/servicios" element={<RoleGuard><ServiciosPage /></RoleGuard>} />
               <Route path="/asistencia" element={<RoleGuard><AsistenciaPage /></RoleGuard>} />
