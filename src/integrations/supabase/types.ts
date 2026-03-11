@@ -53,6 +53,75 @@ export type Database = {
           },
         ]
       }
+      aulas: {
+        Row: {
+          activo: boolean
+          created_at: string
+          direccion: string | null
+          id: string
+          nombre: string
+          sede: string | null
+        }
+        Insert: {
+          activo?: boolean
+          created_at?: string
+          direccion?: string | null
+          id?: string
+          nombre: string
+          sede?: string | null
+        }
+        Update: {
+          activo?: boolean
+          created_at?: string
+          direccion?: string | null
+          id?: string
+          nombre?: string
+          sede?: string | null
+        }
+        Relationships: []
+      }
+      calificaciones: {
+        Row: {
+          created_at: string
+          id: string
+          item_id: string
+          matricula_id: string
+          nota: number | null
+          observacion: string | null
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          item_id: string
+          matricula_id: string
+          nota?: number | null
+          observacion?: string | null
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          item_id?: string
+          matricula_id?: string
+          nota?: number | null
+          observacion?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "calificaciones_item_id_fkey"
+            columns: ["item_id"]
+            isOneToOne: false
+            referencedRelation: "items_calificables"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "calificaciones_matricula_id_fkey"
+            columns: ["matricula_id"]
+            isOneToOne: false
+            referencedRelation: "matriculas"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       categorias_financieras: {
         Row: {
           created_at: string
@@ -185,6 +254,47 @@ export type Database = {
           zona_horaria?: string | null
         }
         Relationships: []
+      }
+      cortes_academicos: {
+        Row: {
+          created_at: string
+          fecha_fin: string | null
+          fecha_inicio: string | null
+          id: string
+          nombre: string
+          numero: number
+          periodo_id: string
+          porcentaje: number
+        }
+        Insert: {
+          created_at?: string
+          fecha_fin?: string | null
+          fecha_inicio?: string | null
+          id?: string
+          nombre: string
+          numero?: number
+          periodo_id: string
+          porcentaje?: number
+        }
+        Update: {
+          created_at?: string
+          fecha_fin?: string | null
+          fecha_inicio?: string | null
+          id?: string
+          nombre?: string
+          numero?: number
+          periodo_id?: string
+          porcentaje?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "cortes_academicos_periodo_id_fkey"
+            columns: ["periodo_id"]
+            isOneToOne: false
+            referencedRelation: "periodos_academicos"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       cursos: {
         Row: {
@@ -511,38 +621,109 @@ export type Database = {
           },
         ]
       }
+      items_calificables: {
+        Row: {
+          corte_id: string
+          created_at: string
+          fecha_fin: string | null
+          fecha_inicio: string | null
+          id: string
+          materia_id: string
+          nombre: string
+          porcentaje: number | null
+          tipo: string
+        }
+        Insert: {
+          corte_id: string
+          created_at?: string
+          fecha_fin?: string | null
+          fecha_inicio?: string | null
+          id?: string
+          materia_id: string
+          nombre: string
+          porcentaje?: number | null
+          tipo?: string
+        }
+        Update: {
+          corte_id?: string
+          created_at?: string
+          fecha_fin?: string | null
+          fecha_inicio?: string | null
+          id?: string
+          materia_id?: string
+          nombre?: string
+          porcentaje?: number | null
+          tipo?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "items_calificables_corte_id_fkey"
+            columns: ["corte_id"]
+            isOneToOne: false
+            referencedRelation: "cortes_academicos"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "items_calificables_materia_id_fkey"
+            columns: ["materia_id"]
+            isOneToOne: false
+            referencedRelation: "materias"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       materias: {
         Row: {
           aula: string | null
+          aula_id: string | null
           created_at: string
           descripcion: string | null
           horario: string | null
           id: string
+          maestro_id: string | null
           maestro_nombre: string | null
           nombre: string
           periodo_id: string
         }
         Insert: {
           aula?: string | null
+          aula_id?: string | null
           created_at?: string
           descripcion?: string | null
           horario?: string | null
           id?: string
+          maestro_id?: string | null
           maestro_nombre?: string | null
           nombre: string
           periodo_id: string
         }
         Update: {
           aula?: string | null
+          aula_id?: string | null
           created_at?: string
           descripcion?: string | null
           horario?: string | null
           id?: string
+          maestro_id?: string | null
           maestro_nombre?: string | null
           nombre?: string
           periodo_id?: string
         }
         Relationships: [
+          {
+            foreignKeyName: "materias_aula_id_fkey"
+            columns: ["aula_id"]
+            isOneToOne: false
+            referencedRelation: "aulas"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "materias_maestro_id_fkey"
+            columns: ["maestro_id"]
+            isOneToOne: false
+            referencedRelation: "personas"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "materias_periodo_id_fkey"
             columns: ["periodo_id"]
