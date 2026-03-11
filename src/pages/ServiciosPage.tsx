@@ -15,6 +15,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 import ExportDropdown from "@/components/shared/ExportDropdown";
+import AttendanceTrendChart from "@/components/charts/AttendanceTrendChart";
 
 export default function ServiciosPage() {
   const { data: servicios, isLoading } = useServicios();
@@ -244,6 +245,9 @@ export default function ServiciosPage() {
             <MetricCard title="Ausentes" value={totalAbsent} icon={X} variant="default" />
             <MetricCard title="Tasa de Asistencia" value={`${attendanceRate}%`} icon={TrendingUp} variant="accent" />
           </div>
+
+          {/* Attendance Trend Chart */}
+          <AttendanceTrendChart />
 
           {/* Attendance list */}
           <div className="bg-card rounded-lg border">
