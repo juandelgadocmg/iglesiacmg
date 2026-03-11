@@ -168,12 +168,23 @@ export default function PersonaPerfilPage() {
           </Button>
 
           <div className="flex flex-col md:flex-row items-start md:items-center gap-6 ml-10 md:ml-8">
-            <Avatar className="h-24 w-24 md:h-28 md:w-28 border-4 border-primary-foreground/30 shadow-xl ring-4 ring-primary-foreground/10">
-              <AvatarImage src={persona.foto_url || undefined} />
-              <AvatarFallback className="text-2xl font-bold bg-primary-foreground/20 text-primary-foreground">
-                {persona.nombres?.[0]}{persona.apellidos?.[0]}
-              </AvatarFallback>
-            </Avatar>
+            <div className="relative group cursor-pointer" onClick={() => fileInputRef.current?.click()}>
+              <Avatar className="h-24 w-24 md:h-28 md:w-28 border-4 border-primary-foreground/30 shadow-xl ring-4 ring-primary-foreground/10">
+                <AvatarImage src={persona.foto_url || undefined} />
+                <AvatarFallback className="text-2xl font-bold bg-primary-foreground/20 text-primary-foreground">
+                  {persona.nombres?.[0]}{persona.apellidos?.[0]}
+                </AvatarFallback>
+              </Avatar>
+              <div className="absolute inset-0 rounded-full bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
+                <Camera className="h-6 w-6 text-white" />
+              </div>
+              {uploadingPhoto && (
+                <div className="absolute inset-0 rounded-full bg-black/50 flex items-center justify-center">
+                  <div className="h-6 w-6 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                </div>
+              )}
+              <input ref={fileInputRef} type="file" accept="image/*" className="hidden" onChange={handlePhotoUpload} />
+            </div>
 
             <div className="flex-1 text-primary-foreground">
               <h1 className="text-2xl md:text-3xl font-bold tracking-tight">
