@@ -6,7 +6,7 @@ import { useUserRoles } from "@/hooks/useUserRoles";
 import { canAccess } from "@/lib/permissions";
 import logo from "@/assets/logo.jpeg";
 import {
-  LayoutDashboard, Users, UsersRound, Church, ClipboardCheck,
+  LayoutDashboard, Users, UsersRound, Church,
   DollarSign, CalendarDays, GraduationCap,
   Award, BarChart3, Settings, UserCog, ChevronLeft, ChevronRight,
   LogOut, HandHeart
