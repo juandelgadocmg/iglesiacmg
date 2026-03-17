@@ -945,11 +945,13 @@ export type Database = {
           foto_url: string | null
           grupo_id: string | null
           id: string
+          invitado_por: string | null
           lider_responsable: string | null
           ministerio: string | null
           nombres: string
           observaciones: string | null
           ocupacion: string | null
+          seguimiento_por: string | null
           sexo: string | null
           telefono: string | null
           tipo_persona: Database["public"]["Enums"]["tipo_persona"]
@@ -970,11 +972,13 @@ export type Database = {
           foto_url?: string | null
           grupo_id?: string | null
           id?: string
+          invitado_por?: string | null
           lider_responsable?: string | null
           ministerio?: string | null
           nombres: string
           observaciones?: string | null
           ocupacion?: string | null
+          seguimiento_por?: string | null
           sexo?: string | null
           telefono?: string | null
           tipo_persona?: Database["public"]["Enums"]["tipo_persona"]
@@ -995,11 +999,13 @@ export type Database = {
           foto_url?: string | null
           grupo_id?: string | null
           id?: string
+          invitado_por?: string | null
           lider_responsable?: string | null
           ministerio?: string | null
           nombres?: string
           observaciones?: string | null
           ocupacion?: string | null
+          seguimiento_por?: string | null
           sexo?: string | null
           telefono?: string | null
           tipo_persona?: Database["public"]["Enums"]["tipo_persona"]
@@ -1026,6 +1032,7 @@ export type Database = {
           notas_seguimiento: string | null
           persona_id: string | null
           prioridad: string
+          tipo: string | null
           titulo: string
           updated_at: string
         }
@@ -1039,6 +1046,7 @@ export type Database = {
           notas_seguimiento?: string | null
           persona_id?: string | null
           prioridad?: string
+          tipo?: string | null
           titulo: string
           updated_at?: string
         }
@@ -1052,6 +1060,7 @@ export type Database = {
           notas_seguimiento?: string | null
           persona_id?: string | null
           prioridad?: string
+          tipo?: string | null
           titulo?: string
           updated_at?: string
         }
