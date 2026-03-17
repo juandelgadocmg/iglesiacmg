@@ -79,7 +79,7 @@ export default function PersonaFormDialog({ initialData, onClose }: Props) {
         toast.success("Persona actualizada");
       } else {
         const result = await createPersona.mutateAsync(payload);
-        personaId = (result as any)?.[0]?.id;
+        personaId = (result as any)?.id;
         toast.success("Persona creada exitosamente");
       }
 
