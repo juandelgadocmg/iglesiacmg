@@ -120,11 +120,11 @@ export default function PersonasPage() {
 
       {/* Metrics */}
       <div className="grid grid-cols-2 lg:grid-cols-5 gap-4">
-        <MetricCard title="Total" value={counts.total} icon={Users} />
-        <MetricCard title="Miembros" value={counts.miembros} icon={Church} variant="default" />
-        <MetricCard title="Visitantes" value={counts.visitantes} icon={UserPlus} variant="info" />
-        <MetricCard title="Líderes" value={counts.lideres} icon={Users} variant="accent" />
-        <MetricCard title="Servidores" value={counts.servidores} icon={Users} variant="success" />
+        <MetricCard title="Total" value={counts.total || 0} icon={Users} />
+        <MetricCard title="Miembros" value={counts["Miembro"] || 0} icon={Church} variant="default" />
+        <MetricCard title="Visitantes" value={counts["Visitante"] || 0} icon={UserPlus} variant="info" />
+        <MetricCard title="Líderes" value={counts["Líder"] || 0} icon={Users} variant="accent" />
+        <MetricCard title="Servidores" value={counts["Servidor"] || 0} icon={Users} variant="success" />
       </div>
 
       {/* Filters */}
