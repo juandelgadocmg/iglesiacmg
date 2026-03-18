@@ -72,6 +72,11 @@ export default function PersonaPerfilPage() {
   const [familiarSearch, setFamiliarSearch] = useState("");
   const [selectedParentesco, setSelectedParentesco] = useState("Cónyuge");
   const [manualName, setManualName] = useState("");
+  // Proceso detail dialog
+  const [procesoDialog, setProcesoDialog] = useState<{ procesoId: string; nombre: string } | null>(null);
+  const [procesoObservacion, setProcesoObservacion] = useState("");
+  const [procesoFecha, setProcesoFecha] = useState<Date | undefined>(undefined);
+  const [procesoEstado, setProcesoEstado] = useState("No Realizado");
 
   const handlePhotoUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
