@@ -373,9 +373,32 @@ export default function PersonaFormDialog({ initialData, onClose }: Props) {
             <Label htmlFor="observaciones">Observaciones</Label>
             <Textarea id="observaciones" name="observaciones" maxLength={500} rows={3} defaultValue={initialData?.observaciones || ""} />
           </div>
+
+          {/* === POLÍTICA DE DATOS === */}
+          {!isEdit && (
+            <div className="rounded-lg border border-border bg-muted/50 p-4 space-y-3">
+              <p className="text-xs text-muted-foreground leading-relaxed">
+                Este formulario contiene información privilegiada y confidencial de acuerdo a la Ley Estatutaria 1581 de 2012 de Protección de datos y con los Decretos 1377 de 2013 y 1759 de 2016, el titular presta su consentimiento para que sus datos, facilitados voluntariamente pasen a formar parte de una base de datos responsabilidad de la Iglesia Cristiana Centro Mundial de Gloria, cuya finalidad está relacionada única y exclusivamente con el objeto de la misma.
+              </p>
+              <p className="text-xs font-semibold text-muted-foreground">
+                Este formulario es Propiedad de Centro Mundial de Gloria, Iglesia Cristiana.
+              </p>
+              <div className="flex items-center gap-2 pt-1">
+                <Checkbox
+                  id="politica_datos"
+                  checked={aceptaPolitica}
+                  onCheckedChange={(v) => setAceptaPolitica(v === true)}
+                />
+                <Label htmlFor="politica_datos" className="text-sm cursor-pointer">
+                  Acepto la política de tratamiento de datos personales *
+                </Label>
+              </div>
+            </div>
+          )}
+
           <div className="flex justify-end gap-2 pt-2">
             <Button type="button" variant="outline" onClick={handleClose}>Cancelar</Button>
-            <Button type="submit" disabled={isPending}>
+            <Button type="submit" disabled={isPending || (!isEdit && !aceptaPolitica)}>
               {isPending ? "Guardando..." : isEdit ? "Actualizar" : "Guardar Persona"}
             </Button>
           </div>
