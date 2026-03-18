@@ -97,6 +97,7 @@ export default function PersonaFormDialog({ initialData, onClose }: Props) {
     const nombres = (fd.get("nombres") as string)?.trim();
     const apellidos = (fd.get("apellidos") as string)?.trim();
     if (!nombres || !apellidos) { toast.error("Nombres y apellidos son obligatorios"); return; }
+    if (!isEdit && !aceptaPolitica) { toast.error("Debe aceptar la política de tratamiento de datos"); return; }
 
     const clean = (key: string) => {
       const v = (fd.get(key) as string)?.trim();
