@@ -24,13 +24,28 @@ import { es } from "date-fns/locale";
 import ExportDropdown from "@/components/shared/ExportDropdown";
 import ImportPersonasDialog from "@/components/forms/ImportPersonasDialog";
 
-const TIPOS = ["Todos", "Miembro", "Visitante", "Líder", "Servidor"];
+const TIPOS = [
+  "Todos", "Miembro", "Visitante", "Líder", "Servidor", "CDP",
+  "Iglesia Virtual", "Estudiante Seminario", "Discípulo",
+  "Maestro Seminario", "Miembro No Activo", "Líder Casa de Paz",
+  "Líder de Red", "Mentor", "Pastor Principal",
+];
 
 const tipoColor: Record<string, string> = {
   Miembro: "bg-primary/10 text-primary",
   Visitante: "bg-info/10 text-info",
   Líder: "bg-accent/10 text-accent",
   Servidor: "bg-success/10 text-success",
+  CDP: "bg-warning/10 text-warning",
+  "Iglesia Virtual": "bg-muted text-muted-foreground",
+  "Estudiante Seminario": "bg-info/10 text-info",
+  "Discípulo": "bg-primary/10 text-primary",
+  "Maestro Seminario": "bg-accent/10 text-accent",
+  "Miembro No Activo": "bg-destructive/10 text-destructive",
+  "Líder Casa de Paz": "bg-success/10 text-success",
+  "Líder de Red": "bg-accent/10 text-accent",
+  "Mentor": "bg-primary/10 text-primary",
+  "Pastor Principal": "bg-accent/10 text-accent",
 };
 
 export default function PersonasPage() {
@@ -58,14 +73,12 @@ export default function PersonasPage() {
   }, [personas, search, tipoFilter, estadoFilter]);
 
   const counts = useMemo(() => {
-    if (!personas) return { total: 0, miembros: 0, visitantes: 0, lideres: 0, servidores: 0 };
-    return {
-      total: personas.length,
-      miembros: personas.filter((p: any) => p.tipo_persona === "Miembro").length,
-      visitantes: personas.filter((p: any) => p.tipo_persona === "Visitante").length,
-      lideres: personas.filter((p: any) => p.tipo_persona === "Líder").length,
-      servidores: personas.filter((p: any) => p.tipo_persona === "Servidor").length,
-    };
+    if (!personas) return {} as Record<string, number>;
+    const c: Record<string, number> = { total: personas.length };
+    TIPOS.filter(t => t !== "Todos").forEach(t => {
+      c[t] = personas.filter((p: any) => p.tipo_persona === t).length;
+    });
+    return c;
   }, [personas]);
 
   const handleDelete = async (id: string) => {
@@ -107,11 +120,11 @@ export default function PersonasPage() {
 
       {/* Metrics */}
       <div className="grid grid-cols-2 lg:grid-cols-5 gap-4">
-        <MetricCard title="Total" value={counts.total} icon={Users} />
-        <MetricCard title="Miembros" value={counts.miembros} icon={Church} variant="default" />
-        <MetricCard title="Visitantes" value={counts.visitantes} icon={UserPlus} variant="info" />
-        <MetricCard title="Líderes" value={counts.lideres} icon={Users} variant="accent" />
-        <MetricCard title="Servidores" value={counts.servidores} icon={Users} variant="success" />
+        <MetricCard title="Total" value={counts.total || 0} icon={Users} />
+        <MetricCard title="Miembros" value={counts["Miembro"] || 0} icon={Church} variant="default" />
+        <MetricCard title="Visitantes" value={counts["Visitante"] || 0} icon={UserPlus} variant="info" />
+        <MetricCard title="Líderes" value={counts["Líder"] || 0} icon={Users} variant="accent" />
+        <MetricCard title="Servidores" value={counts["Servidor"] || 0} icon={Users} variant="success" />
       </div>
 
       {/* Filters */}
@@ -132,8 +145,12 @@ export default function PersonasPage() {
       </div>
 
       <Tabs value={tipoFilter} onValueChange={setTipoFilter}>
-        <TabsList>
-          {TIPOS.map(t => <TabsTrigger key={t} value={t}>{t} {t === "Todos" ? `(${counts.total})` : `(${counts[t.toLowerCase() === "miembro" ? "miembros" : t.toLowerCase() === "visitante" ? "visitantes" : t.toLowerCase() === "líder" ? "lideres" : "servidores"] || 0})`}</TabsTrigger>)}
+        <TabsList className="flex flex-wrap h-auto gap-1">
+          {TIPOS.map(t => (
+            <TabsTrigger key={t} value={t} className="text-xs">
+              {t} ({t === "Todos" ? counts.total || 0 : counts[t] || 0})
+            </TabsTrigger>
+          ))}
         </TabsList>
       </Tabs>
 
