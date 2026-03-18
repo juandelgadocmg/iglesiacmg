@@ -35,6 +35,7 @@ export default function GrupoFormDialog({ initialData, onClose }: Props) {
       dia_reunion: (fd.get("dia_reunion") as string) || null,
       hora_reunion: (fd.get("hora_reunion") as string) || null,
       ubicacion: (fd.get("ubicacion") as string) || null,
+      red: (fd.get("red") as string) || null,
     };
 
     try {
