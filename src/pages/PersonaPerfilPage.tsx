@@ -62,7 +62,7 @@ export default function PersonaPerfilPage() {
   const { data: todasPersonas } = usePersonas();
   const createRelacion = useCreateRelacion();
   const deleteRelacion = useDeleteRelacion();
-  const toggleProceso = useToggleProceso();
+  const updateProceso = useUpdateProceso();
   const updatePersona = useUpdatePersona();
   const queryClient = useQueryClient();
   const fileInputRef = useRef<HTMLInputElement>(null);
