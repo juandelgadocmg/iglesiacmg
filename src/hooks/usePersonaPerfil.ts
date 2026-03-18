@@ -46,26 +46,29 @@ export function usePersonaProcesos(personaId: string | undefined) {
   });
 }
 
-export function useToggleProceso() {
+export function useUpdateProceso() {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: async ({ personaId, procesoId, realizado }: { personaId: string; procesoId: string; realizado: boolean }) => {
-      if (realizado) {
-        const { error } = await supabase
-          .from("persona_procesos")
-          .upsert({
-            persona_id: personaId,
-            proceso_id: procesoId,
-            estado: "Realizado",
-            fecha_completado: new Date().toISOString().split("T")[0],
-          }, { onConflict: "persona_id,proceso_id" });
-        if (error) throw error;
-      } else {
+    mutationFn: async ({ personaId, procesoId, estado, fecha_completado, observacion }: {
+      personaId: string; procesoId: string; estado: string; fecha_completado?: string | null; observacion?: string | null;
+    }) => {
+      if (estado === "No Realizado") {
         const { error } = await supabase
           .from("persona_procesos")
           .delete()
           .eq("persona_id", personaId)
           .eq("proceso_id", procesoId);
+        if (error) throw error;
+      } else {
+        const { error } = await supabase
+          .from("persona_procesos")
+          .upsert({
+            persona_id: personaId,
+            proceso_id: procesoId,
+            estado,
+            fecha_completado: fecha_completado || null,
+            observacion: observacion ?? null,
+          } as any, { onConflict: "persona_id,proceso_id" });
         if (error) throw error;
       }
     },
