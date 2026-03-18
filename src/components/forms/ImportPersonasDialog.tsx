@@ -166,7 +166,7 @@ export default function ImportPersonasDialog() {
 
         const { data: created, error: pErr } = await supabase
           .from("personas")
-          .insert(persona)
+          .insert(persona as any)
           .select("id")
           .single();
 
