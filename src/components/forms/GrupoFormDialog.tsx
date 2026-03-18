@@ -76,7 +76,7 @@ export default function GrupoFormDialog({ initialData, onClose }: Props) {
               <Select name="tipo" defaultValue={initialData?.tipo || "Casas de paz"}>
                 <SelectTrigger><SelectValue /></SelectTrigger>
                 <SelectContent>
-                  {["Casas de paz","Grupos encuentro","Células","Jóvenes","Mujeres","Hombres","Niños","Alabanza","Ujieres","Liderazgo","Discipulado"].map(t => (
+                  {["Casas de paz","Grupos encuentro"].map(t => (
                     <SelectItem key={t} value={t}>{t}</SelectItem>
                   ))}
                 </SelectContent>
