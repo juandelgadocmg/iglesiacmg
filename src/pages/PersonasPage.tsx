@@ -145,8 +145,12 @@ export default function PersonasPage() {
       </div>
 
       <Tabs value={tipoFilter} onValueChange={setTipoFilter}>
-        <TabsList>
-          {TIPOS.map(t => <TabsTrigger key={t} value={t}>{t} {t === "Todos" ? `(${counts.total})` : `(${counts[t.toLowerCase() === "miembro" ? "miembros" : t.toLowerCase() === "visitante" ? "visitantes" : t.toLowerCase() === "líder" ? "lideres" : "servidores"] || 0})`}</TabsTrigger>)}
+        <TabsList className="flex flex-wrap h-auto gap-1">
+          {TIPOS.map(t => (
+            <TabsTrigger key={t} value={t} className="text-xs">
+              {t} ({t === "Todos" ? counts.total || 0 : counts[t] || 0})
+            </TabsTrigger>
+          ))}
         </TabsList>
       </Tabs>
 
