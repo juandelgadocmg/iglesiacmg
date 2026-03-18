@@ -951,14 +951,18 @@ export type Database = {
           invitado_por: string | null
           lider_responsable: string | null
           ministerio: string | null
+          nacionalidad: string | null
           nombres: string
           observaciones: string | null
           ocupacion: string | null
           seguimiento_por: string | null
           sexo: string | null
           telefono: string | null
+          tipo_documento: string | null
           tipo_persona: Database["public"]["Enums"]["tipo_persona"]
           updated_at: string
+          vinculacion: string | null
+          whatsapp: string | null
         }
         Insert: {
           apellidos: string
@@ -978,14 +982,18 @@ export type Database = {
           invitado_por?: string | null
           lider_responsable?: string | null
           ministerio?: string | null
+          nacionalidad?: string | null
           nombres: string
           observaciones?: string | null
           ocupacion?: string | null
           seguimiento_por?: string | null
           sexo?: string | null
           telefono?: string | null
+          tipo_documento?: string | null
           tipo_persona?: Database["public"]["Enums"]["tipo_persona"]
           updated_at?: string
+          vinculacion?: string | null
+          whatsapp?: string | null
         }
         Update: {
           apellidos?: string
@@ -1005,14 +1013,18 @@ export type Database = {
           invitado_por?: string | null
           lider_responsable?: string | null
           ministerio?: string | null
+          nacionalidad?: string | null
           nombres?: string
           observaciones?: string | null
           ocupacion?: string | null
           seguimiento_por?: string | null
           sexo?: string | null
           telefono?: string | null
+          tipo_documento?: string | null
           tipo_persona?: Database["public"]["Enums"]["tipo_persona"]
           updated_at?: string
+          vinculacion?: string | null
+          whatsapp?: string | null
         }
         Relationships: [
           {
@@ -1367,7 +1379,21 @@ export type Database = {
         | "Discipulado"
         | "Casas de paz"
         | "Grupos encuentro"
-      tipo_persona: "Miembro" | "Visitante" | "Líder" | "Servidor"
+      tipo_persona:
+        | "Miembro"
+        | "Visitante"
+        | "Líder"
+        | "Servidor"
+        | "CDP"
+        | "Iglesia Virtual"
+        | "Estudiante Seminario"
+        | "Discípulo"
+        | "Maestro Seminario"
+        | "Miembro No Activo"
+        | "Líder Casa de Paz"
+        | "Líder de Red"
+        | "Mentor"
+        | "Pastor Principal"
       tipo_servicio:
         | "Culto general"
         | "Oración"
@@ -1526,7 +1552,22 @@ export const Constants = {
         "Casas de paz",
         "Grupos encuentro",
       ],
-      tipo_persona: ["Miembro", "Visitante", "Líder", "Servidor"],
+      tipo_persona: [
+        "Miembro",
+        "Visitante",
+        "Líder",
+        "Servidor",
+        "CDP",
+        "Iglesia Virtual",
+        "Estudiante Seminario",
+        "Discípulo",
+        "Maestro Seminario",
+        "Miembro No Activo",
+        "Líder Casa de Paz",
+        "Líder de Red",
+        "Mentor",
+        "Pastor Principal",
+      ],
       tipo_servicio: [
         "Culto general",
         "Oración",
