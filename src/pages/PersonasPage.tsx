@@ -99,6 +99,7 @@ export default function PersonasPage() {
           { header: "Tipo", key: "tipo_persona" }, { header: "Grupo", key: "grupoNombre" },
           { header: "Estado", key: "estado_iglesia" },
         ]} data={tableData} />
+        <ImportPersonasDialog />
         <PersonaFormDialog />
       </PageHeader>
 

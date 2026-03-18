@@ -261,7 +261,7 @@ export default function ImportPersonasDialog() {
           ) : (
             <div className="space-y-3">
               <div className="flex items-center gap-3 p-3 rounded-lg bg-muted">
-                <CheckCircle2 className="h-5 w-5 text-green-600" />
+                <CheckCircle2 className="h-5 w-5 text-success" />
                 <div>
                   <p className="font-semibold">{result.success} de {result.total} personas importadas</p>
                   {result.errors.length > 0 && (
