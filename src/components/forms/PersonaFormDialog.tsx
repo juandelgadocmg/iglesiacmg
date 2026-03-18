@@ -17,6 +17,55 @@ interface Props {
 
 const TIPOS_PETICION = ["Financiera", "Familiar", "Sanidad", "Emocional", "Otros"];
 
+const TIPOS_DOCUMENTO = [
+  "Registro Civil",
+  "Tarjeta de identidad",
+  "Cédula de ciudadanía",
+  "Cédula extranjería",
+  "Permiso temporal de permanencia",
+  "NIT",
+  "Pasaporte",
+];
+
+const TIPOS_PERSONA = [
+  "CDP",
+  "Visitante",
+  "Iglesia Virtual",
+  "Estudiante Seminario",
+  "Discípulo",
+  "Maestro Seminario",
+  "Miembro No Activo",
+  "Líder Casa de Paz",
+  "Líder de Red",
+  "Mentor",
+  "Pastor Principal",
+];
+
+const REDES = ["Nissi", "Rohi", "Jireh", "Adonai", "Shaddai", "Elohim"];
+
+const TIPOS_VINCULACION = [
+  "Casas de Paz",
+  "Evangelismo en las Calles",
+  "Eventos",
+  "Fundación",
+  "Iglesia",
+  "Redes Sociales",
+];
+
+const MINISTERIOS = [
+  "En Proceso",
+  "Protocolo",
+  "Alabanza",
+  "Danza",
+  "Diaconado",
+  "Intercesión",
+  "Infantil",
+  "Afirmación",
+  "EscuelasFel",
+  "Comunicaciones",
+  "Adolescentes y Jóvenes",
+];
+
 export default function PersonaFormDialog({ initialData, onClose }: Props) {
   const isEdit = !!initialData;
   const [open, setOpen] = useState(false);
@@ -25,7 +74,6 @@ export default function PersonaFormDialog({ initialData, onClose }: Props) {
   const { data: grupos } = useGrupos();
   const { data: personas } = usePersonas();
 
-  // Petición state
   const [tipoPeticion, setTipoPeticion] = useState("");
   const [descripcionPeticion, setDescripcionPeticion] = useState("");
 
@@ -47,29 +95,36 @@ export default function PersonaFormDialog({ initialData, onClose }: Props) {
     const apellidos = (fd.get("apellidos") as string)?.trim();
     if (!nombres || !apellidos) { toast.error("Nombres y apellidos son obligatorios"); return; }
 
-    const sexoVal = fd.get("sexo") as string;
+    const clean = (key: string) => {
+      const v = (fd.get(key) as string)?.trim();
+      return v && v !== "none" ? v : null;
+    };
 
     const payload: any = {
       nombres,
       apellidos,
-      telefono: (fd.get("telefono") as string) || null,
-      email: (fd.get("email") as string) || null,
-      direccion: (fd.get("direccion") as string) || null,
-      sexo: sexoVal && sexoVal !== "none" ? sexoVal : null,
-      fecha_nacimiento: (fd.get("fecha_nacimiento") as string) || null,
-      tipo_persona: (fd.get("tipo_persona") as any) || "Miembro",
-      estado_iglesia: (fd.get("estado_iglesia") as any) || "Activo",
-      grupo_id: (fd.get("grupo_id") as string) || null,
-      estado_civil: (fd.get("estado_civil") as string) || null,
-      ocupacion: (fd.get("ocupacion") as string) || null,
-      observaciones: (fd.get("observaciones") as string) || null,
-      invitado_por: (fd.get("invitado_por") as string) || null,
-      seguimiento_por: (fd.get("seguimiento_por") as string) || null,
+      telefono: clean("telefono"),
+      whatsapp: clean("whatsapp"),
+      email: clean("email"),
+      direccion: clean("direccion"),
+      sexo: clean("sexo"),
+      fecha_nacimiento: clean("fecha_nacimiento"),
+      tipo_persona: clean("tipo_persona") || "Miembro",
+      estado_iglesia: clean("estado_iglesia") || "Activo",
+      grupo_id: clean("grupo_id"),
+      estado_civil: clean("estado_civil"),
+      ocupacion: clean("ocupacion"),
+      observaciones: clean("observaciones"),
+      invitado_por: clean("invitado_por"),
+      seguimiento_por: clean("seguimiento_por"),
+      tipo_documento: clean("tipo_documento"),
+      documento: clean("documento"),
+      nacionalidad: clean("nacionalidad"),
+      vinculacion: clean("vinculacion"),
+      ministerio: clean("ministerio"),
     };
 
-    // Clean empty selects
-    if (payload.estado_civil === "none") payload.estado_civil = null;
-    if (payload.grupo_id === "none") payload.grupo_id = null;
+    // Handle red field - stored on grupo, not persona. Skip for now.
 
     try {
       let personaId: string | undefined;
@@ -83,7 +138,6 @@ export default function PersonaFormDialog({ initialData, onClose }: Props) {
         toast.success("Persona creada exitosamente");
       }
 
-      // Create prayer request if provided
       if (tipoPeticion && personaId) {
         const { error } = await supabase.from("peticiones_oracion").insert({
           persona_id: personaId,
@@ -103,12 +157,6 @@ export default function PersonaFormDialog({ initialData, onClose }: Props) {
   };
 
   const isPending = createPersona.isPending || updatePersona.isPending;
-
-  // Filter personas for "invitado por" and "seguimiento" selectors
-  const personasList = (personas || []).map((p: any) => ({
-    id: p.id,
-    label: `${p.nombres} ${p.apellidos}`,
-  }));
 
   return (
     <Dialog open={open} onOpenChange={(v) => { if (!v) handleClose(); else setOpen(true); }}>
@@ -136,12 +184,24 @@ export default function PersonaFormDialog({ initialData, onClose }: Props) {
               <Input id="apellidos" name="apellidos" required maxLength={100} defaultValue={initialData?.apellidos || ""} />
             </div>
             <div className="space-y-2">
-              <Label htmlFor="telefono">Teléfono</Label>
-              <Input id="telefono" name="telefono" maxLength={20} defaultValue={initialData?.telefono || ""} />
+              <Label htmlFor="tipo_documento">Tipo de documento</Label>
+              <Select name="tipo_documento" defaultValue={initialData?.tipo_documento || "none"}>
+                <SelectTrigger><SelectValue placeholder="Seleccionar" /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="none">Sin especificar</SelectItem>
+                  {TIPOS_DOCUMENTO.map(t => (
+                    <SelectItem key={t} value={t}>{t}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
             </div>
             <div className="space-y-2">
-              <Label htmlFor="email">Email</Label>
-              <Input id="email" name="email" type="email" maxLength={255} defaultValue={initialData?.email || ""} />
+              <Label htmlFor="documento">Número de documento</Label>
+              <Input id="documento" name="documento" maxLength={30} defaultValue={initialData?.documento || ""} />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="nacionalidad">Nacionalidad</Label>
+              <Input id="nacionalidad" name="nacionalidad" maxLength={60} placeholder="Ej: Colombiana" defaultValue={initialData?.nacionalidad || ""} />
             </div>
             <div className="space-y-2">
               <Label htmlFor="sexo">Sexo</Label>
@@ -159,14 +219,51 @@ export default function PersonaFormDialog({ initialData, onClose }: Props) {
               <Input id="fecha_nacimiento" name="fecha_nacimiento" type="date" defaultValue={initialData?.fecha_nacimiento || ""} />
             </div>
             <div className="space-y-2">
-              <Label htmlFor="tipo_persona">Tipo de persona</Label>
-              <Select name="tipo_persona" defaultValue={initialData?.tipo_persona || "Miembro"}>
+              <Label htmlFor="estado_civil">Estado civil</Label>
+              <Select name="estado_civil" defaultValue={initialData?.estado_civil || "none"}>
+                <SelectTrigger><SelectValue placeholder="Seleccionar" /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="none">Sin especificar</SelectItem>
+                  <SelectItem value="Soltero/a">Soltero/a</SelectItem>
+                  <SelectItem value="Casado/a">Casado/a</SelectItem>
+                  <SelectItem value="Viudo/a">Viudo/a</SelectItem>
+                  <SelectItem value="Divorciado/a">Divorciado/a</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="telefono">Teléfono</Label>
+              <Input id="telefono" name="telefono" maxLength={20} defaultValue={initialData?.telefono || ""} />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="whatsapp">WhatsApp</Label>
+              <Input id="whatsapp" name="whatsapp" maxLength={20} placeholder="Ej: +57 300 1234567" defaultValue={initialData?.whatsapp || ""} />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="email">Email</Label>
+              <Input id="email" name="email" type="email" maxLength={255} defaultValue={initialData?.email || ""} />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="ocupacion">Ocupación</Label>
+              <Input id="ocupacion" name="ocupacion" maxLength={100} defaultValue={initialData?.ocupacion || ""} />
+            </div>
+            <div className="space-y-2 sm:col-span-2">
+              <Label htmlFor="direccion">Dirección</Label>
+              <Input id="direccion" name="direccion" maxLength={255} defaultValue={initialData?.direccion || ""} />
+            </div>
+          </div>
+
+          {/* === INFORMACIÓN CONGREGACIONAL === */}
+          <p className="text-sm font-semibold text-muted-foreground uppercase tracking-wide pt-2">Información congregacional</p>
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div className="space-y-2">
+              <Label htmlFor="tipo_persona">Tipo de asistente</Label>
+              <Select name="tipo_persona" defaultValue={initialData?.tipo_persona || "CDP"}>
                 <SelectTrigger><SelectValue /></SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="Miembro">Miembro</SelectItem>
-                  <SelectItem value="Visitante">Visitante</SelectItem>
-                  <SelectItem value="Líder">Líder</SelectItem>
-                  <SelectItem value="Servidor">Servidor</SelectItem>
+                  {TIPOS_PERSONA.map(t => (
+                    <SelectItem key={t} value={t}>{t}</SelectItem>
+                  ))}
                 </SelectContent>
               </Select>
             </div>
@@ -182,15 +279,38 @@ export default function PersonaFormDialog({ initialData, onClose }: Props) {
               </Select>
             </div>
             <div className="space-y-2">
-              <Label htmlFor="estado_civil">Estado civil</Label>
-              <Select name="estado_civil" defaultValue={initialData?.estado_civil || "none"}>
+              <Label htmlFor="vinculacion">Tipo de vinculación</Label>
+              <Select name="vinculacion" defaultValue={initialData?.vinculacion || "none"}>
                 <SelectTrigger><SelectValue placeholder="Seleccionar" /></SelectTrigger>
                 <SelectContent>
                   <SelectItem value="none">Sin especificar</SelectItem>
-                  <SelectItem value="Soltero/a">Soltero/a</SelectItem>
-                  <SelectItem value="Casado/a">Casado/a</SelectItem>
-                  <SelectItem value="Viudo/a">Viudo/a</SelectItem>
-                  <SelectItem value="Divorciado/a">Divorciado/a</SelectItem>
+                  {TIPOS_VINCULACION.map(t => (
+                    <SelectItem key={t} value={t}>{t}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="ministerio">Ministerio</Label>
+              <Select name="ministerio" defaultValue={initialData?.ministerio || "none"}>
+                <SelectTrigger><SelectValue placeholder="Seleccionar" /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="none">Sin especificar</SelectItem>
+                  {MINISTERIOS.map(m => (
+                    <SelectItem key={m} value={m}>{m}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="space-y-2">
+              <Label>Red</Label>
+              <Select name="red_persona" defaultValue="none">
+                <SelectTrigger><SelectValue placeholder="Seleccionar red" /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="none">Sin especificar</SelectItem>
+                  {REDES.map(r => (
+                    <SelectItem key={r} value={r}>{r}</SelectItem>
+                  ))}
                 </SelectContent>
               </Select>
             </div>
@@ -200,19 +320,11 @@ export default function PersonaFormDialog({ initialData, onClose }: Props) {
                 <SelectTrigger><SelectValue placeholder="Sin grupo" /></SelectTrigger>
                 <SelectContent>
                   <SelectItem value="none">Sin grupo</SelectItem>
-                  {(grupos || []).map(g => (
+                  {(grupos || []).map((g: any) => (
                     <SelectItem key={g.id} value={g.id}>{g.nombre}</SelectItem>
                   ))}
                 </SelectContent>
               </Select>
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="ocupacion">Ocupación</Label>
-              <Input id="ocupacion" name="ocupacion" maxLength={100} defaultValue={initialData?.ocupacion || ""} />
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="direccion">Dirección</Label>
-              <Input id="direccion" name="direccion" maxLength={255} defaultValue={initialData?.direccion || ""} />
             </div>
           </div>
 
