@@ -566,48 +566,84 @@ export default function PersonaPerfilPage() {
                 <Progress value={progressPercent} className="h-2.5" />
               </div>
             </CardHeader>
-            <CardContent>
-              <div className="grid sm:grid-cols-2 gap-2">
+            <CardContent className="p-0">
+              <div className="divide-y">
                 {(procesos || []).map((p: any) => {
                   const pp = procesosMap.get(p.id);
-                  const done = pp?.estado === "Realizado";
+                  const estado = pp?.estado || "No Realizado";
+                  const badgeClass = estado === "Realizado"
+                    ? "bg-success text-success-foreground"
+                    : estado === "En Curso"
+                    ? "bg-primary text-primary-foreground"
+                    : "bg-destructive text-destructive-foreground";
                   return (
-                    <div
-                      key={p.id}
-                      onClick={() => handleToggle(p.id, done)}
-                      className={cn(
-                        "flex items-center gap-3 p-3 rounded-lg border cursor-pointer transition-all hover:shadow-sm",
-                        done
-                          ? "bg-success/5 border-success/20 hover:bg-success/10"
-                          : "bg-card border-border hover:bg-muted/50"
-                      )}
-                    >
-                      <div className={cn(
-                        "w-8 h-8 rounded-full flex items-center justify-center shrink-0",
-                        done ? "bg-success/20" : "bg-muted"
-                      )}>
-                        {done ? (
-                          <CheckCircle2 className="h-4 w-4 text-success" />
-                        ) : (
-                          <XCircle className="h-4 w-4 text-muted-foreground" />
-                        )}
-                      </div>
-                      <div className="flex-1 min-w-0">
-                        <p className={cn("text-sm font-medium truncate", done ? "text-foreground" : "text-muted-foreground")}>
-                          {p.nombre}
-                        </p>
-                        {done && pp?.fecha_completado && (
-                          <p className="text-[10px] text-success">
-                            Completado: {format(parseISO(pp.fecha_completado), "dd MMM yyyy", { locale: es })}
-                          </p>
-                        )}
-                      </div>
+                    <div key={p.id} className="flex items-center gap-3 px-4 py-3">
+                      <p className="flex-1 text-sm font-semibold">{p.nombre}</p>
+                      <Badge
+                        className={cn("cursor-pointer select-none min-w-[100px] justify-center", badgeClass)}
+                        onClick={() => handleToggleEstado(p.id, estado)}
+                      >
+                        {estado}
+                      </Badge>
+                      <Button variant="outline" size="icon" className="h-8 w-8 shrink-0" onClick={() => openProcesoDialog(p.id, p.nombre)}>
+                        <Plus className="h-4 w-4" />
+                      </Button>
+                      <Popover>
+                        <PopoverTrigger asChild>
+                          <Button variant="outline" size="icon" className="h-8 w-8 shrink-0">
+                            <Calendar className="h-4 w-4" />
+                          </Button>
+                        </PopoverTrigger>
+                        <PopoverContent className="w-auto p-0" align="end">
+                          <CalendarComponent
+                            mode="single"
+                            selected={pp?.fecha_completado ? parseISO(pp.fecha_completado) : undefined}
+                            onSelect={(date) => {
+                              if (date) {
+                                updateProceso.mutate({
+                                  personaId: persona.id,
+                                  procesoId: p.id,
+                                  estado: estado === "No Realizado" ? "En Curso" : estado,
+                                  fecha_completado: format(date, "yyyy-MM-dd"),
+                                  observacion: (pp as any)?.observacion || null,
+                                });
+                              }
+                            }}
+                            locale={es}
+                          />
+                        </PopoverContent>
+                      </Popover>
+                      <span className="text-xs text-muted-foreground w-[85px] text-right">
+                        {pp?.fecha_completado ? format(parseISO(pp.fecha_completado), "dd/MM/yyyy") : "—"}
+                      </span>
                     </div>
                   );
                 })}
               </div>
             </CardContent>
           </Card>
+
+          {/* Detalle del proceso dialog */}
+          <Dialog open={!!procesoDialog} onOpenChange={(o) => !o && setProcesoDialog(null)}>
+            <DialogContent className="sm:max-w-lg">
+              <DialogHeader>
+                <DialogTitle className="flex items-center gap-2">
+                  <FileText className="h-4 w-4" /> Detalle del Proceso
+                </DialogTitle>
+                <p className="text-sm text-muted-foreground">{procesoDialog?.nombre}</p>
+              </DialogHeader>
+              <Textarea
+                placeholder="Ingresa la información adicional sobre el proceso de crecimiento"
+                value={procesoObservacion}
+                onChange={(e) => setProcesoObservacion(e.target.value)}
+                rows={6}
+              />
+              <DialogFooter className="gap-2">
+                <Button onClick={handleSaveProceso}>Guardar</Button>
+                <Button variant="destructive" onClick={() => setProcesoDialog(null)}>Cancelar</Button>
+              </DialogFooter>
+            </DialogContent>
+          </Dialog>
         </TabsContent>
 
         {/* Attendance tab */}
