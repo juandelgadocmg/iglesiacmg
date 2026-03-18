@@ -116,7 +116,14 @@ export default function GrupoFormDialog({ initialData, onClose }: Props) {
             </div>
             <div className="space-y-2">
               <Label htmlFor="red">Red</Label>
-              <Input id="red" name="red" maxLength={100} placeholder="Ej: Red Norte, Red Sur..." defaultValue={initialData?.red || ""} />
+              <Select name="red" defaultValue={initialData?.red || ""}>
+                <SelectTrigger><SelectValue placeholder="Seleccionar red" /></SelectTrigger>
+                <SelectContent>
+                  {["Nissi","Rohi","Jireh","Adonai","Shaddai","Elohim"].map(r => (
+                    <SelectItem key={r} value={r}>{r}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
             </div>
           </div>
           <div className="space-y-2">

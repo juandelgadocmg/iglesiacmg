@@ -70,10 +70,6 @@ export default function GruposPage() {
             filterKey="tipo" filterPlaceholder="Tipo de grupo"
             filterOptions={[
               { value: "Casas de paz", label: "Casas de paz" }, { value: "Grupos encuentro", label: "Grupos encuentro" },
-              { value: "Células", label: "Células" }, { value: "Jóvenes", label: "Jóvenes" },
-              { value: "Mujeres", label: "Mujeres" }, { value: "Hombres", label: "Hombres" },
-              { value: "Alabanza", label: "Alabanza" }, { value: "Ujieres", label: "Ujieres" },
-              { value: "Liderazgo", label: "Liderazgo" },
             ]}
             columns={[
               {
