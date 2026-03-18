@@ -24,13 +24,28 @@ import { es } from "date-fns/locale";
 import ExportDropdown from "@/components/shared/ExportDropdown";
 import ImportPersonasDialog from "@/components/forms/ImportPersonasDialog";
 
-const TIPOS = ["Todos", "Miembro", "Visitante", "Líder", "Servidor"];
+const TIPOS = [
+  "Todos", "Miembro", "Visitante", "Líder", "Servidor", "CDP",
+  "Iglesia Virtual", "Estudiante Seminario", "Discípulo",
+  "Maestro Seminario", "Miembro No Activo", "Líder Casa de Paz",
+  "Líder de Red", "Mentor", "Pastor Principal",
+];
 
 const tipoColor: Record<string, string> = {
   Miembro: "bg-primary/10 text-primary",
   Visitante: "bg-info/10 text-info",
   Líder: "bg-accent/10 text-accent",
   Servidor: "bg-success/10 text-success",
+  CDP: "bg-warning/10 text-warning",
+  "Iglesia Virtual": "bg-muted text-muted-foreground",
+  "Estudiante Seminario": "bg-info/10 text-info",
+  "Discípulo": "bg-primary/10 text-primary",
+  "Maestro Seminario": "bg-accent/10 text-accent",
+  "Miembro No Activo": "bg-destructive/10 text-destructive",
+  "Líder Casa de Paz": "bg-success/10 text-success",
+  "Líder de Red": "bg-accent/10 text-accent",
+  "Mentor": "bg-primary/10 text-primary",
+  "Pastor Principal": "bg-accent/10 text-accent",
 };
 
 export default function PersonasPage() {
