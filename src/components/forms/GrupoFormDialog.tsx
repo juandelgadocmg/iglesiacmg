@@ -108,9 +108,15 @@ export default function GrupoFormDialog({ initialData, onClose }: Props) {
               <Input id="hora_reunion" name="hora_reunion" type="time" defaultValue={initialData?.hora_reunion || ""} />
             </div>
           </div>
-          <div className="space-y-2">
-            <Label htmlFor="ubicacion">Ubicación</Label>
-            <Input id="ubicacion" name="ubicacion" maxLength={255} defaultValue={initialData?.ubicacion || ""} />
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div className="space-y-2">
+              <Label htmlFor="ubicacion">Ubicación</Label>
+              <Input id="ubicacion" name="ubicacion" maxLength={255} defaultValue={initialData?.ubicacion || ""} />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="red">Red</Label>
+              <Input id="red" name="red" maxLength={100} placeholder="Ej: Red Norte, Red Sur..." defaultValue={initialData?.red || ""} />
+            </div>
           </div>
           <div className="space-y-2">
             <Label htmlFor="descripcion">Descripción</Label>
