@@ -77,6 +77,7 @@ export default function PersonaFormDialog({ initialData, onClose }: Props) {
 
   const [tipoPeticion, setTipoPeticion] = useState("");
   const [descripcionPeticion, setDescripcionPeticion] = useState("");
+  const [aceptaPolitica, setAceptaPolitica] = useState(false);
 
   useEffect(() => {
     if (initialData) setOpen(true);
