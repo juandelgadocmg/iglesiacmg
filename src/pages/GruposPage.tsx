@@ -47,8 +47,9 @@ export default function GruposPage() {
       <PageHeader title="Grupos" description="Administración de células, ministerios, reportes y visualizaciones">
         <ExportDropdown title="Grupos" filename="grupos" columns={[
           { header: "Nombre", key: "nombre" }, { header: "Tipo", key: "tipo" },
-          { header: "Líder", key: "liderNombre" }, { header: "Día", key: "dia_reunion" },
-          { header: "Miembros", key: "miembrosCount" }, { header: "Estado", key: "estado" },
+          { header: "Red", key: "red" }, { header: "Líder", key: "liderNombre" },
+          { header: "Día", key: "dia_reunion" }, { header: "Miembros", key: "miembrosCount" },
+          { header: "Estado", key: "estado" },
         ]} data={tableData} />
         <GrupoFormDialog />
       </PageHeader>
@@ -68,6 +69,7 @@ export default function GruposPage() {
             data={tableData} searchKey="nombre" searchPlaceholder="Buscar grupo..."
             filterKey="tipo" filterPlaceholder="Tipo de grupo"
             filterOptions={[
+              { value: "Casas de paz", label: "Casas de paz" }, { value: "Grupos encuentro", label: "Grupos encuentro" },
               { value: "Células", label: "Células" }, { value: "Jóvenes", label: "Jóvenes" },
               { value: "Mujeres", label: "Mujeres" }, { value: "Hombres", label: "Hombres" },
               { value: "Alabanza", label: "Alabanza" }, { value: "Ujieres", label: "Ujieres" },

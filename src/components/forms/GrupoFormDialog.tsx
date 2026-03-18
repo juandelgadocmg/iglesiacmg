@@ -35,6 +35,7 @@ export default function GrupoFormDialog({ initialData, onClose }: Props) {
       dia_reunion: (fd.get("dia_reunion") as string) || null,
       hora_reunion: (fd.get("hora_reunion") as string) || null,
       ubicacion: (fd.get("ubicacion") as string) || null,
+      red: (fd.get("red") as string) || null,
     };
 
     try {
@@ -72,10 +73,10 @@ export default function GrupoFormDialog({ initialData, onClose }: Props) {
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div className="space-y-2">
               <Label htmlFor="tipo">Tipo *</Label>
-              <Select name="tipo" defaultValue={initialData?.tipo || "Células"}>
+              <Select name="tipo" defaultValue={initialData?.tipo || "Casas de paz"}>
                 <SelectTrigger><SelectValue /></SelectTrigger>
                 <SelectContent>
-                  {["Células","Jóvenes","Mujeres","Hombres","Niños","Alabanza","Ujieres","Liderazgo","Discipulado"].map(t => (
+                  {["Casas de paz","Grupos encuentro","Células","Jóvenes","Mujeres","Hombres","Niños","Alabanza","Ujieres","Liderazgo","Discipulado"].map(t => (
                     <SelectItem key={t} value={t}>{t}</SelectItem>
                   ))}
                 </SelectContent>
@@ -108,9 +109,15 @@ export default function GrupoFormDialog({ initialData, onClose }: Props) {
               <Input id="hora_reunion" name="hora_reunion" type="time" defaultValue={initialData?.hora_reunion || ""} />
             </div>
           </div>
-          <div className="space-y-2">
-            <Label htmlFor="ubicacion">Ubicación</Label>
-            <Input id="ubicacion" name="ubicacion" maxLength={255} defaultValue={initialData?.ubicacion || ""} />
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div className="space-y-2">
+              <Label htmlFor="ubicacion">Ubicación</Label>
+              <Input id="ubicacion" name="ubicacion" maxLength={255} defaultValue={initialData?.ubicacion || ""} />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="red">Red</Label>
+              <Input id="red" name="red" maxLength={100} placeholder="Ej: Red Norte, Red Sur..." defaultValue={initialData?.red || ""} />
+            </div>
           </div>
           <div className="space-y-2">
             <Label htmlFor="descripcion">Descripción</Label>

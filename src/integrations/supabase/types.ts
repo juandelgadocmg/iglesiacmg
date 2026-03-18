@@ -577,6 +577,7 @@ export type Database = {
           lider_id: string | null
           longitud: number | null
           nombre: string
+          red: string | null
           tipo: Database["public"]["Enums"]["tipo_grupo"]
           ubicacion: string | null
           updated_at: string
@@ -592,6 +593,7 @@ export type Database = {
           lider_id?: string | null
           longitud?: number | null
           nombre: string
+          red?: string | null
           tipo: Database["public"]["Enums"]["tipo_grupo"]
           ubicacion?: string | null
           updated_at?: string
@@ -607,6 +609,7 @@ export type Database = {
           lider_id?: string | null
           longitud?: number | null
           nombre?: string
+          red?: string | null
           tipo?: Database["public"]["Enums"]["tipo_grupo"]
           ubicacion?: string | null
           updated_at?: string
@@ -1362,6 +1365,8 @@ export type Database = {
         | "Ujieres"
         | "Liderazgo"
         | "Discipulado"
+        | "Casas de paz"
+        | "Grupos encuentro"
       tipo_persona: "Miembro" | "Visitante" | "Líder" | "Servidor"
       tipo_servicio:
         | "Culto general"
@@ -1518,6 +1523,8 @@ export const Constants = {
         "Ujieres",
         "Liderazgo",
         "Discipulado",
+        "Casas de paz",
+        "Grupos encuentro",
       ],
       tipo_persona: ["Miembro", "Visitante", "Líder", "Servidor"],
       tipo_servicio: [
