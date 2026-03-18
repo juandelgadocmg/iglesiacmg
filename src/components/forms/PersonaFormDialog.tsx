@@ -87,6 +87,7 @@ export default function PersonaFormDialog({ initialData, onClose }: Props) {
     setOpen(false);
     setTipoPeticion("");
     setDescripcionPeticion("");
+    setAceptaPolitica(false);
     onClose?.();
   };
 
