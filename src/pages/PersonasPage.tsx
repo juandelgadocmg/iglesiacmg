@@ -73,14 +73,12 @@ export default function PersonasPage() {
   }, [personas, search, tipoFilter, estadoFilter]);
 
   const counts = useMemo(() => {
-    if (!personas) return { total: 0, miembros: 0, visitantes: 0, lideres: 0, servidores: 0 };
-    return {
-      total: personas.length,
-      miembros: personas.filter((p: any) => p.tipo_persona === "Miembro").length,
-      visitantes: personas.filter((p: any) => p.tipo_persona === "Visitante").length,
-      lideres: personas.filter((p: any) => p.tipo_persona === "Líder").length,
-      servidores: personas.filter((p: any) => p.tipo_persona === "Servidor").length,
-    };
+    if (!personas) return {} as Record<string, number>;
+    const c: Record<string, number> = { total: personas.length };
+    TIPOS.filter(t => t !== "Todos").forEach(t => {
+      c[t] = personas.filter((p: any) => p.tipo_persona === t).length;
+    });
+    return c;
   }, [personas]);
 
   const handleDelete = async (id: string) => {
