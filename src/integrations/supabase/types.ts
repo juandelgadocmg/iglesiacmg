@@ -896,6 +896,7 @@ export type Database = {
           estado: string
           fecha_completado: string | null
           id: string
+          observacion: string | null
           persona_id: string
           proceso_id: string
         }
@@ -904,6 +905,7 @@ export type Database = {
           estado?: string
           fecha_completado?: string | null
           id?: string
+          observacion?: string | null
           persona_id: string
           proceso_id: string
         }
@@ -912,6 +914,7 @@ export type Database = {
           estado?: string
           fecha_completado?: string | null
           id?: string
+          observacion?: string | null
           persona_id?: string
           proceso_id?: string
         }

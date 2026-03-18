@@ -1,0 +1,1 @@
+ALTER TABLE public.persona_procesos ADD COLUMN IF NOT EXISTS observacion text;
