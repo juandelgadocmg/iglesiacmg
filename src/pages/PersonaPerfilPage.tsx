@@ -151,9 +151,36 @@ export default function PersonaPerfilPage() {
     ? differenceInYears(new Date(), parseISO(persona.fecha_nacimiento))
     : null;
 
-  const handleToggle = (procesoId: string, current: boolean) => {
-    toggleProceso.mutate(
-      { personaId: persona.id, procesoId, realizado: !current },
+  const openProcesoDialog = (procesoId: string, nombre: string) => {
+    const pp = procesosMap.get(procesoId);
+    setProcesoEstado(pp?.estado || "No Realizado");
+    setProcesoFecha(pp?.fecha_completado ? parseISO(pp.fecha_completado) : undefined);
+    setProcesoObservacion((pp as any)?.observacion || "");
+    setProcesoDialog({ procesoId, nombre });
+  };
+
+  const handleSaveProceso = () => {
+    if (!procesoDialog || !persona) return;
+    updateProceso.mutate(
+      {
+        personaId: persona.id,
+        procesoId: procesoDialog.procesoId,
+        estado: procesoEstado,
+        fecha_completado: procesoFecha ? format(procesoFecha, "yyyy-MM-dd") : null,
+        observacion: procesoObservacion || null,
+      },
+      {
+        onSuccess: () => { toast.success("Proceso actualizado"); setProcesoDialog(null); },
+        onError: () => toast.error("Error al actualizar"),
+      }
+    );
+  };
+
+  const handleToggleEstado = (procesoId: string, currentEstado: string) => {
+    const next = currentEstado === "No Realizado" ? "En Curso"
+      : currentEstado === "En Curso" ? "Realizado" : "No Realizado";
+    updateProceso.mutate(
+      { personaId: persona.id, procesoId, estado: next, fecha_completado: next === "Realizado" ? format(new Date(), "yyyy-MM-dd") : null },
       { onError: () => toast.error("Error al actualizar") }
     );
   };
