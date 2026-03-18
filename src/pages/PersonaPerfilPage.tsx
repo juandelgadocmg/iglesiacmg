@@ -9,12 +9,17 @@ import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Progress } from "@/components/ui/progress";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { Calendar as CalendarComponent } from "@/components/ui/calendar";
+import { Textarea } from "@/components/ui/textarea";
 import StatusBadge from "@/components/shared/StatusBadge";
 import PersonaFormDialog from "@/components/forms/PersonaFormDialog";
 import {
   ArrowLeft, Phone, Mail, MapPin, Calendar, Church, Users, Briefcase,
   Heart, BookOpen, CheckCircle2, XCircle, Clock, User, FileText,
-  GraduationCap, Shield, Pencil, UserPlus, Trash2, Baby, HeartHandshake, Camera,
+  GraduationCap, Shield, Pencil, UserPlus, Trash2, Baby, HeartHandshake, Camera, Plus,
 } from "lucide-react";
 import { format, parseISO, differenceInYears } from "date-fns";
 import { es } from "date-fns/locale";
