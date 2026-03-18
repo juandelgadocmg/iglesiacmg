@@ -22,6 +22,7 @@ import { toast } from "sonner";
 import { format, parseISO } from "date-fns";
 import { es } from "date-fns/locale";
 import ExportDropdown from "@/components/shared/ExportDropdown";
+import ImportPersonasDialog from "@/components/forms/ImportPersonasDialog";
 
 const TIPOS = ["Todos", "Miembro", "Visitante", "Líder", "Servidor"];
 
@@ -98,6 +99,7 @@ export default function PersonasPage() {
           { header: "Tipo", key: "tipo_persona" }, { header: "Grupo", key: "grupoNombre" },
           { header: "Estado", key: "estado_iglesia" },
         ]} data={tableData} />
+        <ImportPersonasDialog />
         <PersonaFormDialog />
       </PageHeader>
 
