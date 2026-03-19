@@ -269,7 +269,7 @@ export default function ReportesGruposPage() {
         </div>
       )}
 
-      <ReporteGrupoFormDialog open={showForm} onOpenChange={setShowForm} />
+      <ReporteGrupoFormDialog open={showForm} onOpenChange={(v) => { setShowForm(v); if (!v) setEditingId(null); }} editReporteId={editingId} />
     </div>
   );
 }
