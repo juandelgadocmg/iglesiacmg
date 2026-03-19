@@ -535,18 +535,21 @@ export type Database = {
           grupo_id: string
           id: string
           persona_id: string
+          rol: string | null
         }
         Insert: {
           created_at?: string
           grupo_id: string
           id?: string
           persona_id: string
+          rol?: string | null
         }
         Update: {
           created_at?: string
           grupo_id?: string
           id?: string
           persona_id?: string
+          rol?: string | null
         }
         Relationships: [
           {
@@ -1238,6 +1241,7 @@ export type Database = {
           ingreso_verificado_sobre: number | null
           lider_id: string | null
           mensaje: string
+          no_realizado: boolean | null
           observaciones: string | null
           ofrenda_casa_paz: number | null
           total_reportado: number | null
@@ -1254,6 +1258,7 @@ export type Database = {
           ingreso_verificado_sobre?: number | null
           lider_id?: string | null
           mensaje?: string
+          no_realizado?: boolean | null
           observaciones?: string | null
           ofrenda_casa_paz?: number | null
           total_reportado?: number | null
@@ -1270,6 +1275,7 @@ export type Database = {
           ingreso_verificado_sobre?: number | null
           lider_id?: string | null
           mensaje?: string
+          no_realizado?: boolean | null
           observaciones?: string | null
           ofrenda_casa_paz?: number | null
           total_reportado?: number | null
