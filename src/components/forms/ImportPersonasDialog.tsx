@@ -45,6 +45,7 @@ const VALID_TIPOS_PERSONA = [
 ];
 const VALID_ESTADOS = ["Activo", "Inactivo", "En proceso"];
 const VALID_PROC_ESTADOS = ["No realizado", "En Curso", "Realizado"];
+const VALID_TIPOS_PETICION = ["Financiera", "Familiar", "Sanidad", "Emocional", "Otros"];
 
 function parseExcelDate(val: any): string | null {
   if (!val) return null;
@@ -65,6 +66,7 @@ function str(val: any): string | null {
 interface ImportResult {
   total: number;
   success: number;
+  duplicates: number;
   errors: { row: number; message: string }[];
 }
 
@@ -73,9 +75,10 @@ const downloadTemplate = () => {
     "nombres*", "apellidos*", "tipo_documento", "documento", "sexo",
     "fecha_nacimiento", "nacionalidad", "telefono", "whatsapp", "email",
     "direccion", "estado_civil", "ocupacion", "tipo_persona", "estado_iglesia",
-    "vinculacion", "ministerio", "grupo_id", "fecha_ingreso",
+    "vinculacion", "ministerio", "red", "grupo", "fecha_ingreso",
     "fecha_conversion", "fecha_bautismo", "invitado_por",
     "seguimiento_por", "lider_responsable", "observaciones",
+    "tipo_peticion", "descripcion_peticion",
   ];
   const procesoCols: string[] = [];
   for (const pName of PROCESO_NAMES) {
@@ -87,6 +90,10 @@ const downloadTemplate = () => {
     "apellidos*": "Pérez",
     "tipo_persona": "Miembro",
     "estado_iglesia": "Activo",
+    "red": "Nissi",
+    "grupo": "Casa de Paz Centro",
+    "tipo_peticion": "Sanidad",
+    "descripcion_peticion": "Oración por salud de un familiar",
     "Ingreso a la Iglesia (Estado)": "Realizado",
     "Ingreso a la Iglesia (Fecha)": "2024-01-15",
     "Ingreso a la Iglesia (Observación)": "Llegó invitado por un familiar",
@@ -139,16 +146,51 @@ export default function ImportPersonasDialog() {
         return;
       }
 
+      // Pre-fetch grupos for name-to-id mapping
+      const { data: gruposData } = await supabase.from("grupos").select("id, nombre");
+      const gruposMap = new Map<string, string>();
+      (gruposData || []).forEach(g => gruposMap.set(g.nombre.toLowerCase(), g.id));
+
+      // Pre-fetch existing documents for duplicate detection
+      const docsInFile = rows
+        .map(r => str(r["documento"]))
+        .filter((d): d is string => !!d && d.length > 0);
+
+      const existingDocs = new Set<string>();
+      if (docsInFile.length > 0) {
+        // Fetch in batches of 100
+        for (let i = 0; i < docsInFile.length; i += 100) {
+          const batch = docsInFile.slice(i, i + 100);
+          const { data } = await supabase
+            .from("personas")
+            .select("documento")
+            .in("documento", batch);
+          (data || []).forEach(p => {
+            if (p.documento) existingDocs.add(p.documento.trim());
+          });
+        }
+      }
+
       let success = 0;
+      let duplicates = 0;
+
       for (let i = 0; i < rows.length; i++) {
         const r = rows[i];
-        const rowNum = i + 2; // excel row (1=header)
+        const rowNum = i + 2;
         setProgress(Math.round(((i + 1) / rows.length) * 100));
 
         const nombres = str(r["nombres*"]);
         const apellidos = str(r["apellidos*"]);
         if (!nombres || !apellidos) {
           errors.push({ row: rowNum, message: "Nombres y apellidos son obligatorios" });
+          continue;
+        }
+
+        // Duplicate check by documento
+        const documento = str(r["documento"]);
+        if (documento && existingDocs.has(documento)) {
+          errors.push({ row: rowNum, message: `Documento duplicado: ${documento} ya existe en el sistema` });
+          duplicates++;
           continue;
         }
 
@@ -164,11 +206,24 @@ export default function ImportPersonasDialog() {
           continue;
         }
 
+        // Resolve grupo by name
+        const grupoNombre = str(r["grupo"]);
+        let grupoId = str(r["grupo_id"]) || null;
+        if (!grupoId && grupoNombre) {
+          grupoId = gruposMap.get(grupoNombre.toLowerCase()) || null;
+          if (!grupoId) {
+            errors.push({ row: rowNum, message: `Grupo no encontrado: "${grupoNombre}"` });
+            continue;
+          }
+        }
+
+        const redVal = str(r["red"]);
+
         const persona: Record<string, any> = {
           nombres,
           apellidos,
           tipo_documento: str(r["tipo_documento"]),
-          documento: str(r["documento"]),
+          documento,
           sexo: str(r["sexo"]),
           fecha_nacimiento: parseExcelDate(r["fecha_nacimiento"]),
           nacionalidad: str(r["nacionalidad"]),
@@ -180,9 +235,9 @@ export default function ImportPersonasDialog() {
           ocupacion: str(r["ocupacion"]),
           tipo_persona: tipoPers,
           estado_iglesia: estadoIg,
-          vinculacion: str(r["vinculacion"]),
+          vinculacion: redVal || str(r["vinculacion"]),
           ministerio: str(r["ministerio"]),
-          grupo_id: str(r["grupo_id"]) || null,
+          grupo_id: grupoId,
           fecha_ingreso: parseExcelDate(r["fecha_ingreso"]),
           fecha_conversion: parseExcelDate(r["fecha_conversion"]),
           fecha_bautismo: parseExcelDate(r["fecha_bautismo"]),
@@ -206,23 +261,41 @@ export default function ImportPersonasDialog() {
           continue;
         }
 
+        // Add to existing docs set to catch duplicates within same file
+        if (documento) existingDocs.add(documento);
+
+        // Create petición de oración if provided
+        const tipoPeticion = str(r["tipo_peticion"]);
+        const descPeticion = str(r["descripcion_peticion"]);
+        if (tipoPeticion && descPeticion) {
+          const peticionData: Record<string, any> = {
+            persona_id: created.id,
+            titulo: `${tipoPeticion} - ${nombres} ${apellidos}`,
+            descripcion: descPeticion,
+            tipo: VALID_TIPOS_PETICION.includes(tipoPeticion) ? tipoPeticion : "Otros",
+            estado: "Pendiente",
+            prioridad: "Normal",
+          };
+          const { error: petErr } = await supabase.from("peticiones_oracion").insert(peticionData as any);
+          if (petErr) {
+            errors.push({ row: rowNum, message: `Persona creada pero error en petición: ${petErr.message}` });
+          }
+        }
+
         // Process growth steps
         const procRecords: any[] = [];
         for (const pName of PROCESO_NAMES) {
-          const estadoCol = `${pName} (Estado)`;
-          const fechaCol = `${pName} (Fecha)`;
-          const obsCol = `${pName} (Observación)`;
-          const estado = str(r[estadoCol]);
+          const estado = str(r[`${pName} (Estado)`]);
           if (!estado) continue;
           if (!VALID_PROC_ESTADOS.includes(estado)) continue;
-          if (estado === "No realizado") continue; // Don't insert "No realizado" records
+          if (estado === "No realizado") continue;
 
           procRecords.push({
             persona_id: created.id,
             proceso_id: PROCESOS_MAP[pName],
             estado,
-            fecha_completado: parseExcelDate(r[fechaCol]),
-            observacion: str(r[obsCol]),
+            fecha_completado: parseExcelDate(r[`${pName} (Fecha)`]),
+            observacion: str(r[`${pName} (Observación)`]),
           });
         }
 
@@ -236,9 +309,10 @@ export default function ImportPersonasDialog() {
         success++;
       }
 
-      setResult({ total: rows.length, success, errors });
+      setResult({ total: rows.length, success, duplicates, errors });
       if (success > 0) {
         qc.invalidateQueries({ queryKey: ["personas"] });
+        qc.invalidateQueries({ queryKey: ["peticiones"] });
         toast.success(`${success} personas importadas exitosamente`);
       }
     } catch (err: any) {
@@ -299,6 +373,9 @@ export default function ImportPersonasDialog() {
                 <CheckCircle2 className="h-5 w-5 text-success" />
                 <div>
                   <p className="font-semibold">{result.success} de {result.total} personas importadas</p>
+                  {result.duplicates > 0 && (
+                    <p className="text-sm text-warning">{result.duplicates} duplicados omitidos</p>
+                  )}
                   {result.errors.length > 0 && (
                     <p className="text-sm text-destructive">{result.errors.length} errores</p>
                   )}
