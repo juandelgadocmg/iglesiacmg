@@ -276,7 +276,7 @@ export default function ImportPersonasDialog() {
             estado: "Pendiente",
             prioridad: "Normal",
           };
-          const { error: petErr } = await supabase.from("peticiones_oracion").insert(peticionData);
+          const { error: petErr } = await supabase.from("peticiones_oracion").insert(peticionData as any);
           if (petErr) {
             errors.push({ row: rowNum, message: `Persona creada pero error en petición: ${petErr.message}` });
           }
