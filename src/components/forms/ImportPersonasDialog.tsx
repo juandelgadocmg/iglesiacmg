@@ -215,6 +215,7 @@ export default function ImportPersonasDialog() {
           const estado = str(r[estadoCol]);
           if (!estado) continue;
           if (!VALID_PROC_ESTADOS.includes(estado)) continue;
+          if (estado === "No realizado") continue; // Don't insert "No realizado" records
 
           procRecords.push({
             persona_id: created.id,
