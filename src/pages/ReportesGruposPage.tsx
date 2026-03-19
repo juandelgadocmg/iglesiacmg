@@ -98,11 +98,12 @@ export default function ReportesGruposPage() {
 
   return (
     <div className="space-y-6">
-      <PageHeader title="Reportes de Grupos" description="Gestión y verificación de reportes de células y grupos">
-        <Button onClick={() => setShowForm(true)} className="gap-2">
-          <Plus className="h-4 w-4" /> Crear Reporte
-        </Button>
-      </PageHeader>
+      <div className="flex items-center justify-between">
+        <div>
+          <h2 className="text-xl font-semibold">Listado de Reportes</h2>
+          <p className="text-sm text-muted-foreground">Consulta y gestiona todos los reportes enviados</p>
+        </div>
+      </div>
 
       {/* Metrics */}
       <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
