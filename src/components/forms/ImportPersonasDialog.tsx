@@ -2,7 +2,7 @@ import { useState, useRef } from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogFooter } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
-import { Upload, FileSpreadsheet, AlertTriangle, CheckCircle2 } from "lucide-react";
+import { Upload, FileSpreadsheet, AlertTriangle, CheckCircle2, Download } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
@@ -67,6 +67,37 @@ interface ImportResult {
   success: number;
   errors: { row: number; message: string }[];
 }
+
+const downloadTemplate = () => {
+  const personalCols = [
+    "nombres*", "apellidos*", "tipo_documento", "documento", "sexo",
+    "fecha_nacimiento", "nacionalidad", "telefono", "whatsapp", "email",
+    "direccion", "estado_civil", "ocupacion", "tipo_persona", "estado_iglesia",
+    "vinculacion", "ministerio", "grupo_id", "fecha_ingreso",
+    "fecha_conversion", "fecha_bautismo", "invitado_por",
+    "seguimiento_por", "lider_responsable", "observaciones",
+  ];
+  const procesoCols: string[] = [];
+  for (const pName of PROCESO_NAMES) {
+    procesoCols.push(`${pName} (Estado)`, `${pName} (Fecha)`, `${pName} (Observación)`);
+  }
+  const headers = [...personalCols, ...procesoCols];
+  const exampleRow: Record<string, string> = {
+    "nombres*": "Juan",
+    "apellidos*": "Pérez",
+    "tipo_persona": "Miembro",
+    "estado_iglesia": "Activo",
+    "Ingreso a la Iglesia (Estado)": "Realizado",
+    "Ingreso a la Iglesia (Fecha)": "2024-01-15",
+    "Ingreso a la Iglesia (Observación)": "Llegó invitado por un familiar",
+  };
+  const ws = XLSX.utils.json_to_sheet([exampleRow], { header: headers });
+  ws["!cols"] = headers.map(() => ({ wch: 22 }));
+  const wb = XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb, ws, "Personas");
+  XLSX.writeFile(wb, "plantilla_importacion_personas.xlsx");
+  toast.success("Plantilla descargada");
+};
 
 export default function ImportPersonasDialog() {
   const [open, setOpen] = useState(false);
@@ -249,6 +280,9 @@ export default function ImportPersonasDialog() {
                 {file && (
                   <p className="text-sm font-medium text-foreground">{file.name}</p>
                 )}
+                <Button variant="link" size="sm" className="gap-1 text-xs" onClick={downloadTemplate}>
+                  <Download className="h-3 w-3" /> Descargar plantilla con procesos de crecimiento
+                </Button>
               </div>
 
               {importing && (
