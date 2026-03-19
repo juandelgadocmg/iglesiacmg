@@ -122,7 +122,7 @@ export function useCreateReporteGrupo() {
       // Create report
       const { data, error } = await supabase
         .from("reportes_grupos" as any)
-        .insert({ ...reporte, lider_id: user?.id, estado: "No Verificado" } as any)
+        .insert({ ...reporte, lider_id: user?.id, estado: reporte.no_realizado ? "No Verificado" : "No Verificado" } as any)
         .select()
         .single();
       if (error) throw error;
