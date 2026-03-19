@@ -113,6 +113,7 @@ export function useCreateReporteGrupo() {
       observaciones?: string;
       ofrenda_casa_paz?: number;
       total_reportado?: number;
+      no_realizado?: boolean;
       asistencia: Array<{ persona_id: string; presente: boolean; es_nuevo: boolean; motivo_ausencia?: string }>;
     }) => {
       const { asistencia, ...reporte } = payload;
