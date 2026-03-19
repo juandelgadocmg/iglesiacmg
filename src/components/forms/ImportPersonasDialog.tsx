@@ -128,6 +128,24 @@ export default function ImportPersonasDialog() {
     if (f) { setFile(f); setResult(null); }
   };
 
+  // Normalize row keys: trim whitespace, remove trailing asterisks for matching
+  const normalizeKey = (key: string) => key.trim().toLowerCase().replace(/\*$/, "");
+
+  const getVal = (row: any, colName: string): any => {
+    // First try exact match
+    if (row[colName] !== undefined && row[colName] !== "") return row[colName];
+    // Try with asterisk (template required fields)
+    if (row[colName + "*"] !== undefined && row[colName + "*"] !== "") return row[colName + "*"];
+    // Fallback: normalize all keys and match
+    const target = normalizeKey(colName);
+    for (const key of Object.keys(row)) {
+      if (normalizeKey(key) === target && row[key] !== undefined && row[key] !== "") {
+        return row[key];
+      }
+    }
+    return "";
+  };
+
   const doImport = async () => {
     if (!file) return;
     setImporting(true);
@@ -149,16 +167,15 @@ export default function ImportPersonasDialog() {
       // Pre-fetch grupos for name-to-id mapping
       const { data: gruposData } = await supabase.from("grupos").select("id, nombre");
       const gruposMap = new Map<string, string>();
-      (gruposData || []).forEach(g => gruposMap.set(g.nombre.toLowerCase(), g.id));
+      (gruposData || []).forEach(g => gruposMap.set(g.nombre.toLowerCase().trim(), g.id));
 
       // Pre-fetch existing documents for duplicate detection
       const docsInFile = rows
-        .map(r => str(r["documento"]))
+        .map(r => str(getVal(r, "documento")))
         .filter((d): d is string => !!d && d.length > 0);
 
       const existingDocs = new Set<string>();
       if (docsInFile.length > 0) {
-        // Fetch in batches of 100
         for (let i = 0; i < docsInFile.length; i += 100) {
           const batch = docsInFile.slice(i, i + 100);
           const { data } = await supabase
@@ -179,72 +196,72 @@ export default function ImportPersonasDialog() {
         const rowNum = i + 2;
         setProgress(Math.round(((i + 1) / rows.length) * 100));
 
-        const nombres = str(r["nombres*"]);
-        const apellidos = str(r["apellidos*"]);
+        const nombres = str(getVal(r, "nombres"));
+        const apellidos = str(getVal(r, "apellidos"));
         if (!nombres || !apellidos) {
           errors.push({ row: rowNum, message: "Nombres y apellidos son obligatorios" });
           continue;
         }
 
         // Duplicate check by documento
-        const documento = str(r["documento"]);
+        const documento = str(getVal(r, "documento"));
         if (documento && existingDocs.has(documento)) {
           errors.push({ row: rowNum, message: `Documento duplicado: ${documento} ya existe en el sistema` });
           duplicates++;
           continue;
         }
 
-        const tipoPers = str(r["tipo_persona"]) || "Miembro";
+        const tipoPers = str(getVal(r, "tipo_persona")) || "Miembro";
         if (!VALID_TIPOS_PERSONA.includes(tipoPers)) {
           errors.push({ row: rowNum, message: `Tipo persona inválido: ${tipoPers}` });
           continue;
         }
 
-        const estadoIg = str(r["estado_iglesia"]) || "Activo";
+        const estadoIg = str(getVal(r, "estado_iglesia")) || "Activo";
         if (!VALID_ESTADOS.includes(estadoIg)) {
           errors.push({ row: rowNum, message: `Estado iglesia inválido: ${estadoIg}` });
           continue;
         }
 
-        // Resolve grupo by name
-        const grupoNombre = str(r["grupo"]);
-        let grupoId = str(r["grupo_id"]) || null;
+        // Resolve grupo by name - don't skip person if grupo not found
+        const grupoNombre = str(getVal(r, "grupo"));
+        let grupoId = str(getVal(r, "grupo_id")) || null;
         if (!grupoId && grupoNombre) {
-          grupoId = gruposMap.get(grupoNombre.toLowerCase()) || null;
+          grupoId = gruposMap.get(grupoNombre.toLowerCase().trim()) || null;
           if (!grupoId) {
-            errors.push({ row: rowNum, message: `Grupo no encontrado: "${grupoNombre}"` });
-            continue;
+            errors.push({ row: rowNum, message: `Grupo no encontrado: "${grupoNombre}" - persona creada sin grupo` });
           }
         }
 
-        const redVal = str(r["red"]);
+        const redVal = str(getVal(r, "red"));
+        const tipoDoc = str(getVal(r, "tipo_documento"));
 
         const persona: Record<string, any> = {
           nombres,
           apellidos,
-          tipo_documento: str(r["tipo_documento"]),
+          tipo_documento: tipoDoc,
           documento,
-          sexo: str(r["sexo"]),
-          fecha_nacimiento: parseExcelDate(r["fecha_nacimiento"]),
-          nacionalidad: str(r["nacionalidad"]),
-          telefono: str(r["telefono"]),
-          whatsapp: str(r["whatsapp"]),
-          email: str(r["email"]),
-          direccion: str(r["direccion"]),
-          estado_civil: str(r["estado_civil"]),
-          ocupacion: str(r["ocupacion"]),
+          sexo: str(getVal(r, "sexo")),
+          fecha_nacimiento: parseExcelDate(getVal(r, "fecha_nacimiento")),
+          nacionalidad: str(getVal(r, "nacionalidad")),
+          telefono: str(getVal(r, "telefono")),
+          whatsapp: str(getVal(r, "whatsapp")),
+          email: str(getVal(r, "email")),
+          direccion: str(getVal(r, "direccion")),
+          estado_civil: str(getVal(r, "estado_civil")),
+          ocupacion: str(getVal(r, "ocupacion")),
           tipo_persona: tipoPers,
           estado_iglesia: estadoIg,
-          vinculacion: redVal || str(r["vinculacion"]),
-          ministerio: str(r["ministerio"]),
+          vinculacion: redVal || str(getVal(r, "vinculacion")),
+          ministerio: str(getVal(r, "ministerio")),
           grupo_id: grupoId,
-          fecha_ingreso: parseExcelDate(r["fecha_ingreso"]),
-          fecha_conversion: parseExcelDate(r["fecha_conversion"]),
-          fecha_bautismo: parseExcelDate(r["fecha_bautismo"]),
-          invitado_por: str(r["invitado_por"]),
-          seguimiento_por: str(r["seguimiento_por"]),
-          lider_responsable: str(r["lider_responsable"]),
-          observaciones: str(r["observaciones"]),
+          fecha_ingreso: parseExcelDate(getVal(r, "fecha_ingreso")),
+          fecha_conversion: parseExcelDate(getVal(r, "fecha_conversion")),
+          fecha_bautismo: parseExcelDate(getVal(r, "fecha_bautismo")),
+          invitado_por: str(getVal(r, "invitado_por")),
+          seguimiento_por: str(getVal(r, "seguimiento_por")),
+          lider_responsable: str(getVal(r, "lider_responsable")),
+          observaciones: str(getVal(r, "observaciones")),
         };
 
         // Remove null values
@@ -264,15 +281,16 @@ export default function ImportPersonasDialog() {
         // Add to existing docs set to catch duplicates within same file
         if (documento) existingDocs.add(documento);
 
-        // Create petición de oración if provided
-        const tipoPeticion = str(r["tipo_peticion"]);
-        const descPeticion = str(r["descripcion_peticion"]);
-        if (tipoPeticion && descPeticion) {
+        // Create petición de oración if provided (only descripcion required)
+        const tipoPeticion = str(getVal(r, "tipo_peticion"));
+        const descPeticion = str(getVal(r, "descripcion_peticion"));
+        if (descPeticion) {
+          const tipoFinal = tipoPeticion && VALID_TIPOS_PETICION.includes(tipoPeticion) ? tipoPeticion : "Otros";
           const peticionData: Record<string, any> = {
             persona_id: created.id,
-            titulo: `${tipoPeticion} - ${nombres} ${apellidos}`,
+            titulo: `${tipoFinal} - ${nombres} ${apellidos}`,
             descripcion: descPeticion,
-            tipo: VALID_TIPOS_PETICION.includes(tipoPeticion) ? tipoPeticion : "Otros",
+            tipo: tipoFinal,
             estado: "Pendiente",
             prioridad: "Normal",
           };
@@ -285,7 +303,7 @@ export default function ImportPersonasDialog() {
         // Process growth steps
         const procRecords: any[] = [];
         for (const pName of PROCESO_NAMES) {
-          const estado = str(r[`${pName} (Estado)`]);
+          const estado = str(getVal(r, `${pName} (Estado)`));
           if (!estado) continue;
           if (!VALID_PROC_ESTADOS.includes(estado)) continue;
           if (estado === "No realizado") continue;
@@ -294,8 +312,8 @@ export default function ImportPersonasDialog() {
             persona_id: created.id,
             proceso_id: PROCESOS_MAP[pName],
             estado,
-            fecha_completado: parseExcelDate(r[`${pName} (Fecha)`]),
-            observacion: str(r[`${pName} (Observación)`]),
+            fecha_completado: parseExcelDate(getVal(r, `${pName} (Fecha)`)),
+            observacion: str(getVal(r, `${pName} (Observación)`)),
           });
         }
 
