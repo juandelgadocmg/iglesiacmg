@@ -5,7 +5,9 @@ import StatusBadge from "@/components/shared/StatusBadge";
 import GrupoFormDialog from "@/components/forms/GrupoFormDialog";
 import DeleteConfirmDialog from "@/components/shared/DeleteConfirmDialog";
 import ReporteGrupoFormDialog from "@/components/forms/ReporteGrupoFormDialog";
-import { Users, Pencil, Plus, ClipboardList } from "lucide-react";
+import GrupoMembersPanel from "@/components/groups/GrupoMembersPanel";
+import GrupoHierarchyView from "@/components/groups/GrupoHierarchyView";
+import { Users, Pencil, Plus, ClipboardList, ChevronLeft } from "lucide-react";
 import { useGrupos, useDeleteGrupo } from "@/hooks/useDatabase";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -22,6 +24,7 @@ export default function GruposPage() {
   const deleteGrupo = useDeleteGrupo();
   const [editing, setEditing] = useState<any>(null);
   const [showReportForm, setShowReportForm] = useState(false);
+  const [selectedGrupo, setSelectedGrupo] = useState<any>(null);
 
   if (isLoading) {
     return (
@@ -43,6 +46,20 @@ export default function GruposPage() {
     catch { toast.error("Error al eliminar"); }
   };
 
+  // If a group is selected, show members panel
+  if (selectedGrupo) {
+    return (
+      <div className="animate-fade-in">
+        <div className="flex items-center gap-3 mb-6">
+          <Button variant="ghost" size="sm" className="gap-1" onClick={() => setSelectedGrupo(null)}>
+            <ChevronLeft className="h-4 w-4" /> Volver a Grupos
+          </Button>
+        </div>
+        <GrupoMembersPanel grupoId={selectedGrupo.id} grupoNombre={selectedGrupo.nombre} />
+      </div>
+    );
+  }
+
   return (
     <div className="animate-fade-in">
       <PageHeader title="Grupos" description="Administración de células, ministerios, reportes y visualizaciones">
@@ -60,6 +77,7 @@ export default function GruposPage() {
       <Tabs defaultValue="lista" className="space-y-4">
         <TabsList className="flex-wrap h-auto gap-1">
           <TabsTrigger value="lista">Grupos</TabsTrigger>
+          <TabsTrigger value="jerarquia">Jerarquía</TabsTrigger>
           <TabsTrigger value="reporte" className="gap-1.5">
             <ClipboardList className="h-3.5 w-3.5" /> Crear Reporte
           </TabsTrigger>
@@ -79,12 +97,12 @@ export default function GruposPage() {
               {
                 key: "nombre", label: "Grupo",
                 render: (g: any) => (
-                  <div className="flex items-center gap-3">
+                  <div className="flex items-center gap-3 cursor-pointer" onClick={() => setSelectedGrupo(g)}>
                     <div className="w-8 h-8 rounded-lg bg-primary/10 flex items-center justify-center">
                       <Users className="h-4 w-4 text-primary" />
                     </div>
                     <div>
-                      <p className="font-medium text-sm">{g.nombre}</p>
+                      <p className="font-medium text-sm hover:underline">{g.nombre}</p>
                       <p className="text-xs text-muted-foreground">{g.tipo}</p>
                     </div>
                   </div>
@@ -93,7 +111,11 @@ export default function GruposPage() {
               { key: "red", label: "Red", render: (g: any) => g.red || "—" },
               { key: "liderNombre", label: "Líder" },
               { key: "dia_reunion", label: "Día", render: (g: any) => `${g.dia_reunion || "—"} ${g.hora_reunion || ""}` },
-              { key: "miembrosCount", label: "Miembros", render: (g: any) => <span className="font-semibold">{g.miembrosCount}</span> },
+              { key: "miembrosCount", label: "Miembros", render: (g: any) => (
+                <Button variant="ghost" size="sm" className="gap-1 h-7 font-semibold" onClick={() => setSelectedGrupo(g)}>
+                  <Users className="h-3.5 w-3.5" /> {g.miembrosCount}
+                </Button>
+              )},
               { key: "estado", label: "Estado", render: (g: any) => <StatusBadge status={g.estado} /> },
               {
                 key: "actions", label: "",
@@ -106,6 +128,10 @@ export default function GruposPage() {
               },
             ]}
           />
+        </TabsContent>
+
+        <TabsContent value="jerarquia">
+          <GrupoHierarchyView />
         </TabsContent>
 
         <TabsContent value="reporte">
