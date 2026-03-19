@@ -113,6 +113,7 @@ export function useCreateReporteGrupo() {
       observaciones?: string;
       ofrenda_casa_paz?: number;
       total_reportado?: number;
+      no_realizado?: boolean;
       asistencia: Array<{ persona_id: string; presente: boolean; es_nuevo: boolean; motivo_ausencia?: string }>;
     }) => {
       const { asistencia, ...reporte } = payload;
@@ -121,7 +122,7 @@ export function useCreateReporteGrupo() {
       // Create report
       const { data, error } = await supabase
         .from("reportes_grupos" as any)
-        .insert({ ...reporte, lider_id: user?.id, estado: "No Verificado" } as any)
+        .insert({ ...reporte, lider_id: user?.id, estado: reporte.no_realizado ? "No Verificado" : "No Verificado" } as any)
         .select()
         .single();
       if (error) throw error;

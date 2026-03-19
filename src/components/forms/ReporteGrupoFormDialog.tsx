@@ -1,22 +1,22 @@
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Calendar } from "@/components/ui/calendar";
-import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { Switch } from "@/components/ui/switch";
+import { Checkbox } from "@/components/ui/checkbox";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Separator } from "@/components/ui/separator";
 import { cn } from "@/lib/utils";
-import { format } from "date-fns";
+import { format, getDay } from "date-fns";
 import { es } from "date-fns/locale";
 import {
-  CalendarIcon, ChevronRight, ChevronLeft, Users, UserPlus,
+  ChevronRight, ChevronLeft, Users, UserPlus,
   CheckCircle2, XCircle, ClipboardList, DollarSign, Send,
+  AlertTriangle, Ban, FileCheck,
 } from "lucide-react";
 import { useGrupos } from "@/hooks/useDatabase";
 import { useCreateReporteGrupo, useGrupoMiembrosForReport } from "@/hooks/useReportesGrupos";
@@ -38,36 +38,44 @@ interface NuevaPersona {
   nombres: string;
   apellidos: string;
   telefono: string;
-  tipo_persona: string;
+  aceptaTerminos: boolean;
 }
 
 interface Props {
   open: boolean;
   onOpenChange: (open: boolean) => void;
+  editReporteId?: string | null;
 }
 
 const STEPS = ["Grupo", "Personas Nuevas", "Asistencia", "Finanzas"];
 
-export default function ReporteGrupoFormDialog({ open, onOpenChange }: Props) {
+function isThursday(): boolean {
+  return getDay(new Date()) === 4; // 0=Sunday, 4=Thursday
+}
+
+export default function ReporteGrupoFormDialog({ open, onOpenChange, editReporteId }: Props) {
   const [step, setStep] = useState(0);
   const [grupoId, setGrupoId] = useState("");
-  const [fecha, setFecha] = useState<Date>(new Date());
   const [mensaje, setMensaje] = useState("");
   const [observaciones, setObservaciones] = useState("");
+  const [noRealizado, setNoRealizado] = useState(false);
   const [ofrendaCasaPaz, setOfrendaCasaPaz] = useState("");
   const [totalReportado, setTotalReportado] = useState("");
   const [attendance, setAttendance] = useState<AttendanceRecord[]>([]);
   const [nuevasPersonas, setNuevasPersonas] = useState<NuevaPersona[]>([]);
-  const [newForm, setNewForm] = useState<NuevaPersona>({ nombres: "", apellidos: "", telefono: "", tipo_persona: "Visitante" });
+  const [newForm, setNewForm] = useState<NuevaPersona>({ nombres: "", apellidos: "", telefono: "", aceptaTerminos: false });
+  const [showReceipt, setShowReceipt] = useState(false);
+  const [receiptData, setReceiptData] = useState<any>(null);
 
   const { data: grupos } = useGrupos();
   const { data: miembros, isLoading: loadingMiembros } = useGrupoMiembrosForReport(grupoId || null);
   const createReporte = useCreateReporteGrupo();
 
-  // Initialize attendance when members load
   const selectedGrupo = grupos?.find((g) => g.id === grupoId);
+  const thursdayAllowed = isThursday();
 
-  useMemo(() => {
+  // Also fetch leader from the grupo to include in attendance
+  useEffect(() => {
     if (miembros && miembros.length > 0 && grupoId) {
       setAttendance(
         miembros.map((m) => ({
@@ -83,6 +91,26 @@ export default function ReporteGrupoFormDialog({ open, onOpenChange }: Props) {
       );
     }
   }, [miembros, grupoId]);
+
+  // If grupo has a leader not in miembros list, add them
+  useEffect(() => {
+    if (selectedGrupo && (selectedGrupo as any).personas && miembros) {
+      const leader = (selectedGrupo as any).personas;
+      const leaderInList = attendance.some(a => a.persona_id === leader.id);
+      if (!leaderInList && leader.id) {
+        setAttendance(prev => [{
+          persona_id: leader.id,
+          nombres: leader.nombres,
+          apellidos: leader.apellidos,
+          foto_url: leader.foto_url || null,
+          tipo_persona: leader.tipo_persona || "Líder",
+          presente: true,
+          es_nuevo: false,
+          motivo_ausencia: "",
+        }, ...prev]);
+      }
+    }
+  }, [selectedGrupo, miembros]);
 
   const togglePresente = (personaId: string) => {
     setAttendance((prev) =>
@@ -101,8 +129,12 @@ export default function ReporteGrupoFormDialog({ open, onOpenChange }: Props) {
       toast.error("Nombre y apellido son obligatorios.");
       return;
     }
+    if (!newForm.aceptaTerminos) {
+      toast.error("Debe aceptar los términos y condiciones.");
+      return;
+    }
     setNuevasPersonas((prev) => [...prev, { ...newForm }]);
-    setNewForm({ nombres: "", apellidos: "", telefono: "", tipo_persona: "Visitante" });
+    setNewForm({ nombres: "", apellidos: "", telefono: "", aceptaTerminos: false });
   };
 
   const removeNuevaPersona = (index: number) => {
@@ -112,39 +144,50 @@ export default function ReporteGrupoFormDialog({ open, onOpenChange }: Props) {
   const presentesCount = attendance.filter((a) => a.presente).length;
   const ausentesCount = attendance.filter((a) => !a.presente).length;
 
+  // Validate attendance: all absent members must have motivo
+  const attendanceValid = useMemo(() => {
+    if (noRealizado) return true;
+    const absentWithoutMotivo = attendance.filter(a => !a.presente && !a.motivo_ausencia.trim());
+    return absentWithoutMotivo.length === 0;
+  }, [attendance, noRealizado]);
+
   const handleSubmit = async () => {
     if (!grupoId || !mensaje) {
       toast.error("Complete los datos obligatorios.");
       return;
     }
 
-    try {
-      // First, create any new personas and add to grupo
-      const newPersonaIds: string[] = [];
-      for (const np of nuevasPersonas) {
-        const { data: persona, error: pErr } = await supabase
-          .from("personas")
-          .insert({
-            nombres: np.nombres,
-            apellidos: np.apellidos,
-            telefono: np.telefono || null,
-            tipo_persona: np.tipo_persona as any,
-            grupo_id: grupoId,
-          })
-          .select("id")
-          .single();
-        if (pErr) throw pErr;
-        newPersonaIds.push(persona.id);
+    if (!noRealizado && !attendanceValid) {
+      toast.error("Debe indicar el motivo de ausencia para todos los ausentes.");
+      return;
+    }
 
-        // Add to grupo_miembros
-        await supabase.from("grupo_miembros").insert({
-          grupo_id: grupoId,
-          persona_id: persona.id,
-        });
+    try {
+      const newPersonaIds: string[] = [];
+      if (!noRealizado) {
+        for (const np of nuevasPersonas) {
+          const { data: persona, error: pErr } = await supabase
+            .from("personas")
+            .insert({
+              nombres: np.nombres,
+              apellidos: np.apellidos,
+              telefono: np.telefono || null,
+              tipo_persona: "CDP" as any,
+              grupo_id: grupoId,
+            })
+            .select("id")
+            .single();
+          if (pErr) throw pErr;
+          newPersonaIds.push(persona.id);
+
+          await supabase.from("grupo_miembros").insert({
+            grupo_id: grupoId,
+            persona_id: persona.id,
+          } as any);
+        }
       }
 
-      // Build attendance list (existing + new people marked as present and nuevo)
-      const allAttendance = [
+      const allAttendance = noRealizado ? [] : [
         ...attendance.map((a) => ({
           persona_id: a.persona_id,
           presente: a.presente,
@@ -160,17 +203,29 @@ export default function ReporteGrupoFormDialog({ open, onOpenChange }: Props) {
 
       await createReporte.mutateAsync({
         grupo_id: grupoId,
-        fecha: format(fecha, "yyyy-MM-dd"),
+        fecha: format(new Date(), "yyyy-MM-dd"),
         mensaje,
         observaciones: observaciones || undefined,
         ofrenda_casa_paz: parseFloat(ofrendaCasaPaz) || 0,
         total_reportado: parseFloat(totalReportado) || 0,
+        no_realizado: noRealizado,
         asistencia: allAttendance,
       });
 
-      toast.success("Reporte creado exitosamente.");
-      resetForm();
-      onOpenChange(false);
+      // Show receipt instead of closing
+      setReceiptData({
+        grupo: selectedGrupo?.nombre,
+        fecha: format(new Date(), "PPP", { locale: es }),
+        mensaje,
+        noRealizado,
+        presentes: presentesCount + newPersonaIds.length,
+        ausentes: ausentesCount,
+        nuevos: nuevasPersonas.length,
+        ofrenda: parseFloat(ofrendaCasaPaz) || 0,
+        total: parseFloat(totalReportado) || 0,
+      });
+      setShowReceipt(true);
+      toast.success("Reporte enviado exitosamente.");
     } catch (err: any) {
       toast.error("Error al crear el reporte: " + (err.message || ""));
     }
@@ -181,17 +236,102 @@ export default function ReporteGrupoFormDialog({ open, onOpenChange }: Props) {
     setGrupoId("");
     setMensaje("");
     setObservaciones("");
-    setFecha(new Date());
+    setNoRealizado(false);
     setOfrendaCasaPaz("");
     setTotalReportado("");
     setAttendance([]);
     setNuevasPersonas([]);
+    setShowReceipt(false);
+    setReceiptData(null);
   };
 
   const canNext = () => {
     if (step === 0) return !!grupoId && !!mensaje;
+    if (step === 2 && !noRealizado && !attendanceValid) return false;
     return true;
   };
+
+  // If not Thursday, show restriction message
+  if (open && !thursdayAllowed && !editReporteId) {
+    return (
+      <Dialog open={open} onOpenChange={(o) => { if (!o) resetForm(); onOpenChange(o); }}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Ban className="h-5 w-5 text-destructive" />
+              Reporte no disponible
+            </DialogTitle>
+          </DialogHeader>
+          <div className="py-6 text-center space-y-4">
+            <AlertTriangle className="h-12 w-12 text-amber-500 mx-auto" />
+            <div>
+              <p className="font-semibold text-lg">Solo disponible los jueves</p>
+              <p className="text-sm text-muted-foreground mt-2">
+                Los reportes de grupo solo pueden realizarse el día <strong>jueves</strong> hasta las <strong>11:59 PM</strong>.
+              </p>
+              <p className="text-xs text-muted-foreground mt-1">
+                Hoy es {format(new Date(), "EEEE", { locale: es })}. Vuelve el próximo jueves.
+              </p>
+            </div>
+          </div>
+          <Button onClick={() => onOpenChange(false)} className="w-full">Entendido</Button>
+        </DialogContent>
+      </Dialog>
+    );
+  }
+
+  // Receipt view
+  if (showReceipt && receiptData) {
+    return (
+      <Dialog open={open} onOpenChange={(o) => { if (!o) resetForm(); onOpenChange(o); }}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <FileCheck className="h-5 w-5 text-success" />
+              Reporte Enviado
+            </DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4 py-2">
+            <div className="rounded-xl border-2 border-success/30 bg-success/5 p-5 space-y-4">
+              <div className="text-center">
+                <CheckCircle2 className="h-10 w-10 text-success mx-auto mb-2" />
+                <p className="font-bold text-lg">¡Reporte enviado con éxito!</p>
+              </div>
+              <Separator />
+              {receiptData.noRealizado ? (
+                <div className="text-center py-2">
+                  <Badge variant="secondary" className="text-sm">Grupo NO se realizó</Badge>
+                </div>
+              ) : null}
+              <div className="grid grid-cols-2 gap-2 text-sm">
+                <span className="text-muted-foreground">Grupo:</span>
+                <span className="font-medium">{receiptData.grupo}</span>
+                <span className="text-muted-foreground">Fecha:</span>
+                <span className="font-medium">{receiptData.fecha}</span>
+                <span className="text-muted-foreground">Mensaje:</span>
+                <span className="font-medium">{receiptData.mensaje}</span>
+                {!receiptData.noRealizado && (
+                  <>
+                    <span className="text-muted-foreground">Presentes:</span>
+                    <span className="font-medium text-success">{receiptData.presentes}</span>
+                    <span className="text-muted-foreground">Ausentes:</span>
+                    <span className="font-medium text-destructive">{receiptData.ausentes}</span>
+                    <span className="text-muted-foreground">Nuevos:</span>
+                    <span className="font-medium text-info">{receiptData.nuevos}</span>
+                  </>
+                )}
+                <span className="text-muted-foreground">Ofrenda:</span>
+                <span className="font-medium">${receiptData.ofrenda.toFixed(2)}</span>
+                <span className="text-muted-foreground">Total:</span>
+                <span className="font-bold">${receiptData.total.toFixed(2)}</span>
+              </div>
+            </div>
+          </div>
+          <Button onClick={() => { resetForm(); onOpenChange(false); }} className="w-full">Cerrar</Button>
+        </DialogContent>
+      </Dialog>
+    );
+  }
 
   return (
     <Dialog open={open} onOpenChange={(o) => { if (!o) resetForm(); onOpenChange(o); }}>
@@ -199,28 +339,42 @@ export default function ReporteGrupoFormDialog({ open, onOpenChange }: Props) {
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             <ClipboardList className="h-5 w-5" />
-            Crear Reporte Semanal
+            {editReporteId ? "Editar Reporte" : "Crear Reporte Semanal"}
           </DialogTitle>
         </DialogHeader>
 
         {/* Step indicators */}
         <div className="flex items-center gap-1 pb-2">
-          {STEPS.map((s, i) => (
-            <div key={s} className="flex items-center gap-1 flex-1">
-              <div
-                className={cn(
-                  "flex items-center justify-center w-7 h-7 rounded-full text-xs font-semibold shrink-0 transition-colors",
-                  i <= step ? "bg-primary text-primary-foreground" : "bg-muted text-muted-foreground"
-                )}
-              >
-                {i + 1}
+          {STEPS.map((s, i) => {
+            // If noRealizado, skip steps 1 and 2
+            if (noRealizado && (i === 1 || i === 2)) {
+              return (
+                <div key={s} className="flex items-center gap-1 flex-1 opacity-30">
+                  <div className="flex items-center justify-center w-7 h-7 rounded-full text-xs font-semibold shrink-0 bg-muted text-muted-foreground line-through">
+                    {i + 1}
+                  </div>
+                  <span className="text-xs truncate hidden sm:block text-muted-foreground line-through">{s}</span>
+                  {i < STEPS.length - 1 && <div className="h-px flex-1 mx-1 bg-border" />}
+                </div>
+              );
+            }
+            return (
+              <div key={s} className="flex items-center gap-1 flex-1">
+                <div
+                  className={cn(
+                    "flex items-center justify-center w-7 h-7 rounded-full text-xs font-semibold shrink-0 transition-colors",
+                    i <= step ? "bg-primary text-primary-foreground" : "bg-muted text-muted-foreground"
+                  )}
+                >
+                  {i + 1}
+                </div>
+                <span className={cn("text-xs truncate hidden sm:block", i <= step ? "text-foreground font-medium" : "text-muted-foreground")}>
+                  {s}
+                </span>
+                {i < STEPS.length - 1 && <div className={cn("h-px flex-1 mx-1", i < step ? "bg-primary" : "bg-border")} />}
               </div>
-              <span className={cn("text-xs truncate hidden sm:block", i <= step ? "text-foreground font-medium" : "text-muted-foreground")}>
-                {s}
-              </span>
-              {i < STEPS.length - 1 && <div className={cn("h-px flex-1 mx-1", i < step ? "bg-primary" : "bg-border")} />}
-            </div>
-          ))}
+            );
+          })}
         </div>
 
         <Separator />
@@ -241,23 +395,23 @@ export default function ReporteGrupoFormDialog({ open, onOpenChange }: Props) {
                     </SelectContent>
                   </Select>
                 </div>
-                <div className="space-y-1.5">
-                  <label className="text-sm font-medium">Fecha</label>
-                  <Popover>
-                    <PopoverTrigger asChild>
-                      <Button variant="outline" className={cn("w-full justify-start text-left font-normal")}>
-                        <CalendarIcon className="mr-2 h-4 w-4" />
-                        {format(fecha, "PPP", { locale: es })}
-                      </Button>
-                    </PopoverTrigger>
-                    <PopoverContent className="w-auto p-0" align="start">
-                      <Calendar mode="single" selected={fecha} onSelect={(d) => d && setFecha(d)} className="p-3 pointer-events-auto" />
-                    </PopoverContent>
-                  </Popover>
+
+                {/* No realizado checkbox */}
+                <div className="flex items-center gap-3 p-3 rounded-lg border border-amber-300/50 bg-amber-50/50 dark:bg-amber-950/20">
+                  <Checkbox
+                    id="no-realizado"
+                    checked={noRealizado}
+                    onCheckedChange={(v) => setNoRealizado(!!v)}
+                  />
+                  <label htmlFor="no-realizado" className="text-sm font-medium cursor-pointer flex items-center gap-2">
+                    <Ban className="h-4 w-4 text-amber-600" />
+                    El grupo NO se realizó esta semana
+                  </label>
                 </div>
+
                 <div className="space-y-1.5">
                   <label className="text-sm font-medium">Mensaje / Tema *</label>
-                  <Input value={mensaje} onChange={(e) => setMensaje(e.target.value)} placeholder="Tema del mensaje..." />
+                  <Input value={mensaje} onChange={(e) => setMensaje(e.target.value)} placeholder={noRealizado ? "Motivo por el que no se realizó..." : "Tema del mensaje..."} />
                 </div>
                 <div className="space-y-1.5">
                   <label className="text-sm font-medium">Observaciones</label>
@@ -273,34 +427,35 @@ export default function ReporteGrupoFormDialog({ open, onOpenChange }: Props) {
             )}
 
             {/* Step 1: New people */}
-            {step === 1 && (
+            {step === 1 && !noRealizado && (
               <>
                 <div className="flex items-center gap-2 p-3 rounded-lg bg-info/10 border border-info/20 text-sm">
                   <UserPlus className="h-5 w-5 text-info shrink-0" />
                   <div>
                     <p className="font-medium text-foreground">¿Tienes personas nuevas?</p>
-                    <p className="text-muted-foreground text-xs">Agrega visitantes o personas nuevas que llegaron esta semana. Se crearán automáticamente en el sistema.</p>
+                    <p className="text-muted-foreground text-xs">Agrega personas nuevas que llegaron. Se guardarán automáticamente como <strong>CDP</strong> (Casa de Paz).</p>
                   </div>
                 </div>
 
-                {/* New person form */}
                 <div className="grid grid-cols-2 gap-3">
                   <Input placeholder="Nombres *" value={newForm.nombres} onChange={(e) => setNewForm({ ...newForm, nombres: e.target.value })} />
                   <Input placeholder="Apellidos *" value={newForm.apellidos} onChange={(e) => setNewForm({ ...newForm, apellidos: e.target.value })} />
-                  <Input placeholder="Teléfono" value={newForm.telefono} onChange={(e) => setNewForm({ ...newForm, telefono: e.target.value })} />
-                  <Select value={newForm.tipo_persona} onValueChange={(v) => setNewForm({ ...newForm, tipo_persona: v })}>
-                    <SelectTrigger><SelectValue /></SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="Visitante">Visitante</SelectItem>
-                      <SelectItem value="Miembro">Miembro</SelectItem>
-                    </SelectContent>
-                  </Select>
+                  <Input placeholder="Teléfono" value={newForm.telefono} onChange={(e) => setNewForm({ ...newForm, telefono: e.target.value })} className="col-span-2" />
+                </div>
+                <div className="flex items-center gap-2 p-2 rounded-lg border">
+                  <Checkbox
+                    id="terminos-nueva"
+                    checked={newForm.aceptaTerminos}
+                    onCheckedChange={(v) => setNewForm({ ...newForm, aceptaTerminos: !!v })}
+                  />
+                  <label htmlFor="terminos-nueva" className="text-xs cursor-pointer">
+                    Acepto la política de tratamiento de datos personales conforme a la Ley 1581 de 2012.
+                  </label>
                 </div>
                 <Button variant="outline" className="gap-2 w-full" onClick={addNuevaPersona}>
                   <UserPlus className="h-4 w-4" /> Agregar persona
                 </Button>
 
-                {/* List of added people */}
                 {nuevasPersonas.length > 0 && (
                   <div className="space-y-2">
                     <p className="text-sm font-medium">Personas nuevas agregadas ({nuevasPersonas.length})</p>
@@ -312,7 +467,7 @@ export default function ReporteGrupoFormDialog({ open, onOpenChange }: Props) {
                           </Avatar>
                           <div>
                             <p className="text-sm font-medium">{np.nombres} {np.apellidos}</p>
-                            <p className="text-xs text-muted-foreground">{np.tipo_persona}{np.telefono ? ` · ${np.telefono}` : ""}</p>
+                            <p className="text-xs text-muted-foreground">CDP{np.telefono ? ` · ${np.telefono}` : ""}</p>
                           </div>
                         </div>
                         <Button size="sm" variant="ghost" className="text-destructive h-7" onClick={() => removeNuevaPersona(i)}>
@@ -332,7 +487,7 @@ export default function ReporteGrupoFormDialog({ open, onOpenChange }: Props) {
             )}
 
             {/* Step 2: Attendance */}
-            {step === 2 && (
+            {step === 2 && !noRealizado && (
               <>
                 <div className="flex items-center gap-4 mb-2">
                   <Badge variant="outline" className="gap-1.5 border-success text-success">
@@ -348,6 +503,13 @@ export default function ReporteGrupoFormDialog({ open, onOpenChange }: Props) {
                   )}
                 </div>
 
+                {!attendanceValid && (
+                  <div className="flex items-center gap-2 p-3 rounded-lg bg-destructive/10 border border-destructive/20 text-sm text-destructive">
+                    <AlertTriangle className="h-4 w-4 shrink-0" />
+                    Debe indicar el motivo de ausencia para todos los miembros ausentes.
+                  </div>
+                )}
+
                 {loadingMiembros ? (
                   <p className="text-sm text-muted-foreground text-center py-8">Cargando miembros...</p>
                 ) : attendance.length === 0 ? (
@@ -358,12 +520,14 @@ export default function ReporteGrupoFormDialog({ open, onOpenChange }: Props) {
                   <div className="space-y-1.5">
                     {attendance.map((a) => {
                       const initials = `${a.nombres[0] || ""}${a.apellidos[0] || ""}`.toUpperCase();
+                      const isAbsentNoMotivo = !a.presente && !a.motivo_ausencia.trim();
                       return (
                         <div
                           key={a.persona_id}
                           className={cn(
                             "flex items-center gap-3 p-3 rounded-lg border transition-colors",
-                            a.presente ? "bg-success/5 border-success/20" : "bg-destructive/5 border-destructive/20"
+                            a.presente ? "bg-success/5 border-success/20" : "bg-destructive/5 border-destructive/20",
+                            isAbsentNoMotivo && "ring-2 ring-destructive/50"
                           )}
                         >
                           <Avatar className="h-9 w-9">
@@ -371,13 +535,16 @@ export default function ReporteGrupoFormDialog({ open, onOpenChange }: Props) {
                             <AvatarFallback className="text-xs">{initials}</AvatarFallback>
                           </Avatar>
                           <div className="flex-1 min-w-0">
-                            <p className="text-sm font-medium truncate">{a.nombres} {a.apellidos}</p>
+                            <div className="flex items-center gap-2">
+                              <p className="text-sm font-medium truncate">{a.nombres} {a.apellidos}</p>
+                              <Badge variant="outline" className="text-[10px] h-4">{a.tipo_persona}</Badge>
+                            </div>
                             {!a.presente && (
                               <Input
-                                placeholder="Motivo de ausencia..."
+                                placeholder="Motivo de ausencia (obligatorio) *"
                                 value={a.motivo_ausencia}
                                 onChange={(e) => setMotivo(a.persona_id, e.target.value)}
-                                className="mt-1 h-7 text-xs"
+                                className={cn("mt-1 h-7 text-xs", isAbsentNoMotivo && "border-destructive")}
                               />
                             )}
                           </div>
@@ -388,7 +555,6 @@ export default function ReporteGrupoFormDialog({ open, onOpenChange }: Props) {
                   </div>
                 )}
 
-                {/* Show new people as automatic present */}
                 {nuevasPersonas.length > 0 && (
                   <>
                     <Separator />
@@ -400,7 +566,7 @@ export default function ReporteGrupoFormDialog({ open, onOpenChange }: Props) {
                         </Avatar>
                         <div className="flex-1">
                           <p className="text-sm font-medium">{np.nombres} {np.apellidos}</p>
-                          <p className="text-xs text-info">Nuevo</p>
+                          <p className="text-xs text-info">CDP · Nuevo</p>
                         </div>
                         <CheckCircle2 className="h-5 w-5 text-success" />
                       </div>
@@ -439,15 +605,24 @@ export default function ReporteGrupoFormDialog({ open, onOpenChange }: Props) {
                     <span className="text-muted-foreground">Grupo:</span>
                     <span className="font-medium">{selectedGrupo?.nombre}</span>
                     <span className="text-muted-foreground">Fecha:</span>
-                    <span className="font-medium">{format(fecha, "PPP", { locale: es })}</span>
+                    <span className="font-medium">{format(new Date(), "PPP", { locale: es })}</span>
                     <span className="text-muted-foreground">Mensaje:</span>
                     <span className="font-medium truncate">{mensaje}</span>
-                    <span className="text-muted-foreground">Presentes:</span>
-                    <span className="font-medium text-success">{presentesCount + nuevasPersonas.length}</span>
-                    <span className="text-muted-foreground">Ausentes:</span>
-                    <span className="font-medium text-destructive">{ausentesCount}</span>
-                    <span className="text-muted-foreground">Personas nuevas:</span>
-                    <span className="font-medium text-info">{nuevasPersonas.length}</span>
+                    {noRealizado ? (
+                      <>
+                        <span className="text-muted-foreground">Estado:</span>
+                        <Badge variant="secondary">No se realizó</Badge>
+                      </>
+                    ) : (
+                      <>
+                        <span className="text-muted-foreground">Presentes:</span>
+                        <span className="font-medium text-success">{presentesCount + nuevasPersonas.length}</span>
+                        <span className="text-muted-foreground">Ausentes:</span>
+                        <span className="font-medium text-destructive">{ausentesCount}</span>
+                        <span className="text-muted-foreground">Personas nuevas:</span>
+                        <span className="font-medium text-info">{nuevasPersonas.length}</span>
+                      </>
+                    )}
                   </div>
                 </div>
               </>
@@ -459,13 +634,13 @@ export default function ReporteGrupoFormDialog({ open, onOpenChange }: Props) {
 
         {/* Navigation */}
         <div className="flex justify-between pt-2">
-          <Button variant="outline" onClick={() => step > 0 ? setStep(step - 1) : onOpenChange(false)} className="gap-1">
+          <Button variant="outline" onClick={() => step > 0 ? setStep(noRealizado && step === 3 ? 0 : step - 1) : onOpenChange(false)} className="gap-1">
             <ChevronLeft className="h-4 w-4" />
             {step === 0 ? "Cancelar" : "Anterior"}
           </Button>
 
           {step < STEPS.length - 1 ? (
-            <Button onClick={() => setStep(step + 1)} disabled={!canNext()} className="gap-1">
+            <Button onClick={() => setStep(noRealizado && step === 0 ? 3 : step + 1)} disabled={!canNext()} className="gap-1">
               Siguiente <ChevronRight className="h-4 w-4" />
             </Button>
           ) : (

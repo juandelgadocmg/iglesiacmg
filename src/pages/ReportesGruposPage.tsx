@@ -15,7 +15,7 @@ import { format, isWithinInterval, parseISO } from "date-fns";
 import { es } from "date-fns/locale";
 import {
   Plus, Search, FileText, ClipboardCheck, CheckCircle2, XCircle,
-  AlertCircle, CalendarIcon, DollarSign, Trash2, ShieldCheck
+  AlertCircle, CalendarIcon, DollarSign, Trash2, ShieldCheck, Pencil
 } from "lucide-react";
 import { toast } from "sonner";
 import type { DateRange } from "react-day-picker";
@@ -33,6 +33,7 @@ export default function ReportesGruposPage() {
   const [search, setSearch] = useState("");
   const [tab, setTab] = useState("Todos");
   const [showForm, setShowForm] = useState(false);
+  const [editingId, setEditingId] = useState<string | null>(null);
   const [dateRange, setDateRange] = useState<DateRange | undefined>();
 
   const { data: reportes, isLoading } = useReportesGrupos();
@@ -97,11 +98,12 @@ export default function ReportesGruposPage() {
 
   return (
     <div className="space-y-6">
-      <PageHeader title="Reportes de Grupos" description="Gestión y verificación de reportes de células y grupos">
-        <Button onClick={() => setShowForm(true)} className="gap-2">
-          <Plus className="h-4 w-4" /> Crear Reporte
-        </Button>
-      </PageHeader>
+      <div className="flex items-center justify-between">
+        <div>
+          <h2 className="text-xl font-semibold">Listado de Reportes</h2>
+          <p className="text-sm text-muted-foreground">Consulta y gestiona todos los reportes enviados</p>
+        </div>
+      </div>
 
       {/* Metrics */}
       <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
@@ -246,6 +248,9 @@ export default function ReportesGruposPage() {
                       </Button>
                     </>
                   )}
+                  <Button size="sm" variant="outline" className="gap-1" onClick={() => { setEditingId(r.id); setShowForm(true); }}>
+                    <Pencil className="h-3.5 w-3.5" /> Editar
+                  </Button>
                   <DeleteConfirmDialog
                     onConfirm={async () => {
                       await deleteReporte.mutateAsync(r.id);
@@ -264,7 +269,7 @@ export default function ReportesGruposPage() {
         </div>
       )}
 
-      <ReporteGrupoFormDialog open={showForm} onOpenChange={setShowForm} />
+      <ReporteGrupoFormDialog open={showForm} onOpenChange={(v) => { setShowForm(v); if (!v) setEditingId(null); }} editReporteId={editingId} />
     </div>
   );
 }

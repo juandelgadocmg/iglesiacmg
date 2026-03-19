@@ -4,7 +4,8 @@ import DataTable from "@/components/shared/DataTable";
 import StatusBadge from "@/components/shared/StatusBadge";
 import GrupoFormDialog from "@/components/forms/GrupoFormDialog";
 import DeleteConfirmDialog from "@/components/shared/DeleteConfirmDialog";
-import { Users, Pencil } from "lucide-react";
+import ReporteGrupoFormDialog from "@/components/forms/ReporteGrupoFormDialog";
+import { Users, Pencil, Plus, ClipboardList } from "lucide-react";
 import { useGrupos, useDeleteGrupo } from "@/hooks/useDatabase";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -12,7 +13,6 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { toast } from "sonner";
 import ExportDropdown from "@/components/shared/ExportDropdown";
 
-// Lazy load heavy sub-modules
 const ReportesGruposContent = lazy(() => import("@/pages/ReportesGruposPage"));
 const MapaGruposContent = lazy(() => import("@/pages/MapaGruposPage"));
 const GraficoMinisterioContent = lazy(() => import("@/pages/GraficoMinisterioPage"));
@@ -21,6 +21,7 @@ export default function GruposPage() {
   const { data: grupos, isLoading } = useGrupos();
   const deleteGrupo = useDeleteGrupo();
   const [editing, setEditing] = useState<any>(null);
+  const [showReportForm, setShowReportForm] = useState(false);
 
   if (isLoading) {
     return (
@@ -57,9 +58,12 @@ export default function GruposPage() {
       {editing && <GrupoFormDialog initialData={editing} onClose={() => setEditing(null)} />}
 
       <Tabs defaultValue="lista" className="space-y-4">
-        <TabsList>
-          <TabsTrigger value="lista">Lista</TabsTrigger>
-          <TabsTrigger value="reportes">Reportes</TabsTrigger>
+        <TabsList className="flex-wrap h-auto gap-1">
+          <TabsTrigger value="lista">Grupos</TabsTrigger>
+          <TabsTrigger value="reporte" className="gap-1.5">
+            <ClipboardList className="h-3.5 w-3.5" /> Crear Reporte
+          </TabsTrigger>
+          <TabsTrigger value="reportes">Listado Reportes</TabsTrigger>
           <TabsTrigger value="mapa">Mapa</TabsTrigger>
           <TabsTrigger value="organigrama">Organigrama</TabsTrigger>
         </TabsList>
@@ -86,6 +90,7 @@ export default function GruposPage() {
                   </div>
                 )
               },
+              { key: "red", label: "Red", render: (g: any) => g.red || "—" },
               { key: "liderNombre", label: "Líder" },
               { key: "dia_reunion", label: "Día", render: (g: any) => `${g.dia_reunion || "—"} ${g.hora_reunion || ""}` },
               { key: "miembrosCount", label: "Miembros", render: (g: any) => <span className="font-semibold">{g.miembrosCount}</span> },
@@ -101,6 +106,24 @@ export default function GruposPage() {
               },
             ]}
           />
+        </TabsContent>
+
+        <TabsContent value="reporte">
+          <div className="flex flex-col items-center justify-center py-12 space-y-4">
+            <ClipboardList className="h-16 w-16 text-muted-foreground/30" />
+            <div className="text-center">
+              <h3 className="text-lg font-semibold">Crear Reporte Semanal</h3>
+              <p className="text-sm text-muted-foreground mt-1">
+                Registra la asistencia, personas nuevas y ofrenda de tu grupo.
+              </p>
+              <p className="text-xs text-muted-foreground mt-1">
+                Solo disponible los días <strong>jueves</strong> hasta las 11:59 PM.
+              </p>
+            </div>
+            <Button onClick={() => setShowReportForm(true)} className="gap-2">
+              <Plus className="h-4 w-4" /> Iniciar Reporte
+            </Button>
+          </div>
         </TabsContent>
 
         <TabsContent value="reportes">
@@ -121,6 +144,8 @@ export default function GruposPage() {
           </Suspense>
         </TabsContent>
       </Tabs>
+
+      <ReporteGrupoFormDialog open={showReportForm} onOpenChange={setShowReportForm} />
     </div>
   );
 }
