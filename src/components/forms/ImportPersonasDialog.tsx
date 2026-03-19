@@ -280,6 +280,9 @@ export default function ImportPersonasDialog() {
                 {file && (
                   <p className="text-sm font-medium text-foreground">{file.name}</p>
                 )}
+                <Button variant="link" size="sm" className="gap-1 text-xs" onClick={downloadTemplate}>
+                  <Download className="h-3 w-3" /> Descargar plantilla con procesos de crecimiento
+                </Button>
               </div>
 
               {importing && (
