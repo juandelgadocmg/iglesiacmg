@@ -248,6 +248,9 @@ export default function ReportesGruposPage() {
                       </Button>
                     </>
                   )}
+                  <Button size="sm" variant="outline" className="gap-1" onClick={() => { setEditingId(r.id); setShowForm(true); }}>
+                    <Pencil className="h-3.5 w-3.5" /> Editar
+                  </Button>
                   <DeleteConfirmDialog
                     onConfirm={async () => {
                       await deleteReporte.mutateAsync(r.id);
