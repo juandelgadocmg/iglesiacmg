@@ -15,7 +15,7 @@ import { format, isWithinInterval, parseISO } from "date-fns";
 import { es } from "date-fns/locale";
 import {
   Plus, Search, FileText, ClipboardCheck, CheckCircle2, XCircle,
-  AlertCircle, CalendarIcon, DollarSign, Trash2, ShieldCheck
+  AlertCircle, CalendarIcon, DollarSign, Trash2, ShieldCheck, Pencil
 } from "lucide-react";
 import { toast } from "sonner";
 import type { DateRange } from "react-day-picker";
