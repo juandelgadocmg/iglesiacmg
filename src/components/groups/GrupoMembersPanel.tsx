@@ -21,6 +21,7 @@ interface Props {
 const rolIcon = (rol: string) => {
   switch (rol) {
     case "lider": return <Shield className="h-3 w-3" />;
+    case "sublider": return <UserCheck className="h-3 w-3" />;
     case "anfitrion": return <Home className="h-3 w-3" />;
     case "colaborador": return <UserCheck className="h-3 w-3" />;
     default: return null;
@@ -30,6 +31,7 @@ const rolIcon = (rol: string) => {
 const rolBadgeClass = (rol: string) => {
   switch (rol) {
     case "lider": return "bg-primary/10 text-primary border-primary/30";
+    case "sublider": return "bg-purple-100 text-purple-700 border-purple-300 dark:bg-purple-950 dark:text-purple-400";
     case "anfitrion": return "bg-amber-100 text-amber-700 border-amber-300 dark:bg-amber-950 dark:text-amber-400";
     case "colaborador": return "bg-info/10 text-info border-info/30";
     default: return "";

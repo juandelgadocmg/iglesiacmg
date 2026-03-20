@@ -106,6 +106,7 @@ export function useSearchPersonas(query: string) {
 
 export const ROLES_GRUPO = [
   { value: "lider", label: "Líder" },
+  { value: "sublider", label: "Sub Líder" },
   { value: "anfitrion", label: "Anfitrión" },
   { value: "colaborador", label: "Colaborador" },
   { value: "asistente", label: "Asistente" },
