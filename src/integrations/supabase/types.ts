@@ -424,6 +424,60 @@ export type Database = {
           },
         ]
       }
+      equipos_ministeriales: {
+        Row: {
+          created_at: string
+          descripcion: string | null
+          estado: string
+          id: string
+          lider_id: string | null
+          nombre: string
+          parent_id: string | null
+          red: string | null
+          tipo: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          descripcion?: string | null
+          estado?: string
+          id?: string
+          lider_id?: string | null
+          nombre: string
+          parent_id?: string | null
+          red?: string | null
+          tipo?: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          descripcion?: string | null
+          estado?: string
+          id?: string
+          lider_id?: string | null
+          nombre?: string
+          parent_id?: string | null
+          red?: string | null
+          tipo?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "equipos_ministeriales_lider_id_fkey"
+            columns: ["lider_id"]
+            isOneToOne: false
+            referencedRelation: "personas"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "equipos_ministeriales_parent_id_fkey"
+            columns: ["parent_id"]
+            isOneToOne: false
+            referencedRelation: "equipos_ministeriales"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       eventos: {
         Row: {
           created_at: string
