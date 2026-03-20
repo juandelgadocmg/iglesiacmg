@@ -163,6 +163,7 @@ reportes: { fecha: string; presentes: number; ausentes: number; nuevos: number; 
   doc.save(`perfil-${grupo.nombre.replace(/\s+/g, "-").toLowerCase()}.pdf`);
 }
 
+export function exportFinancialSummaryPDF(stats: {
   ingresosMes: number;
   gastosMes: number;
   totalPersonas: number;
