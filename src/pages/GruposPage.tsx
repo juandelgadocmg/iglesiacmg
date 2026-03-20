@@ -5,7 +5,7 @@ import StatusBadge from "@/components/shared/StatusBadge";
 import GrupoFormDialog from "@/components/forms/GrupoFormDialog";
 import DeleteConfirmDialog from "@/components/shared/DeleteConfirmDialog";
 import ReporteGrupoFormDialog from "@/components/forms/ReporteGrupoFormDialog";
-import GrupoMembersPanel from "@/components/groups/GrupoMembersPanel";
+import GrupoPerfilView from "@/components/groups/GrupoPerfilView";
 import GrupoHierarchyView from "@/components/groups/GrupoHierarchyView";
 import { Users, Pencil, Plus, ClipboardList, ChevronLeft } from "lucide-react";
 import { useGrupos, useDeleteGrupo } from "@/hooks/useDatabase";
@@ -24,7 +24,7 @@ export default function GruposPage() {
   const deleteGrupo = useDeleteGrupo();
   const [editing, setEditing] = useState<any>(null);
   const [showReportForm, setShowReportForm] = useState(false);
-  const [selectedGrupo, setSelectedGrupo] = useState<any>(null);
+  const [selectedGrupoId, setSelectedGrupoId] = useState<string | null>(null);
 
   if (isLoading) {
     return (
@@ -46,18 +46,9 @@ export default function GruposPage() {
     catch { toast.error("Error al eliminar"); }
   };
 
-  // If a group is selected, show members panel
-  if (selectedGrupo) {
-    return (
-      <div className="animate-fade-in">
-        <div className="flex items-center gap-3 mb-6">
-          <Button variant="ghost" size="sm" className="gap-1" onClick={() => setSelectedGrupo(null)}>
-            <ChevronLeft className="h-4 w-4" /> Volver a Grupos
-          </Button>
-        </div>
-        <GrupoMembersPanel grupoId={selectedGrupo.id} grupoNombre={selectedGrupo.nombre} />
-      </div>
-    );
+  // If a group is selected, show profile view
+  if (selectedGrupoId) {
+    return <GrupoPerfilView grupoId={selectedGrupoId} onBack={() => setSelectedGrupoId(null)} />;
   }
 
   return (
@@ -97,7 +88,7 @@ export default function GruposPage() {
               {
                 key: "nombre", label: "Grupo",
                 render: (g: any) => (
-                  <div className="flex items-center gap-3 cursor-pointer" onClick={() => setSelectedGrupo(g)}>
+                  <div className="flex items-center gap-3 cursor-pointer" onClick={() => setSelectedGrupoId(g.id)}>
                     <div className="w-8 h-8 rounded-lg bg-primary/10 flex items-center justify-center">
                       <Users className="h-4 w-4 text-primary" />
                     </div>
@@ -112,7 +103,7 @@ export default function GruposPage() {
               { key: "liderNombre", label: "Líder" },
               { key: "dia_reunion", label: "Día", render: (g: any) => `${g.dia_reunion || "—"} ${g.hora_reunion || ""}` },
               { key: "miembrosCount", label: "Miembros", render: (g: any) => (
-                <Button variant="ghost" size="sm" className="gap-1 h-7 font-semibold" onClick={() => setSelectedGrupo(g)}>
+                <Button variant="ghost" size="sm" className="gap-1 h-7 font-semibold" onClick={() => setSelectedGrupoId(g.id)}>
                   <Users className="h-3.5 w-3.5" /> {g.miembrosCount}
                 </Button>
               )},
