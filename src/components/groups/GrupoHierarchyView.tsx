@@ -235,7 +235,7 @@ export default function GrupoHierarchyView({ onSelectGrupo }: Props) {
           </div>
         </div>
 
-        <ScrollArea className="max-h-[calc(100vh-300px)]">
+        <div className="overflow-y-auto" style={{ maxHeight: 'calc(100vh - 340px)', minHeight: '300px' }}>
           <div className="p-2">
             {hierarchy.redes.map((red) => {
               const hasContent = red.grupos.length > 0 || red.liderRed;
@@ -352,7 +352,7 @@ export default function GrupoHierarchyView({ onSelectGrupo }: Props) {
               </div>
             )}
           </div>
-        </ScrollArea>
+        </div>
       </div>
 
       {/* ====== Create/Edit Dialog ====== */}
