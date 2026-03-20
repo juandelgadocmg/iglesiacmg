@@ -352,7 +352,7 @@ export default function GrupoHierarchyView({ onSelectGrupo }: Props) {
               </div>
             )}
           </div>
-        </ScrollArea>
+        </div>
       </div>
 
       {/* ====== Create/Edit Dialog ====== */}
