@@ -134,7 +134,7 @@ export default function GruposPage() {
                 Registra la asistencia, personas nuevas y ofrenda de tu grupo.
               </p>
               <p className="text-xs text-muted-foreground mt-1">
-                Solo disponible los días <strong>jueves</strong> hasta las 11:59 PM.
+                Solo disponible el día de reunión configurado en cada grupo.
               </p>
             </div>
             <Button onClick={() => setShowReportForm(true)} className="gap-2">
