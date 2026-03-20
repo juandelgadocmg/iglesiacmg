@@ -20,7 +20,7 @@ import {
   Users, Shield, Home, UserCheck, Search, UserPlus, X, MapPin, Clock,
   CalendarDays, Phone, Mail, ChevronLeft, Pencil, ClipboardList, TrendingUp,
   TrendingDown, UserMinus, Star, Network, Crown, BarChart3, FileText,
-  CheckCircle2, XCircle, DollarSign, Map as MapIcon, Eye,
+  CheckCircle2, XCircle, DollarSign, Map as MapIcon, Eye, Download,
 } from "lucide-react";
 import { toast } from "sonner";
 import { format, parseISO } from "date-fns";
@@ -28,6 +28,7 @@ import { es } from "date-fns/locale";
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid, LineChart, Line, Legend } from "recharts";
 import GrupoFormDialog from "@/components/forms/GrupoFormDialog";
 import ReporteGrupoFormDialog from "@/components/forms/ReporteGrupoFormDialog";
+import { exportGroupProfilePDF } from "@/lib/exportUtils";
 
 interface Props {
   grupoId: string;
