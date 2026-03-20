@@ -27,6 +27,22 @@ export default function GrupoFormDialog({ initialData, onClose }: Props) {
     const nombre = (fd.get("nombre") as string)?.trim();
     if (!nombre) { toast.error("El nombre es obligatorio"); return; }
 
+    const ubicacion = (fd.get("ubicacion") as string) || null;
+
+    // Geocode address if provided
+    let latitud: number | null = initialData?.latitud || null;
+    let longitud: number | null = initialData?.longitud || null;
+    if (ubicacion && ubicacion !== initialData?.ubicacion) {
+      try {
+        const res = await fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(ubicacion)}&limit=1`);
+        const results = await res.json();
+        if (results && results.length > 0) {
+          latitud = parseFloat(results[0].lat);
+          longitud = parseFloat(results[0].lon);
+        }
+      } catch { /* ignore geocoding errors */ }
+    }
+
     const payload = {
       nombre,
       tipo: (fd.get("tipo") as any),
@@ -34,8 +50,10 @@ export default function GrupoFormDialog({ initialData, onClose }: Props) {
       lider_id: (fd.get("lider_id") as string) || null,
       dia_reunion: (fd.get("dia_reunion") as string) || null,
       hora_reunion: (fd.get("hora_reunion") as string) || null,
-      ubicacion: (fd.get("ubicacion") as string) || null,
+      ubicacion,
       red: (fd.get("red") as string) || null,
+      latitud,
+      longitud,
     };
 
     try {
