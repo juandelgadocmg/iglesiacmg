@@ -10,16 +10,19 @@ import { Switch } from "@/components/ui/switch";
 import { Checkbox } from "@/components/ui/checkbox";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Separator } from "@/components/ui/separator";
+import { Calendar } from "@/components/ui/calendar";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { cn } from "@/lib/utils";
-import { format, getDay } from "date-fns";
+import { format, getDay, parseISO } from "date-fns";
 import { es } from "date-fns/locale";
 import {
   ChevronRight, ChevronLeft, Users, UserPlus,
   CheckCircle2, XCircle, ClipboardList, DollarSign, Send,
-  AlertTriangle, Ban, FileCheck,
+  AlertTriangle, Ban, FileCheck, Search, X, UserCircle,
+  Calendar as CalendarIcon, MapPin, Phone, Mail,
 } from "lucide-react";
 import { useGrupos } from "@/hooks/useDatabase";
-import { useCreateReporteGrupo, useGrupoMiembrosForReport } from "@/hooks/useReportesGrupos";
+import { useCreateReporteGrupo, useGrupoMiembrosForReport, useReportesGrupos } from "@/hooks/useReportesGrupos";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 
@@ -32,12 +35,20 @@ interface AttendanceRecord {
   presente: boolean;
   es_nuevo: boolean;
   motivo_ausencia: string;
+  rol?: string;
 }
 
 interface NuevaPersona {
+  tipo_documento: string;
+  documento: string;
   nombres: string;
   apellidos: string;
+  fecha_nacimiento: string;
+  sexo: string;
   telefono: string;
+  fecha_ingreso: string;
+  email: string;
+  tipo: "menor" | "asistente";
   aceptaTerminos: boolean;
 }
 
@@ -47,74 +58,171 @@ interface Props {
   editReporteId?: string | null;
 }
 
-const STEPS = ["Grupo", "Personas Nuevas", "Asistencia", "Finanzas"];
+const MOTIVOS_AUSENCIA = [
+  "Calamidad doméstica",
+  "Causa desconocida",
+  "Compromiso laboral",
+  "Compromiso académico",
+  "Compromiso familiar",
+  "Condiciones climáticas",
+  "Enfermedad",
+  "Desánimo",
+  "Incapacidad",
+  "Problemas de movilidad",
+  "Vacaciones",
+  "Actividad en la iglesia",
+  "Actividad ministerial",
+  "No le dieron permiso",
+  "Viaje",
+  "No quiso",
+  "Otro",
+  "Grupo no realizado",
+];
+
+const TIPOS_DOCUMENTO = [
+  "Cédula de Ciudadanía",
+  "Tarjeta de Identidad",
+  "Cédula de Extranjería",
+  "Pasaporte",
+  "Registro Civil",
+  "NIT",
+  "Otro",
+];
 
 function isThursday(): boolean {
-  return getDay(new Date()) === 4; // 0=Sunday, 4=Thursday
+  return getDay(new Date()) === 4;
 }
 
+const emptyNewPerson = (): NuevaPersona => ({
+  tipo_documento: "",
+  documento: "",
+  nombres: "",
+  apellidos: "",
+  fecha_nacimiento: "",
+  sexo: "Masculino",
+  telefono: "",
+  fecha_ingreso: format(new Date(), "yyyy-MM-dd"),
+  email: "",
+  tipo: "asistente",
+  aceptaTerminos: false,
+});
+
 export default function ReporteGrupoFormDialog({ open, onOpenChange, editReporteId }: Props) {
+  // Steps: 0 = datos principales (grupo + calendario), 1 = asistencia + finanzas
   const [step, setStep] = useState(0);
   const [grupoId, setGrupoId] = useState("");
+  const [grupoSearch, setGrupoSearch] = useState("");
+  const [selectedDate, setSelectedDate] = useState<Date>(new Date());
   const [mensaje, setMensaje] = useState("");
   const [observaciones, setObservaciones] = useState("");
-  const [noRealizado, setNoRealizado] = useState(false);
+  const [seRealizo, setSeRealizo] = useState(true);
   const [ofrendaCasaPaz, setOfrendaCasaPaz] = useState("");
   const [totalReportado, setTotalReportado] = useState("");
+  const [invitados, setInvitados] = useState(0);
   const [attendance, setAttendance] = useState<AttendanceRecord[]>([]);
-  const [nuevasPersonas, setNuevasPersonas] = useState<NuevaPersona[]>([]);
-  const [newForm, setNewForm] = useState<NuevaPersona>({ nombres: "", apellidos: "", telefono: "", aceptaTerminos: false });
   const [showReceipt, setShowReceipt] = useState(false);
   const [receiptData, setReceiptData] = useState<any>(null);
 
+  // New person modals
+  const [showNewPersonModal, setShowNewPersonModal] = useState(false);
+  const [showNewPersonForm, setShowNewPersonForm] = useState(false);
+  const [newPersonType, setNewPersonType] = useState<"menor" | "asistente">("asistente");
+  const [newForm, setNewForm] = useState<NuevaPersona>(emptyNewPerson());
+  const [nuevasPersonas, setNuevasPersonas] = useState<NuevaPersona[]>([]);
+  const [newPersonaIds, setNewPersonaIds] = useState<string[]>([]);
+
   const { data: grupos } = useGrupos();
   const { data: miembros, isLoading: loadingMiembros } = useGrupoMiembrosForReport(grupoId || null);
+  const { data: allReportes } = useReportesGrupos();
   const createReporte = useCreateReporteGrupo();
 
   const selectedGrupo = grupos?.find((g) => g.id === grupoId);
   const thursdayAllowed = isThursday();
 
-  // Also fetch leader from the grupo to include in attendance
+  // Filter groups by search
+  const filteredGrupos = useMemo(() => {
+    if (!grupos || !grupoSearch.trim()) return [];
+    const q = grupoSearch.toLowerCase();
+    return grupos.filter(g =>
+      g.nombre.toLowerCase().includes(q) ||
+      g.tipo?.toLowerCase().includes(q) ||
+      g.id.toLowerCase().includes(q)
+    ).slice(0, 8);
+  }, [grupos, grupoSearch]);
+
+  // Get existing reports for calendar markers
+  const grupoReportes = useMemo(() => {
+    if (!allReportes || !grupoId) return [];
+    return allReportes.filter(r => r.grupo_id === grupoId);
+  }, [allReportes, grupoId]);
+
+  // Get leader info
+  const liderInfo = useMemo(() => {
+    if (!selectedGrupo) return null;
+    return (selectedGrupo as any).personas || null;
+  }, [selectedGrupo]);
+
+  // Get encargados (leaders/subliders from grupo_miembros)
+  const encargados = useMemo(() => {
+    return attendance.filter(a => 
+      a.rol === "lider" || a.rol === "sublider" || a.rol === "anfitrion" ||
+      a.tipo_persona === "Líder" || a.tipo_persona === "Líder Casa de Paz" || a.tipo_persona === "Líder de Red"
+    );
+  }, [attendance]);
+
+  const asistentes = useMemo(() => {
+    return attendance.filter(a => !encargados.some(e => e.persona_id === a.persona_id));
+  }, [attendance, encargados]);
+
+  // Load members when group selected
   useEffect(() => {
     if (miembros && miembros.length > 0 && grupoId) {
-      setAttendance(
-        miembros.map((m) => ({
+      // Fetch roles from grupo_miembros
+      const loadRoles = async () => {
+        const { data: memberData } = await supabase
+          .from("grupo_miembros")
+          .select("persona_id, rol")
+          .eq("grupo_id", grupoId) as any;
+        
+        const roleMap: Record<string, string> = {};
+        (memberData || []).forEach((m: any) => { roleMap[m.persona_id] = m.rol || "asistente"; });
+
+        const records: AttendanceRecord[] = miembros.map((m) => ({
           persona_id: m.id,
           nombres: m.nombres,
           apellidos: m.apellidos,
           foto_url: m.foto_url,
           tipo_persona: m.tipo_persona,
-          presente: true,
+          presente: false,
           es_nuevo: false,
           motivo_ausencia: "",
-        }))
-      );
-    }
-  }, [miembros, grupoId]);
+          rol: roleMap[m.id] || "asistente",
+        }));
 
-  // If grupo has a leader not in miembros list, add them
-  useEffect(() => {
-    if (selectedGrupo && (selectedGrupo as any).personas && miembros) {
-      const leader = (selectedGrupo as any).personas;
-      const leaderInList = attendance.some(a => a.persona_id === leader.id);
-      if (!leaderInList && leader.id) {
-        setAttendance(prev => [{
-          persona_id: leader.id,
-          nombres: leader.nombres,
-          apellidos: leader.apellidos,
-          foto_url: leader.foto_url || null,
-          tipo_persona: leader.tipo_persona || "Líder",
-          presente: true,
-          es_nuevo: false,
-          motivo_ausencia: "",
-        }, ...prev]);
-      }
+        // Add leader if not in list
+        if (liderInfo && !records.some(r => r.persona_id === liderInfo.id)) {
+          records.unshift({
+            persona_id: liderInfo.id,
+            nombres: liderInfo.nombres,
+            apellidos: liderInfo.apellidos,
+            foto_url: liderInfo.foto_url || null,
+            tipo_persona: liderInfo.tipo_persona || "Líder",
+            presente: false,
+            es_nuevo: false,
+            motivo_ausencia: "",
+            rol: "lider",
+          });
+        }
+
+        setAttendance(records);
+      };
+      loadRoles();
     }
-  }, [selectedGrupo, miembros]);
+  }, [miembros, grupoId, liderInfo]);
 
   const togglePresente = (personaId: string) => {
     setAttendance((prev) =>
-      prev.map((a) => (a.persona_id === personaId ? { ...a, presente: !a.presente, motivo_ausencia: a.presente ? "" : a.motivo_ausencia } : a))
+      prev.map((a) => (a.persona_id === personaId ? { ...a, presente: !a.presente, motivo_ausencia: a.presente ? a.motivo_ausencia : "" } : a))
     );
   };
 
@@ -124,7 +232,16 @@ export default function ReporteGrupoFormDialog({ open, onOpenChange, editReporte
     );
   };
 
-  const addNuevaPersona = () => {
+  const openNewPersonForm = (tipo: "menor" | "asistente") => {
+    setNewPersonType(tipo);
+    const np = emptyNewPerson();
+    np.tipo = tipo;
+    setNewForm(np);
+    setShowNewPersonModal(false);
+    setShowNewPersonForm(true);
+  };
+
+  const saveNewPerson = async () => {
     if (!newForm.nombres || !newForm.apellidos) {
       toast.error("Nombre y apellido son obligatorios.");
       return;
@@ -133,23 +250,67 @@ export default function ReporteGrupoFormDialog({ open, onOpenChange, editReporte
       toast.error("Debe aceptar los términos y condiciones.");
       return;
     }
-    setNuevasPersonas((prev) => [...prev, { ...newForm }]);
-    setNewForm({ nombres: "", apellidos: "", telefono: "", aceptaTerminos: false });
-  };
 
-  const removeNuevaPersona = (index: number) => {
-    setNuevasPersonas((prev) => prev.filter((_, i) => i !== index));
+    try {
+      const { data: persona, error } = await supabase
+        .from("personas")
+        .insert({
+          nombres: newForm.nombres,
+          apellidos: newForm.apellidos,
+          telefono: newForm.telefono || null,
+          email: newForm.email || null,
+          documento: newForm.documento || null,
+          tipo_documento: newForm.tipo_documento || null,
+          fecha_nacimiento: newForm.fecha_nacimiento || null,
+          sexo: newForm.sexo || null,
+          fecha_ingreso: newForm.fecha_ingreso || null,
+          tipo_persona: (newForm.tipo === "menor" ? "Visitante" : "CDP") as any,
+          grupo_id: grupoId,
+        })
+        .select("id, nombres, apellidos, foto_url, tipo_persona")
+        .single();
+      if (error) throw error;
+
+      await supabase.from("grupo_miembros").insert({
+        grupo_id: grupoId,
+        persona_id: persona.id,
+      } as any);
+
+      setNewPersonaIds(prev => [...prev, persona.id]);
+      setNuevasPersonas(prev => [...prev, { ...newForm }]);
+
+      // Add to attendance as presente
+      setAttendance(prev => [...prev, {
+        persona_id: persona.id,
+        nombres: newForm.nombres,
+        apellidos: newForm.apellidos,
+        foto_url: null,
+        tipo_persona: newForm.tipo === "menor" ? "Visitante" : "CDP",
+        presente: true,
+        es_nuevo: true,
+        motivo_ausencia: "",
+        rol: "asistente",
+      }]);
+
+      setShowNewPersonForm(false);
+      setNewForm(emptyNewPerson());
+      toast.success(`${newForm.nombres} ${newForm.apellidos} agregado(a) exitosamente.`);
+    } catch (err: any) {
+      toast.error("Error al guardar persona: " + (err.message || ""));
+    }
   };
 
   const presentesCount = attendance.filter((a) => a.presente).length;
   const ausentesCount = attendance.filter((a) => !a.presente).length;
+  const nuevosCount = attendance.filter(a => a.es_nuevo).length;
+  const hombresCount = 0; // We don't have sex in attendance, could be enhanced
+  const mujeresCount = 0;
 
-  // Validate attendance: all absent members must have motivo
   const attendanceValid = useMemo(() => {
-    if (noRealizado) return true;
+    if (!seRealizo) return true;
     const absentWithoutMotivo = attendance.filter(a => !a.presente && !a.motivo_ausencia.trim());
     return absentWithoutMotivo.length === 0;
-  }, [attendance, noRealizado]);
+  }, [attendance, seRealizo]);
 
   const handleSubmit = async () => {
     if (!grupoId || !mensaje) {
@@ -157,72 +318,45 @@ export default function ReporteGrupoFormDialog({ open, onOpenChange, editReporte
       return;
     }
 
-    if (!noRealizado && !attendanceValid) {
+    if (seRealizo && !attendanceValid) {
       toast.error("Debe indicar el motivo de ausencia para todos los ausentes.");
       return;
     }
 
     try {
-      const newPersonaIds: string[] = [];
-      if (!noRealizado) {
-        for (const np of nuevasPersonas) {
-          const { data: persona, error: pErr } = await supabase
-            .from("personas")
-            .insert({
-              nombres: np.nombres,
-              apellidos: np.apellidos,
-              telefono: np.telefono || null,
-              tipo_persona: "CDP" as any,
-              grupo_id: grupoId,
-            })
-            .select("id")
-            .single();
-          if (pErr) throw pErr;
-          newPersonaIds.push(persona.id);
-
-          await supabase.from("grupo_miembros").insert({
-            grupo_id: grupoId,
-            persona_id: persona.id,
-          } as any);
-        }
-      }
-
-      const allAttendance = noRealizado ? [] : [
-        ...attendance.map((a) => ({
-          persona_id: a.persona_id,
-          presente: a.presente,
-          es_nuevo: false,
-          motivo_ausencia: a.motivo_ausencia || undefined,
-        })),
-        ...newPersonaIds.map((pid) => ({
-          persona_id: pid,
-          presente: true,
-          es_nuevo: true,
-        })),
-      ];
+      const allAttendance = !seRealizo ? [] : attendance.map((a) => ({
+        persona_id: a.persona_id,
+        presente: a.presente,
+        es_nuevo: a.es_nuevo,
+        motivo_ausencia: a.motivo_ausencia || undefined,
+      }));
 
       await createReporte.mutateAsync({
         grupo_id: grupoId,
-        fecha: format(new Date(), "yyyy-MM-dd"),
+        fecha: format(selectedDate, "yyyy-MM-dd"),
         mensaje,
         observaciones: observaciones || undefined,
         ofrenda_casa_paz: parseFloat(ofrendaCasaPaz) || 0,
         total_reportado: parseFloat(totalReportado) || 0,
-        no_realizado: noRealizado,
+        no_realizado: !seRealizo,
         asistencia: allAttendance,
       });
 
-      // Show receipt instead of closing
       setReceiptData({
         grupo: selectedGrupo?.nombre,
-        fecha: format(new Date(), "PPP", { locale: es }),
+        tipo: selectedGrupo?.tipo,
+        dia_reunion: (selectedGrupo as any)?.dia_reunion,
+        fecha: format(selectedDate, "yyyy-MM-dd"),
         mensaje,
-        noRealizado,
-        presentes: presentesCount + newPersonaIds.length,
+        noRealizado: !seRealizo,
+        presentes: presentesCount,
         ausentes: ausentesCount,
-        nuevos: nuevasPersonas.length,
+        nuevos: nuevosCount,
+        invitados,
         ofrenda: parseFloat(ofrendaCasaPaz) || 0,
         total: parseFloat(totalReportado) || 0,
+        encargados,
+        asistentes: attendance,
       });
       setShowReceipt(true);
       toast.success("Reporte enviado exitosamente.");
@@ -234,24 +368,26 @@ export default function ReporteGrupoFormDialog({ open, onOpenChange, editReporte
   const resetForm = () => {
     setStep(0);
     setGrupoId("");
+    setGrupoSearch("");
+    setSelectedDate(new Date());
     setMensaje("");
     setObservaciones("");
-    setNoRealizado(false);
+    setSeRealizo(true);
     setOfrendaCasaPaz("");
     setTotalReportado("");
+    setInvitados(0);
     setAttendance([]);
     setNuevasPersonas([]);
+    setNewPersonaIds([]);
     setShowReceipt(false);
     setReceiptData(null);
+    setShowNewPersonModal(false);
+    setShowNewPersonForm(false);
   };
 
-  const canNext = () => {
-    if (step === 0) return !!grupoId && !!mensaje;
-    if (step === 2 && !noRealizado && !attendanceValid) return false;
-    return true;
-  };
+  const canCreateReport = !!grupoId && !!mensaje;
 
-  // If not Thursday, show restriction message
+  // Thursday restriction
   if (open && !thursdayAllowed && !editReporteId) {
     return (
       <Dialog open={open} onOpenChange={(o) => { if (!o) resetForm(); onOpenChange(o); }}>
@@ -280,377 +416,681 @@ export default function ReporteGrupoFormDialog({ open, onOpenChange, editReporte
     );
   }
 
-  // Receipt view
-  if (showReceipt && receiptData) {
-    return (
-      <Dialog open={open} onOpenChange={(o) => { if (!o) resetForm(); onOpenChange(o); }}>
-        <DialogContent className="sm:max-w-md">
-          <DialogHeader>
-            <DialogTitle className="flex items-center gap-2">
-              <FileCheck className="h-5 w-5 text-success" />
-              Reporte Enviado
-            </DialogTitle>
-          </DialogHeader>
-          <div className="space-y-4 py-2">
-            <div className="rounded-xl border-2 border-success/30 bg-success/5 p-5 space-y-4">
-              <div className="text-center">
-                <CheckCircle2 className="h-10 w-10 text-success mx-auto mb-2" />
-                <p className="font-bold text-lg">¡Reporte enviado con éxito!</p>
+  // New person modal: "¿Tienes personas nuevas?"
+  const renderNewPersonModal = () => (
+    <Dialog open={showNewPersonModal} onOpenChange={setShowNewPersonModal}>
+      <DialogContent className="sm:max-w-md p-0 overflow-hidden">
+        <div className="bg-primary text-primary-foreground p-8 text-center space-y-3">
+          <UserCircle className="h-16 w-16 mx-auto opacity-90" />
+          <h2 className="text-2xl font-bold">¿Tienes personas nuevas?</h2>
+        </div>
+        <div className="p-6 space-y-4">
+          <div>
+            <p className="font-semibold text-lg">¡Bendiciones!</p>
+            <p className="text-sm text-muted-foreground mt-1">
+              Si tienes personas nuevas para este reporte recuerda crearlas antes de continuar con el reporte y marcar asistencia.
+            </p>
+          </div>
+          <div className="flex flex-wrap gap-3 justify-center">
+            <Button className="gap-2" onClick={() => openNewPersonForm("menor")}>
+              Sí, Nuevo Menor Reporte Grupo
+            </Button>
+            <Button className="gap-2" onClick={() => openNewPersonForm("asistente")}>
+              Sí, Nuevo Asistente Reporte Grupo
+            </Button>
+          </div>
+          <div className="text-center">
+            <Button variant="destructive" onClick={() => setShowNewPersonModal(false)}>
+              No, continuar con el reporte
+            </Button>
+          </div>
+        </div>
+      </DialogContent>
+    </Dialog>
+  );
+
+  // New person form dialog
+  const renderNewPersonFormDialog = () => (
+    <Dialog open={showNewPersonForm} onOpenChange={setShowNewPersonForm}>
+      <DialogContent className="sm:max-w-3xl p-0 overflow-hidden max-h-[90vh]">
+        <div className="bg-primary text-primary-foreground p-6 text-center space-y-2">
+          <UserCircle className="h-12 w-12 mx-auto opacity-90" />
+          <h2 className="text-xl font-bold uppercase">
+            {newPersonType === "menor" ? "Nuevo Menor Reporte Grupo" : "Nuevo Asistente Reporte Grupo"}
+          </h2>
+          <p className="text-sm opacity-80">* Campos obligatorios</p>
+        </div>
+        <ScrollArea className="max-h-[60vh]">
+          <div className="p-6 space-y-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4">
+              <div className="space-y-1.5">
+                <label className="text-sm font-medium">* Tipo de identificación</label>
+                <Select value={newForm.tipo_documento} onValueChange={(v) => setNewForm({ ...newForm, tipo_documento: v })}>
+                  <SelectTrigger><SelectValue placeholder="Seleccionar..." /></SelectTrigger>
+                  <SelectContent>
+                    {TIPOS_DOCUMENTO.map(t => <SelectItem key={t} value={t}>{t}</SelectItem>)}
+                  </SelectContent>
+                </Select>
               </div>
-              <Separator />
-              {receiptData.noRealizado ? (
-                <div className="text-center py-2">
-                  <Badge variant="secondary" className="text-sm">Grupo NO se realizó</Badge>
-                </div>
-              ) : null}
-              <div className="grid grid-cols-2 gap-2 text-sm">
-                <span className="text-muted-foreground">Grupo:</span>
-                <span className="font-medium">{receiptData.grupo}</span>
-                <span className="text-muted-foreground">Fecha:</span>
-                <span className="font-medium">{receiptData.fecha}</span>
-                <span className="text-muted-foreground">Mensaje:</span>
-                <span className="font-medium">{receiptData.mensaje}</span>
-                {!receiptData.noRealizado && (
-                  <>
-                    <span className="text-muted-foreground">Presentes:</span>
-                    <span className="font-medium text-success">{receiptData.presentes}</span>
-                    <span className="text-muted-foreground">Ausentes:</span>
-                    <span className="font-medium text-destructive">{receiptData.ausentes}</span>
-                    <span className="text-muted-foreground">Nuevos:</span>
-                    <span className="font-medium text-info">{receiptData.nuevos}</span>
-                  </>
-                )}
-                <span className="text-muted-foreground">Ofrenda:</span>
-                <span className="font-medium">${receiptData.ofrenda.toFixed(2)}</span>
-                <span className="text-muted-foreground">Total:</span>
-                <span className="font-bold">${receiptData.total.toFixed(2)}</span>
+              <div className="space-y-1.5">
+                <label className="text-sm font-medium">* Identificación</label>
+                <Input value={newForm.documento} onChange={(e) => setNewForm({ ...newForm, documento: e.target.value })} />
+              </div>
+              <div className="space-y-1.5">
+                <label className="text-sm font-medium">* Fecha de nacimiento</label>
+                <Input type="date" value={newForm.fecha_nacimiento} onChange={(e) => setNewForm({ ...newForm, fecha_nacimiento: e.target.value })} />
+              </div>
+              <div className="space-y-1.5">
+                <label className="text-sm font-medium">* Sexo</label>
+                <Select value={newForm.sexo} onValueChange={(v) => setNewForm({ ...newForm, sexo: v })}>
+                  <SelectTrigger><SelectValue /></SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="Masculino">Masculino</SelectItem>
+                    <SelectItem value="Femenino">Femenino</SelectItem>
+                  </SelectContent>
+                </Select>
               </div>
             </div>
+
+            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4">
+              <div className="space-y-1.5">
+                <label className="text-sm font-medium">* Primer nombre</label>
+                <Input value={newForm.nombres.split(" ")[0] || ""} onChange={(e) => {
+                  const parts = newForm.nombres.split(" ");
+                  parts[0] = e.target.value;
+                  setNewForm({ ...newForm, nombres: parts.join(" ").trim() });
+                }} />
+              </div>
+              <div className="space-y-1.5">
+                <label className="text-sm font-medium">Segundo nombre</label>
+                <Input value={newForm.nombres.split(" ").slice(1).join(" ")} onChange={(e) => {
+                  const first = newForm.nombres.split(" ")[0] || "";
+                  setNewForm({ ...newForm, nombres: `${first} ${e.target.value}`.trim() });
+                }} />
+              </div>
+              <div className="space-y-1.5">
+                <label className="text-sm font-medium">* Primer apellido</label>
+                <Input value={newForm.apellidos.split(" ")[0] || ""} onChange={(e) => {
+                  const parts = newForm.apellidos.split(" ");
+                  parts[0] = e.target.value;
+                  setNewForm({ ...newForm, apellidos: parts.join(" ").trim() });
+                }} />
+              </div>
+              <div className="space-y-1.5">
+                <label className="text-sm font-medium">Segundo apellido</label>
+                <Input value={newForm.apellidos.split(" ").slice(1).join(" ")} onChange={(e) => {
+                  const first = newForm.apellidos.split(" ")[0] || "";
+                  setNewForm({ ...newForm, apellidos: `${first} ${e.target.value}`.trim() });
+                }} />
+              </div>
+            </div>
+
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+              <div className="space-y-1.5">
+                <label className="text-sm font-medium">Teléfono móvil</label>
+                <Input value={newForm.telefono} onChange={(e) => setNewForm({ ...newForm, telefono: e.target.value })} placeholder="📱" />
+              </div>
+              <div className="space-y-1.5">
+                <label className="text-sm font-medium">* Fecha de ingreso a la iglesia</label>
+                <Input type="date" value={newForm.fecha_ingreso} onChange={(e) => setNewForm({ ...newForm, fecha_ingreso: e.target.value })} />
+              </div>
+              <div className="space-y-1.5">
+                <label className="text-sm font-medium">* E-mail</label>
+                <Input type="email" value={newForm.email} onChange={(e) => setNewForm({ ...newForm, email: e.target.value })} placeholder="@ Escriba su E-mail" />
+              </div>
+            </div>
+
+            <div className="flex items-start gap-2 p-3 rounded-lg border bg-muted/30">
+              <Checkbox
+                id="terminos-new"
+                checked={newForm.aceptaTerminos}
+                onCheckedChange={(v) => setNewForm({ ...newForm, aceptaTerminos: !!v })}
+              />
+              <label htmlFor="terminos-new" className="text-xs cursor-pointer leading-relaxed">
+                <strong>Acepta los términos y condiciones.</strong> Autorizo el uso de la información suministrada en el presente formulario a la Iglesia. Los datos aquí recopilados serán tratados según lo señalado en las políticas de privacidad para el tratamiento de datos personales de la Iglesia, el cual incluye, entre otras, el envío de notificaciones. El titular de los datos podrá cuando él lo desee, solicitar que la información sea modificada, actualizada o retirada de la base de datos.
+              </label>
+            </div>
+
+            <div className="flex justify-end gap-3">
+              <Button onClick={saveNewPerson} className="gap-2">
+                💾 Guardar
+              </Button>
+              <Button variant="destructive" onClick={() => setShowNewPersonForm(false)}>
+                No, continuar
+              </Button>
+            </div>
           </div>
-          <Button onClick={() => { resetForm(); onOpenChange(false); }} className="w-full">Cerrar</Button>
+        </ScrollArea>
+      </DialogContent>
+    </Dialog>
+  );
+
+  // Receipt view
+  if (open && showReceipt && receiptData) {
+    return (
+      <Dialog open={open} onOpenChange={(o) => { if (!o) resetForm(); onOpenChange(o); }}>
+        <DialogContent className="sm:max-w-4xl max-h-[90vh] overflow-auto">
+          <div className="space-y-4">
+            <div className="border-b pb-3">
+              <h2 className="text-xl font-bold">REPORTE: {receiptData.mensaje}</h2>
+              <p className="text-sm text-muted-foreground flex items-center gap-1">
+                <CalendarIcon className="h-3.5 w-3.5" /> Fecha de reunión: {receiptData.fecha}
+              </p>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+              {/* Left: Encargados + clasificación */}
+              <div className="space-y-4">
+                <Card>
+                  <CardHeader className="pb-2">
+                    <CardTitle className="text-sm">{encargados.length} Encargado(s)</CardTitle>
+                  </CardHeader>
+                  <CardContent className="space-y-3">
+                    {(receiptData.encargados || []).map((enc: AttendanceRecord) => (
+                      <div key={enc.persona_id} className="text-center space-y-1">
+                        <Avatar className="h-14 w-14 mx-auto">
+                          <AvatarImage src={enc.foto_url || undefined} />
+                          <AvatarFallback>{enc.nombres[0]}{enc.apellidos[0]}</AvatarFallback>
+                        </Avatar>
+                        <p className="text-sm font-medium">{enc.nombres} {enc.apellidos}</p>
+                        <p className="text-xs text-muted-foreground">{enc.tipo_persona}</p>
+                        <p className="text-xs">¿Asistió? <span className={enc.presente ? "text-success font-medium" : "text-destructive font-medium"}>{enc.presente ? "Sí" : "No"}</span></p>
+                      </div>
+                    ))}
+                  </CardContent>
+                </Card>
+
+                <Card>
+                  <CardHeader className="pb-2">
+                    <CardTitle className="text-sm">📊 Clasificación</CardTitle>
+                  </CardHeader>
+                  <CardContent className="space-y-1 text-sm">
+                    <div className="flex justify-between"><span>Hombres</span><span>{hombresCount}</span></div>
+                    <div className="flex justify-between"><span>Mujeres</span><span>{mujeresCount}</span></div>
+                    <div className="flex justify-between"><span>Invitados</span><span>{receiptData.invitados}</span></div>
+                    <Separator className="my-1" />
+                    <div className="flex justify-between font-medium"><span>Asistieron</span><span className="text-success">{receiptData.presentes}</span></div>
+                    <div className="flex justify-between font-medium"><span>No asistieron</span><span className="text-destructive">{receiptData.ausentes}</span></div>
+                  </CardContent>
+                </Card>
+
+                <Card>
+                  <CardHeader className="pb-2">
+                    <CardTitle className="text-sm">💰 Resumen financiero</CardTitle>
+                  </CardHeader>
+                  <CardContent className="space-y-1 text-sm">
+                    <p className="text-xs text-muted-foreground">💲 Digitado por el Líder</p>
+                    <div className="flex justify-between"><span>TIPO</span><span>TOTAL</span></div>
+                    <Separator />
+                    <div className="flex justify-between font-bold"><span>TOTAL</span><span>💲 {receiptData.total.toFixed(0)}</span></div>
+                  </CardContent>
+                </Card>
+              </div>
+
+              {/* Right: Info + asistencia */}
+              <div className="md:col-span-2 space-y-4">
+                <Card>
+                  <CardHeader className="pb-2">
+                    <CardTitle className="text-sm">ℹ️ Información principal</CardTitle>
+                  </CardHeader>
+                  <CardContent className="space-y-1 text-sm">
+                    <p>✅ Grupo: ({receiptData.grupo})</p>
+                    <p>📅 Día de reunión: {receiptData.dia_reunion || "—"}</p>
+                    <p>⭕ Tipo de grupo: {receiptData.tipo || "—"}</p>
+                  </CardContent>
+                </Card>
+
+                {/* Personas que asistieron */}
+                <Card>
+                  <CardHeader className="pb-2">
+                    <CardTitle className="text-sm text-success">Personas que asistieron</CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="flex flex-wrap gap-4">
+                      {(receiptData.asistentes as AttendanceRecord[])
+                        .filter(a => a.presente && !encargados.some(e => e.persona_id === a.persona_id))
+                        .map(a => (
+                          <div key={a.persona_id} className="text-center space-y-1">
+                            <Avatar className="h-12 w-12 mx-auto">
+                              <AvatarImage src={a.foto_url || undefined} />
+                              <AvatarFallback className="text-xs">{a.nombres[0]}{a.apellidos[0]}</AvatarFallback>
+                            </Avatar>
+                            <p className="text-xs font-medium">{a.nombres}</p>
+                            <p className="text-[10px] text-muted-foreground">{a.tipo_persona}</p>
+                          </div>
+                        ))}
+                    </div>
+                  </CardContent>
+                </Card>
+
+                {/* Personas que no asistieron */}
+                <Card>
+                  <CardHeader className="pb-2">
+                    <CardTitle className="text-sm text-destructive">Personas que no asistieron</CardTitle>
+                  </CardHeader>
+                  <CardContent className="space-y-3">
+                    {(receiptData.asistentes as AttendanceRecord[])
+                      .filter(a => !a.presente)
+                      .map(a => (
+                        <div key={a.persona_id} className="flex items-center gap-3 p-2 rounded-lg bg-muted/30">
+                          <Avatar className="h-10 w-10">
+                            <AvatarImage src={a.foto_url || undefined} />
+                            <AvatarFallback className="text-xs">{a.nombres[0]}{a.apellidos[0]}</AvatarFallback>
+                          </Avatar>
+                          <div className="flex-1">
+                            <p className="text-sm font-medium">{a.nombres} {a.apellidos}</p>
+                            <p className="text-xs text-muted-foreground">{a.tipo_persona}</p>
+                          </div>
+                          <div className="text-right text-xs">
+                            <p className="font-medium text-destructive">TIPO INASISTENCIA: {a.motivo_ausencia || "—"}</p>
+                            <p className="text-muted-foreground">OBSERVACIÓN:</p>
+                          </div>
+                        </div>
+                      ))}
+                  </CardContent>
+                </Card>
+              </div>
+            </div>
+
+            <div className="flex justify-end pt-4">
+              <Button onClick={() => { resetForm(); onOpenChange(false); }}>Cerrar</Button>
+            </div>
+          </div>
         </DialogContent>
       </Dialog>
     );
   }
 
+  if (!open) return null;
+
+  // Calendar modifiers for existing reports
+  const reportDates = grupoReportes.map(r => parseISO(r.fecha));
+  const reportDateModifiers = {
+    reported: reportDates,
+  };
+
   return (
-    <Dialog open={open} onOpenChange={(o) => { if (!o) resetForm(); onOpenChange(o); }}>
-      <DialogContent className="sm:max-w-2xl max-h-[90vh] flex flex-col">
-        <DialogHeader>
-          <DialogTitle className="flex items-center gap-2">
-            <ClipboardList className="h-5 w-5" />
-            {editReporteId ? "Editar Reporte" : "Crear Reporte Semanal"}
-          </DialogTitle>
-        </DialogHeader>
-
-        {/* Step indicators */}
-        <div className="flex items-center gap-1 pb-2">
-          {STEPS.map((s, i) => {
-            // If noRealizado, skip steps 1 and 2
-            if (noRealizado && (i === 1 || i === 2)) {
-              return (
-                <div key={s} className="flex items-center gap-1 flex-1 opacity-30">
-                  <div className="flex items-center justify-center w-7 h-7 rounded-full text-xs font-semibold shrink-0 bg-muted text-muted-foreground line-through">
-                    {i + 1}
-                  </div>
-                  <span className="text-xs truncate hidden sm:block text-muted-foreground line-through">{s}</span>
-                  {i < STEPS.length - 1 && <div className="h-px flex-1 mx-1 bg-border" />}
-                </div>
-              );
-            }
-            return (
-              <div key={s} className="flex items-center gap-1 flex-1">
-                <div
-                  className={cn(
-                    "flex items-center justify-center w-7 h-7 rounded-full text-xs font-semibold shrink-0 transition-colors",
-                    i <= step ? "bg-primary text-primary-foreground" : "bg-muted text-muted-foreground"
-                  )}
-                >
-                  {i + 1}
-                </div>
-                <span className={cn("text-xs truncate hidden sm:block", i <= step ? "text-foreground font-medium" : "text-muted-foreground")}>
-                  {s}
-                </span>
-                {i < STEPS.length - 1 && <div className={cn("h-px flex-1 mx-1", i < step ? "bg-primary" : "bg-border")} />}
+    <>
+      <Dialog open={open} onOpenChange={(o) => { if (!o) resetForm(); onOpenChange(o); }}>
+        <DialogContent className="sm:max-w-6xl max-h-[90vh] flex flex-col p-0 gap-0">
+          {/* Header */}
+          <div className="p-4 border-b bg-background">
+            <div className="flex items-center justify-between">
+              <div>
+                <h1 className="text-xl font-bold uppercase tracking-wide">Reporte del Grupo</h1>
+                <p className="text-sm text-muted-foreground">
+                  {step === 0
+                    ? "Aquí podrá diligenciar la información general de tu reporte."
+                    : "Aquí podrás registrar las asistencias del reporte, al terminar recuerda dar CLIC en finalizar reporte."}
+                </p>
               </div>
-            );
-          })}
-        </div>
-
-        <Separator />
-
-        <ScrollArea className="flex-1 pr-2">
-          <div className="space-y-4 py-2">
-            {/* Step 0: Group selection */}
-            {step === 0 && (
-              <>
-                <div className="space-y-1.5">
-                  <label className="text-sm font-medium">Grupo *</label>
-                  <Select value={grupoId} onValueChange={setGrupoId}>
-                    <SelectTrigger><SelectValue placeholder="Seleccionar grupo..." /></SelectTrigger>
-                    <SelectContent>
-                      {grupos?.map((g) => (
-                        <SelectItem key={g.id} value={g.id}>{g.nombre} — {g.tipo}</SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-
-                {/* No realizado checkbox */}
-                <div className="flex items-center gap-3 p-3 rounded-lg border border-amber-300/50 bg-amber-50/50 dark:bg-amber-950/20">
-                  <Checkbox
-                    id="no-realizado"
-                    checked={noRealizado}
-                    onCheckedChange={(v) => setNoRealizado(!!v)}
-                  />
-                  <label htmlFor="no-realizado" className="text-sm font-medium cursor-pointer flex items-center gap-2">
-                    <Ban className="h-4 w-4 text-amber-600" />
-                    El grupo NO se realizó esta semana
-                  </label>
-                </div>
-
-                <div className="space-y-1.5">
-                  <label className="text-sm font-medium">Mensaje / Tema *</label>
-                  <Input value={mensaje} onChange={(e) => setMensaje(e.target.value)} placeholder={noRealizado ? "Motivo por el que no se realizó..." : "Tema del mensaje..."} />
-                </div>
-                <div className="space-y-1.5">
-                  <label className="text-sm font-medium">Observaciones</label>
-                  <Textarea value={observaciones} onChange={(e) => setObservaciones(e.target.value)} placeholder="Observaciones..." rows={3} />
-                </div>
-                {selectedGrupo && (
-                  <div className="flex items-center gap-2 p-3 rounded-lg bg-muted/50 text-sm">
-                    <Users className="h-4 w-4 text-muted-foreground" />
-                    <span>Grupo seleccionado: <strong>{selectedGrupo.nombre}</strong></span>
-                  </div>
+              <div className="flex items-center gap-2">
+                {step === 1 && (
+                  <Button size="sm" variant="outline" onClick={() => setStep(0)} className="gap-1">
+                    1 Datos Principales
+                  </Button>
                 )}
-              </>
-            )}
+                {step === 0 && grupoId && (
+                  <Button size="sm" variant="outline" onClick={() => { setStep(1); setShowNewPersonModal(true); }} className="gap-1 text-destructive border-destructive">
+                    2 Añadir Asistentes
+                  </Button>
+                )}
+              </div>
+            </div>
 
-            {/* Step 1: New people */}
-            {step === 1 && !noRealizado && (
-              <>
-                <div className="flex items-center gap-2 p-3 rounded-lg bg-info/10 border border-info/20 text-sm">
-                  <UserPlus className="h-5 w-5 text-info shrink-0" />
-                  <div>
-                    <p className="font-medium text-foreground">¿Tienes personas nuevas?</p>
-                    <p className="text-muted-foreground text-xs">Agrega personas nuevas que llegaron. Se guardarán automáticamente como <strong>CDP</strong> (Casa de Paz).</p>
-                  </div>
-                </div>
-
-                <div className="grid grid-cols-2 gap-3">
-                  <Input placeholder="Nombres *" value={newForm.nombres} onChange={(e) => setNewForm({ ...newForm, nombres: e.target.value })} />
-                  <Input placeholder="Apellidos *" value={newForm.apellidos} onChange={(e) => setNewForm({ ...newForm, apellidos: e.target.value })} />
-                  <Input placeholder="Teléfono" value={newForm.telefono} onChange={(e) => setNewForm({ ...newForm, telefono: e.target.value })} className="col-span-2" />
-                </div>
-                <div className="flex items-center gap-2 p-2 rounded-lg border">
-                  <Checkbox
-                    id="terminos-nueva"
-                    checked={newForm.aceptaTerminos}
-                    onCheckedChange={(v) => setNewForm({ ...newForm, aceptaTerminos: !!v })}
-                  />
-                  <label htmlFor="terminos-nueva" className="text-xs cursor-pointer">
-                    Acepto la política de tratamiento de datos personales conforme a la Ley 1581 de 2012.
-                  </label>
-                </div>
-                <Button variant="outline" className="gap-2 w-full" onClick={addNuevaPersona}>
-                  <UserPlus className="h-4 w-4" /> Agregar persona
+            <div className="flex gap-2 mt-3">
+              {step === 0 ? (
+                <Button
+                  size="sm"
+                  disabled={!canCreateReport}
+                  onClick={() => { setStep(1); setShowNewPersonModal(true); }}
+                >
+                  Crear reporte
                 </Button>
+              ) : (
+                <Button size="sm" onClick={handleSubmit} disabled={createReporte.isPending}>
+                  {createReporte.isPending ? "Enviando..." : "Finalizar Reporte"}
+                </Button>
+              )}
+              <Button size="sm" variant="destructive" className="gap-1" onClick={() => { resetForm(); onOpenChange(false); }}>
+                ↩ Cancelar
+              </Button>
+              <span className="ml-auto text-sm text-destructive">* Campos obligatorios</span>
+            </div>
+          </div>
 
-                {nuevasPersonas.length > 0 && (
-                  <div className="space-y-2">
-                    <p className="text-sm font-medium">Personas nuevas agregadas ({nuevasPersonas.length})</p>
-                    {nuevasPersonas.map((np, i) => (
-                      <div key={i} className="flex items-center justify-between p-2.5 rounded-lg bg-muted/50">
-                        <div className="flex items-center gap-3">
-                          <Avatar className="h-8 w-8">
-                            <AvatarFallback className="text-[10px]">{np.nombres[0]}{np.apellidos[0]}</AvatarFallback>
-                          </Avatar>
-                          <div>
-                            <p className="text-sm font-medium">{np.nombres} {np.apellidos}</p>
-                            <p className="text-xs text-muted-foreground">CDP{np.telefono ? ` · ${np.telefono}` : ""}</p>
-                          </div>
+          <ScrollArea className="flex-1">
+            {/* Step 0: Datos principales */}
+            {step === 0 && (
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-0">
+                {/* Left: Group info */}
+                <div className="p-6 space-y-4 border-r">
+                  <Card>
+                    <CardHeader className="pb-2">
+                      <CardTitle className="text-sm">Información del reporte</CardTitle>
+                    </CardHeader>
+                    <CardContent className="space-y-4">
+                      <div className="space-y-1.5">
+                        <label className="text-sm font-medium">Seleccione el grupo que desea reportar:</label>
+                        <div className="relative">
+                          <Input
+                            placeholder="Buscar grupo por código, nombre o cédula..."
+                            value={grupoSearch}
+                            onChange={(e) => { setGrupoSearch(e.target.value); if (grupoId) { setGrupoId(""); setAttendance([]); } }}
+                            className="pr-10"
+                          />
+                          <Search className="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                         </div>
-                        <Button size="sm" variant="ghost" className="text-destructive h-7" onClick={() => removeNuevaPersona(i)}>
-                          <XCircle className="h-4 w-4" />
-                        </Button>
+                        {/* Search results */}
+                        {grupoSearch && !grupoId && filteredGrupos.length > 0 && (
+                          <div className="border rounded-lg mt-1 max-h-48 overflow-auto bg-popover shadow-md">
+                            {filteredGrupos.map(g => (
+                              <button
+                                key={g.id}
+                                className="w-full text-left px-3 py-2 hover:bg-accent text-sm flex items-center gap-2"
+                                onClick={() => { setGrupoId(g.id); setGrupoSearch(g.nombre); }}
+                              >
+                                <Users className="h-4 w-4 text-muted-foreground shrink-0" />
+                                <span className="font-medium">{g.nombre}</span>
+                                <Badge variant="outline" className="ml-auto text-[10px]">{g.tipo}</Badge>
+                              </button>
+                            ))}
+                          </div>
+                        )}
                       </div>
-                    ))}
-                  </div>
-                )}
 
-                {nuevasPersonas.length === 0 && (
-                  <p className="text-sm text-muted-foreground text-center py-4">
-                    No hay personas nuevas. Puedes continuar al siguiente paso.
-                  </p>
-                )}
-              </>
-            )}
-
-            {/* Step 2: Attendance */}
-            {step === 2 && !noRealizado && (
-              <>
-                <div className="flex items-center gap-4 mb-2">
-                  <Badge variant="outline" className="gap-1.5 border-success text-success">
-                    <CheckCircle2 className="h-3.5 w-3.5" /> Presentes: {presentesCount}
-                  </Badge>
-                  <Badge variant="outline" className="gap-1.5 border-destructive text-destructive">
-                    <XCircle className="h-3.5 w-3.5" /> Ausentes: {ausentesCount}
-                  </Badge>
-                  {nuevasPersonas.length > 0 && (
-                    <Badge variant="outline" className="gap-1.5 border-info text-info">
-                      <UserPlus className="h-3.5 w-3.5" /> Nuevos: {nuevasPersonas.length}
-                    </Badge>
-                  )}
-                </div>
-
-                {!attendanceValid && (
-                  <div className="flex items-center gap-2 p-3 rounded-lg bg-destructive/10 border border-destructive/20 text-sm text-destructive">
-                    <AlertTriangle className="h-4 w-4 shrink-0" />
-                    Debe indicar el motivo de ausencia para todos los miembros ausentes.
-                  </div>
-                )}
-
-                {loadingMiembros ? (
-                  <p className="text-sm text-muted-foreground text-center py-8">Cargando miembros...</p>
-                ) : attendance.length === 0 ? (
-                  <p className="text-sm text-muted-foreground text-center py-8">
-                    Este grupo no tiene miembros registrados. Agrega personas nuevas en el paso anterior.
-                  </p>
-                ) : (
-                  <div className="space-y-1.5">
-                    {attendance.map((a) => {
-                      const initials = `${a.nombres[0] || ""}${a.apellidos[0] || ""}`.toUpperCase();
-                      const isAbsentNoMotivo = !a.presente && !a.motivo_ausencia.trim();
-                      return (
-                        <div
-                          key={a.persona_id}
-                          className={cn(
-                            "flex items-center gap-3 p-3 rounded-lg border transition-colors",
-                            a.presente ? "bg-success/5 border-success/20" : "bg-destructive/5 border-destructive/20",
-                            isAbsentNoMotivo && "ring-2 ring-destructive/50"
-                          )}
-                        >
-                          <Avatar className="h-9 w-9">
-                            <AvatarImage src={a.foto_url || undefined} />
-                            <AvatarFallback className="text-xs">{initials}</AvatarFallback>
-                          </Avatar>
-                          <div className="flex-1 min-w-0">
-                            <div className="flex items-center gap-2">
-                              <p className="text-sm font-medium truncate">{a.nombres} {a.apellidos}</p>
-                              <Badge variant="outline" className="text-[10px] h-4">{a.tipo_persona}</Badge>
-                            </div>
-                            {!a.presente && (
-                              <Input
-                                placeholder="Motivo de ausencia (obligatorio) *"
-                                value={a.motivo_ausencia}
-                                onChange={(e) => setMotivo(a.persona_id, e.target.value)}
-                                className={cn("mt-1 h-7 text-xs", isAbsentNoMotivo && "border-destructive")}
-                              />
+                      {/* Selected group card */}
+                      {selectedGrupo && (
+                        <div className="flex items-start gap-4 p-4 rounded-lg border bg-accent/5 relative">
+                          <div className="h-16 w-16 rounded-lg bg-primary/10 flex items-center justify-center shrink-0">
+                            <Users className="h-8 w-8 text-primary" />
+                          </div>
+                          <div className="flex-1">
+                            <p className="text-xs text-muted-foreground">Grupo</p>
+                            <p className="font-bold text-lg">{selectedGrupo.nombre}</p>
+                            {liderInfo && (
+                              <div className="mt-1 space-y-0.5">
+                                <p className="text-xs flex items-center gap-1">
+                                  <UserCircle className="h-3 w-3" /> {liderInfo.nombres} {liderInfo.apellidos}
+                                </p>
+                              </div>
                             )}
                           </div>
-                          <Switch checked={a.presente} onCheckedChange={() => togglePresente(a.persona_id)} />
+                          <Button
+                            size="icon"
+                            variant="ghost"
+                            className="absolute top-2 right-2 h-6 w-6 text-destructive"
+                            onClick={() => { setGrupoId(""); setGrupoSearch(""); setAttendance([]); }}
+                          >
+                            <X className="h-4 w-4" />
+                          </Button>
                         </div>
-                      );
-                    })}
-                  </div>
-                )}
+                      )}
 
-                {nuevasPersonas.length > 0 && (
-                  <>
-                    <Separator />
-                    <p className="text-xs font-medium text-muted-foreground uppercase tracking-wider">Personas nuevas (presentes automáticamente)</p>
-                    {nuevasPersonas.map((np, i) => (
-                      <div key={`new-${i}`} className="flex items-center gap-3 p-3 rounded-lg bg-info/5 border border-info/20">
-                        <Avatar className="h-9 w-9">
-                          <AvatarFallback className="text-xs">{np.nombres[0]}{np.apellidos[0]}</AvatarFallback>
-                        </Avatar>
-                        <div className="flex-1">
-                          <p className="text-sm font-medium">{np.nombres} {np.apellidos}</p>
-                          <p className="text-xs text-info">CDP · Nuevo</p>
+                      {/* Se realizó toggle */}
+                      {grupoId && (
+                        <div className="flex items-center gap-3">
+                          <label className="text-sm font-medium">¿Se realizó este grupo?</label>
+                          <Switch checked={seRealizo} onCheckedChange={setSeRealizo} />
+                          <span className={cn("text-sm font-semibold", seRealizo ? "text-success" : "text-destructive")}>
+                            {seRealizo ? "Sí" : "No"}
+                          </span>
                         </div>
-                        <CheckCircle2 className="h-5 w-5 text-success" />
+                      )}
+
+                      <div className="space-y-1.5">
+                        <label className="text-sm font-medium">* Mensaje o tema</label>
+                        <Input
+                          value={mensaje}
+                          onChange={(e) => setMensaje(e.target.value)}
+                          placeholder="Ej: El unico DIOS verdadero"
+                        />
                       </div>
-                    ))}
-                  </>
-                )}
-              </>
+
+                      <div className="space-y-1.5">
+                        <label className="text-sm font-medium">Observaciones</label>
+                        <Textarea
+                          value={observaciones}
+                          onChange={(e) => setObservaciones(e.target.value)}
+                          rows={4}
+                        />
+                      </div>
+                    </CardContent>
+                  </Card>
+                </div>
+
+                {/* Right: Calendar */}
+                <div className="p-6">
+                  <Card>
+                    <CardHeader className="pb-2">
+                      <CardTitle className="text-sm">* Seleccione la fecha del reporte</CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                      <Calendar
+                        mode="single"
+                        selected={selectedDate}
+                        onSelect={(d) => d && setSelectedDate(d)}
+                        locale={es}
+                        className="w-full"
+                        modifiers={reportDateModifiers}
+                        modifiersClassNames={{
+                          reported: "bg-destructive/20 text-destructive font-bold",
+                        }}
+                      />
+                      {grupoReportes.length > 0 && (
+                        <div className="mt-3 space-y-1">
+                          <p className="text-xs text-muted-foreground font-medium">Reportes existentes:</p>
+                          {grupoReportes.slice(0, 5).map(r => (
+                            <div key={r.id} className="flex items-center gap-2 text-xs p-1.5 rounded bg-muted/50">
+                              <div className={cn("w-2 h-2 rounded-full", r.estado === "Aprobado" ? "bg-success" : r.estado === "No Aprobado" ? "bg-destructive" : "bg-amber-500")} />
+                              <span>{r.fecha}</span>
+                              <span className="truncate flex-1 text-muted-foreground">{r.mensaje}</span>
+                            </div>
+                          ))}
+                        </div>
+                      )}
+                    </CardContent>
+                  </Card>
+                </div>
+              </div>
             )}
 
-            {/* Step 3: Finances */}
-            {step === 3 && (
-              <>
-                <div className="flex items-center gap-2 p-3 rounded-lg bg-accent/10 border border-accent/20 text-sm">
-                  <DollarSign className="h-5 w-5 text-accent shrink-0" />
-                  <div>
-                    <p className="font-medium text-foreground">Resumen financiero</p>
-                    <p className="text-muted-foreground text-xs">Registra la ofrenda y el total recaudado en la reunión.</p>
-                  </div>
+            {/* Step 1: Attendance + Finanzas */}
+            {step === 1 && (
+              <div className="p-4 space-y-4">
+                {/* Header info */}
+                <div className="flex items-center gap-4 text-sm">
+                  <p><strong>📅 FECHA DE REUNIÓN:</strong> {format(selectedDate, "yyyy-MM-dd")}</p>
+                  <p><strong>📝 PREDICACIÓN O TEMA:</strong> {mensaje}</p>
                 </div>
 
-                <div className="grid grid-cols-2 gap-4">
-                  <div className="space-y-1.5">
-                    <label className="text-sm font-medium">Ofrenda Casa de Paz</label>
-                    <Input type="number" step="0.01" min="0" value={ofrendaCasaPaz} onChange={(e) => setOfrendaCasaPaz(e.target.value)} placeholder="0.00" />
-                  </div>
-                  <div className="space-y-1.5">
-                    <label className="text-sm font-medium">Total Reportado</label>
-                    <Input type="number" step="0.01" min="0" value={totalReportado} onChange={(e) => setTotalReportado(e.target.value)} placeholder="0.00" />
-                  </div>
+                {/* Invitados counter */}
+                <div className="flex items-center gap-3">
+                  <span className="text-sm font-medium">Invitados</span>
+                  <Button size="sm" variant="outline" className="h-7 w-7 p-0 text-success" onClick={() => setInvitados(v => v + 1)}>+</Button>
+                  <Input
+                    type="number"
+                    value={invitados}
+                    onChange={(e) => setInvitados(parseInt(e.target.value) || 0)}
+                    className="w-16 h-7 text-center text-sm"
+                  />
+                  <Button size="sm" variant="outline" className="h-7 w-7 p-0 text-destructive" onClick={() => setInvitados(v => Math.max(0, v - 1))}>-</Button>
+                  <Button size="sm" variant="outline" className="ml-4 gap-1" onClick={() => setShowNewPersonModal(true)}>
+                    <UserPlus className="h-4 w-4" /> Agregar nueva persona
+                  </Button>
                 </div>
 
-                {/* Summary */}
-                <div className="rounded-lg border bg-muted/30 p-4 space-y-3">
-                  <p className="text-sm font-semibold">Resumen del Reporte</p>
-                  <div className="grid grid-cols-2 gap-2 text-sm">
-                    <span className="text-muted-foreground">Grupo:</span>
-                    <span className="font-medium">{selectedGrupo?.nombre}</span>
-                    <span className="text-muted-foreground">Fecha:</span>
-                    <span className="font-medium">{format(new Date(), "PPP", { locale: es })}</span>
-                    <span className="text-muted-foreground">Mensaje:</span>
-                    <span className="font-medium truncate">{mensaje}</span>
-                    {noRealizado ? (
-                      <>
-                        <span className="text-muted-foreground">Estado:</span>
-                        <Badge variant="secondary">No se realizó</Badge>
-                      </>
+                <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
+                  {/* Main: Attendance list */}
+                  <div className="lg:col-span-2 space-y-2">
+                    <h3 className="text-sm font-bold uppercase text-muted-foreground">Asistente</h3>
+                    {loadingMiembros ? (
+                      <p className="text-sm text-muted-foreground text-center py-8">Cargando miembros...</p>
+                    ) : asistentes.length === 0 && encargados.length === 0 ? (
+                      <p className="text-sm text-muted-foreground text-center py-8">
+                        Este grupo no tiene miembros registrados.
+                      </p>
                     ) : (
-                      <>
-                        <span className="text-muted-foreground">Presentes:</span>
-                        <span className="font-medium text-success">{presentesCount + nuevasPersonas.length}</span>
-                        <span className="text-muted-foreground">Ausentes:</span>
-                        <span className="font-medium text-destructive">{ausentesCount}</span>
-                        <span className="text-muted-foreground">Personas nuevas:</span>
-                        <span className="font-medium text-info">{nuevasPersonas.length}</span>
-                      </>
+                      <div className="space-y-2">
+                        {asistentes.map((a) => {
+                          const initials = `${a.nombres[0] || ""}${a.apellidos[0] || ""}`.toUpperCase();
+                          return (
+                            <div
+                              key={a.persona_id}
+                              className={cn(
+                                "flex items-center gap-3 p-3 rounded-lg border transition-colors",
+                                !a.presente && "bg-muted/30"
+                              )}
+                            >
+                              <div className="flex flex-col items-center gap-1 shrink-0">
+                                <Avatar className="h-12 w-12">
+                                  <AvatarImage src={a.foto_url || undefined} />
+                                  <AvatarFallback className="text-sm">{initials}</AvatarFallback>
+                                </Avatar>
+                                <div className="flex items-center gap-0.5">
+                                  <Badge variant="outline" className="text-[8px] h-3 px-1">{a.tipo_persona}</Badge>
+                                </div>
+                                <p className="text-xs font-medium text-center max-w-[100px] truncate">{a.nombres} {a.apellidos}</p>
+                              </div>
+
+                              <div className="flex-1 flex items-center gap-4">
+                                <div className="flex items-center gap-2">
+                                  <span className="text-xs text-muted-foreground">¿Asistió?</span>
+                                  <Switch
+                                    checked={a.presente}
+                                    onCheckedChange={() => togglePresente(a.persona_id)}
+                                  />
+                                  <span className={cn("text-xs font-semibold min-w-[20px]", a.presente ? "text-success" : "text-destructive")}>
+                                    {a.presente ? "Sí" : "No"}
+                                  </span>
+                                </div>
+
+                                {!a.presente && (
+                                  <div className="flex-1">
+                                    <label className="text-xs text-destructive font-medium">* ¿Porque no asistió?</label>
+                                    <Select value={a.motivo_ausencia} onValueChange={(v) => setMotivo(a.persona_id, v)}>
+                                      <SelectTrigger className="h-8 text-xs">
+                                        <SelectValue placeholder="Seleccionar motivo..." />
+                                      </SelectTrigger>
+                                      <SelectContent>
+                                        {MOTIVOS_AUSENCIA.map(m => (
+                                          <SelectItem key={m} value={m}>{m}</SelectItem>
+                                        ))}
+                                      </SelectContent>
+                                    </Select>
+                                  </div>
+                                )}
+                              </div>
+                            </div>
+                          );
+                        })}
+                      </div>
                     )}
                   </div>
+
+                  {/* Right sidebar: Encargados + Finanzas */}
+                  <div className="space-y-4">
+                    {/* Encargados */}
+                    <Card>
+                      <CardHeader className="pb-2">
+                        <CardTitle className="text-sm">{encargados.length} Encargado(s)</CardTitle>
+                      </CardHeader>
+                      <CardContent className="space-y-4">
+                        {encargados.map((enc) => (
+                          <div key={enc.persona_id} className="text-center space-y-2 p-3 rounded-lg border">
+                            <Avatar className="h-14 w-14 mx-auto">
+                              <AvatarImage src={enc.foto_url || undefined} />
+                              <AvatarFallback>{enc.nombres[0]}{enc.apellidos[0]}</AvatarFallback>
+                            </Avatar>
+                            <p className="text-xs flex items-center justify-center gap-1">
+                              <Badge variant="outline" className="text-[8px]">{enc.tipo_persona}</Badge>
+                            </p>
+                            <p className="text-sm font-medium">{enc.nombres} {enc.apellidos}</p>
+                            <div className="flex items-center justify-center gap-2">
+                              <span className="text-xs">¿El encargado asistió?</span>
+                              <Switch
+                                checked={enc.presente}
+                                onCheckedChange={() => togglePresente(enc.persona_id)}
+                              />
+                              <span className={cn("text-xs font-semibold", enc.presente ? "text-success" : "text-destructive")}>
+                                {enc.presente ? "Sí" : "No"}
+                              </span>
+                            </div>
+                            {!enc.presente && (
+                              <Select value={enc.motivo_ausencia} onValueChange={(v) => setMotivo(enc.persona_id, v)}>
+                                <SelectTrigger className="h-7 text-xs">
+                                  <SelectValue placeholder="Motivo..." />
+                                </SelectTrigger>
+                                <SelectContent>
+                                  {MOTIVOS_AUSENCIA.map(m => (
+                                    <SelectItem key={m} value={m}>{m}</SelectItem>
+                                  ))}
+                                </SelectContent>
+                              </Select>
+                            )}
+                          </div>
+                        ))}
+                      </CardContent>
+                    </Card>
+
+                    {/* Resumen financiero */}
+                    <Card>
+                      <CardHeader className="pb-2">
+                        <CardTitle className="text-sm">💰 Resumen financiero</CardTitle>
+                      </CardHeader>
+                      <CardContent className="space-y-3">
+                        <p className="text-xs text-muted-foreground">💲 Digitado por el Líder</p>
+                        <div className="space-y-2">
+                          <div className="space-y-1">
+                            <label className="text-xs font-medium">Ofrenda Casa de Paz</label>
+                            <Input
+                              type="number"
+                              step="0.01"
+                              min="0"
+                              value={ofrendaCasaPaz}
+                              onChange={(e) => setOfrendaCasaPaz(e.target.value)}
+                              placeholder="0"
+                              className="h-8 text-sm"
+                            />
+                          </div>
+                          <div className="space-y-1">
+                            <label className="text-xs font-medium">Total Reportado</label>
+                            <Input
+                              type="number"
+                              step="0.01"
+                              min="0"
+                              value={totalReportado}
+                              onChange={(e) => setTotalReportado(e.target.value)}
+                              placeholder="0"
+                              className="h-8 text-sm"
+                            />
+                          </div>
+                          <Separator />
+                          <div className="flex justify-between text-sm font-bold">
+                            <span>TOTAL</span>
+                            <span>💲 {(parseFloat(totalReportado) || 0).toFixed(0)}</span>
+                          </div>
+                        </div>
+                      </CardContent>
+                    </Card>
+                  </div>
                 </div>
-              </>
+
+                {/* Bottom: Finalizar */}
+                <div className="flex justify-start pt-4">
+                  <Button onClick={handleSubmit} disabled={createReporte.isPending || (!seRealizo ? false : !attendanceValid)} className="gap-2">
+                    <Send className="h-4 w-4" />
+                    {createReporte.isPending ? "Enviando..." : "Finalizar Reporte"}
+                  </Button>
+                </div>
+              </div>
             )}
-          </div>
-        </ScrollArea>
+          </ScrollArea>
+        </DialogContent>
+      </Dialog>
 
-        <Separator />
-
-        {/* Navigation */}
-        <div className="flex justify-between pt-2">
-          <Button variant="outline" onClick={() => step > 0 ? setStep(noRealizado && step === 3 ? 0 : step - 1) : onOpenChange(false)} className="gap-1">
-            <ChevronLeft className="h-4 w-4" />
-            {step === 0 ? "Cancelar" : "Anterior"}
-          </Button>
-
-          {step < STEPS.length - 1 ? (
-            <Button onClick={() => setStep(noRealizado && step === 0 ? 3 : step + 1)} disabled={!canNext()} className="gap-1">
-              Siguiente <ChevronRight className="h-4 w-4" />
-            </Button>
-          ) : (
-            <Button onClick={handleSubmit} disabled={createReporte.isPending} className="gap-1">
-              <Send className="h-4 w-4" />
-              {createReporte.isPending ? "Enviando..." : "Enviar Reporte"}
-            </Button>
-          )}
-        </div>
-      </DialogContent>
-    </Dialog>
+      {renderNewPersonModal()}
+      {renderNewPersonFormDialog()}
+    </>
   );
 }
