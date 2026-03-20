@@ -184,6 +184,28 @@ export default function GrupoPerfilView({ grupoId, onBack }: Props) {
             </div>
           </div>
           <div className="flex items-center gap-2 flex-wrap">
+            <Button variant="outline" size="sm" className="gap-1.5" onClick={() => {
+              if (!grupo) return;
+              const mList = (miembros || []).map(m => ({
+                nombre: `${m.persona?.nombres || ""} ${m.persona?.apellidos || ""}`,
+                rol: ROLES_GRUPO.find(r => r.value === m.rol)?.label || "Asistente",
+                telefono: m.persona?.telefono || "",
+                email: m.persona?.email || "",
+                estado: m.persona?.estado_iglesia || "",
+              }));
+              const rList = (reportes || []).map(r => ({
+                fecha: format(parseISO(r.fecha), "dd/MM/yyyy"),
+                presentes: r.presentes,
+                ausentes: r.ausentes,
+                nuevos: r.nuevos,
+                ofrenda: r.ofrenda_casa_paz || 0,
+                estado: r.estado,
+              }));
+              exportGroupProfilePDF(grupo as any, metrics, mList, rList);
+              toast.success("PDF generado");
+            }}>
+              <Download className="h-3.5 w-3.5" /> Exportar PDF
+            </Button>
             <Button variant="outline" size="sm" className="gap-1.5" onClick={() => setEditing(true)}>
               <Pencil className="h-3.5 w-3.5" /> Editar
             </Button>

@@ -55,7 +55,114 @@ export function exportToExcel({ title, columns, data, filename }: ExportOptions)
   XLSX.writeFile(wb, `${filename}.xlsx`);
 }
 
-export function exportFinancialSummaryPDF(stats: {
+export function exportGroupProfilePDF(grupo: {
+  nombre: string;
+  tipo: string;
+  red?: string | null;
+  estado: string;
+  dia_reunion?: string | null;
+  hora_reunion?: string | null;
+  ubicacion?: string | null;
+  descripcion?: string | null;
+  created_at: string;
+  lider?: { nombres: string; apellidos: string; telefono?: string | null } | null;
+}, metrics: {
+  total: number;
+  equipo: number;
+  avgPresentes: number;
+  totalNuevos: number;
+  inactivos: number;
+  retencion: number;
+}, miembros: { nombre: string; rol: string; telefono?: string; email?: string; estado: string }[],
+reportes: { fecha: string; presentes: number; ausentes: number; nuevos: number; ofrenda: number; estado: string }[]) {
+  const doc = new jsPDF();
+  const fecha = new Date().toLocaleDateString("es-CO", { year: "numeric", month: "long", day: "numeric" });
+
+  // Title
+  doc.setFontSize(18);
+  doc.text(`Perfil 360° — ${grupo.nombre}`, 14, 20);
+  doc.setFontSize(9);
+  doc.setTextColor(120);
+  doc.text(`Generado: ${fecha}`, 14, 28);
+
+  // General info
+  doc.setTextColor(0);
+  doc.setFontSize(13);
+  doc.text("Información General", 14, 40);
+
+  autoTable(doc, {
+    startY: 46,
+    head: [["Campo", "Valor"]],
+    body: [
+      ["Tipo de grupo", grupo.tipo],
+      ["Red", grupo.red || "Sin asignar"],
+      ["Estado", grupo.estado],
+      ["Día de reunión", `${grupo.dia_reunion || "—"} ${grupo.hora_reunion || ""}`],
+      ["Dirección", grupo.ubicacion || "—"],
+      ["Líder", grupo.lider ? `${grupo.lider.nombres} ${grupo.lider.apellidos}` : "—"],
+      ["Teléfono líder", grupo.lider?.telefono || "—"],
+      ["Descripción", grupo.descripcion || "—"],
+      ["Fecha de creación", new Date(grupo.created_at).toLocaleDateString("es-CO")],
+    ],
+    styles: { fontSize: 9, cellPadding: 3 },
+    headStyles: { fillColor: [30, 41, 59], textColor: 255 },
+  });
+
+  // Metrics
+  let y = (doc as any).lastAutoTable.finalY + 12;
+  doc.setFontSize(13);
+  doc.text("Métricas", 14, y);
+
+  autoTable(doc, {
+    startY: y + 6,
+    head: [["Indicador", "Valor"]],
+    body: [
+      ["Total integrantes", String(metrics.total)],
+      ["Equipo de trabajo", String(metrics.equipo)],
+      ["Promedio asistencia", String(metrics.avgPresentes)],
+      ["Nuevos (acumulado)", String(metrics.totalNuevos)],
+      ["Inactivos", String(metrics.inactivos)],
+      ["Retención", `${metrics.retencion}%`],
+    ],
+    styles: { fontSize: 9, cellPadding: 3 },
+    headStyles: { fillColor: [30, 41, 59], textColor: 255 },
+  });
+
+  // Members
+  y = (doc as any).lastAutoTable.finalY + 12;
+  if (y > 240) { doc.addPage(); y = 20; }
+  doc.setFontSize(13);
+  doc.text(`Integrantes (${miembros.length})`, 14, y);
+
+  autoTable(doc, {
+    startY: y + 6,
+    head: [["Nombre", "Rol", "Teléfono", "Email", "Estado"]],
+    body: miembros.map(m => [m.nombre, m.rol, m.telefono || "—", m.email || "—", m.estado]),
+    styles: { fontSize: 8, cellPadding: 2 },
+    headStyles: { fillColor: [30, 41, 59], textColor: 255 },
+    alternateRowStyles: { fillColor: [245, 247, 250] },
+  });
+
+  // Reports
+  if (reportes.length > 0) {
+    y = (doc as any).lastAutoTable.finalY + 12;
+    if (y > 240) { doc.addPage(); y = 20; }
+    doc.setFontSize(13);
+    doc.text(`Últimos Reportes (${reportes.length})`, 14, y);
+
+    autoTable(doc, {
+      startY: y + 6,
+      head: [["Fecha", "Presentes", "Ausentes", "Nuevos", "Ofrenda", "Estado"]],
+      body: reportes.map(r => [r.fecha, String(r.presentes), String(r.ausentes), String(r.nuevos), `$${r.ofrenda}`, r.estado]),
+      styles: { fontSize: 8, cellPadding: 2 },
+      headStyles: { fillColor: [30, 41, 59], textColor: 255 },
+      alternateRowStyles: { fillColor: [245, 247, 250] },
+    });
+  }
+
+  doc.save(`perfil-${grupo.nombre.replace(/\s+/g, "-").toLowerCase()}.pdf`);
+}
+
   ingresosMes: number;
   gastosMes: number;
   totalPersonas: number;
