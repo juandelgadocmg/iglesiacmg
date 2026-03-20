@@ -122,7 +122,7 @@ export default function GruposPage() {
         </TabsContent>
 
         <TabsContent value="jerarquia">
-          <GrupoHierarchyView />
+          <GrupoHierarchyView onSelectGrupo={(id) => setSelectedGrupoId(id)} />
         </TabsContent>
 
         <TabsContent value="reporte">
