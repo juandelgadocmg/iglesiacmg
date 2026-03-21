@@ -134,6 +134,7 @@ export default function EventoDetailView({ evento, onBack }: Props) {
           <TabsTrigger value="encargados">Encargados</TabsTrigger>
           <TabsTrigger value="asistencias">Asistencias</TabsTrigger>
           <TabsTrigger value="servidores">Servidores Actividad</TabsTrigger>
+          <TabsTrigger value="informes">📊 Informes</TabsTrigger>
         </TabsList>
 
         {/* TAB GENERAL */}
