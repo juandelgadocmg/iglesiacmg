@@ -20,6 +20,7 @@ import {
   useCalificacionesByMateriaCorte, useBulkUpsertCalificaciones,
   useAsistenciaMaterias, useUpsertAsistenciaMateria,
 } from "@/hooks/useAcademia";
+import { usePersonas } from "@/hooks/useDatabase";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -32,13 +33,13 @@ import {
   Search, UserCheck, ChevronRight, FileText, Lock, Unlock,
   MoreVertical, Trash2, BookText, ArrowLeft, Building2,
   BarChart3, Eye, ClipboardCheck, CheckCircle2, XCircle,
-  Save, Check, X,
+  Save, Check, X, History, Download, User,
 } from "lucide-react";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { toast } from "sonner";
 import { format, parseISO } from "date-fns";
 import { es } from "date-fns/locale";
-import { exportToExcel } from "@/lib/exportUtils";
+import { exportToExcel, exportToPDF } from "@/lib/exportUtils";
 import { cn } from "@/lib/utils";
 
 const ESTADO_PERIODO: Record<string, { icon: any; color: string }> = {
@@ -46,8 +47,73 @@ const ESTADO_PERIODO: Record<string, { icon: any; color: string }> = {
   Cerrado: { icon: Lock, color: "bg-destructive/10 text-destructive border-destructive/20" },
 };
 
-// ========== ESCUELAS VIEW ==========
-function EscuelasView({ escuelas, allPeriodos, allMatriculas, search, setSearch, onSelectEscuela }: any) {
+// ========== SIDEBAR NAVIGATION ==========
+const SIDEBAR_ITEMS = [
+  { id: "escuelas", label: "Escuelas", icon: BookOpen },
+  { id: "periodos", label: "Periodos", icon: CalendarDays },
+  { id: "estudiantes", label: "Estudiantes", icon: Users },
+  { id: "maestros", label: "Maestros", icon: UserCheck },
+  { id: "calificaciones", label: "Calificaciones", icon: BarChart3 },
+  { id: "historial-matriculas", label: "Historial matrículas", icon: History },
+  { id: "certificados", label: "Certificados", icon: Award },
+  { id: "aulas", label: "Aulas", icon: Building2 },
+];
+
+function AcademiaSidebar({ activeSection, onSectionChange }: { activeSection: string; onSectionChange: (s: string) => void }) {
+  return (
+    <nav className="w-56 shrink-0 border-r bg-card/50 hidden md:block">
+      <div className="p-4">
+        <h2 className="text-xs font-bold uppercase tracking-wider text-muted-foreground mb-3">Academia</h2>
+        <div className="space-y-0.5">
+          {SIDEBAR_ITEMS.map((item) => (
+            <button
+              key={item.id}
+              onClick={() => onSectionChange(item.id)}
+              className={cn(
+                "w-full flex items-center gap-2.5 px-3 py-2 rounded-lg text-sm font-medium transition-colors",
+                activeSection === item.id
+                  ? "bg-primary/10 text-primary"
+                  : "text-muted-foreground hover:bg-muted hover:text-foreground"
+              )}
+            >
+              <item.icon className="h-4 w-4 shrink-0" />
+              {item.label}
+            </button>
+          ))}
+        </div>
+      </div>
+    </nav>
+  );
+}
+
+// Mobile tabs
+function MobileNav({ activeSection, onSectionChange }: { activeSection: string; onSectionChange: (s: string) => void }) {
+  return (
+    <div className="md:hidden overflow-x-auto border-b">
+      <div className="flex gap-0.5 px-2 py-1 min-w-max">
+        {SIDEBAR_ITEMS.map((item) => (
+          <button
+            key={item.id}
+            onClick={() => onSectionChange(item.id)}
+            className={cn(
+              "flex items-center gap-1.5 px-3 py-2 rounded-md text-xs font-medium whitespace-nowrap transition-colors",
+              activeSection === item.id
+                ? "bg-primary/10 text-primary"
+                : "text-muted-foreground hover:text-foreground"
+            )}
+          >
+            <item.icon className="h-3.5 w-3.5" />
+            {item.label}
+          </button>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+// ========== ESCUELAS SECTION ==========
+function EscuelasSection({ escuelas, allPeriodos, allMatriculas, onSelectEscuela }: any) {
+  const [search, setSearch] = useState("");
   const enriched = useMemo(() => {
     return (escuelas || []).map((e: any) => {
       const periodos = (allPeriodos || []).filter((p: any) => p.escuela_id === e.id);
@@ -64,10 +130,13 @@ function EscuelasView({ escuelas, allPeriodos, allMatriculas, search, setSearch,
   }, [enriched, search]);
 
   return (
-    <>
-      <div className="relative max-w-md">
-        <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-        <Input placeholder="Buscar escuela..." value={search} onChange={(e) => setSearch(e.target.value)} className="pl-10" />
+    <div className="space-y-4">
+      <div className="flex items-center justify-between gap-3">
+        <div className="relative flex-1 max-w-md">
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+          <Input placeholder="Buscar escuela..." value={search} onChange={(e) => setSearch(e.target.value)} className="pl-10" />
+        </div>
+        <CursoFormDialog />
       </div>
       {filtered.length === 0 ? (
         <div className="rounded-xl border bg-card p-12 text-center text-muted-foreground">
@@ -77,19 +146,14 @@ function EscuelasView({ escuelas, allPeriodos, allMatriculas, search, setSearch,
       ) : (
         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
           {filtered.map((e: any) => (
-            <div key={e.id} onClick={() => onSelectEscuela(e.id)} className="group rounded-xl border bg-card p-5 cursor-pointer hover:shadow-md transition-all hover:border-primary/30">
+            <div key={e.id} onClick={() => onSelectEscuela(e)} className="group rounded-xl border bg-card p-5 cursor-pointer hover:shadow-md transition-all hover:border-primary/30">
               <div className="flex items-start justify-between gap-3 mb-3">
                 <div className="w-11 h-11 rounded-xl bg-primary/10 flex items-center justify-center shrink-0 group-hover:bg-primary/20 transition-colors">
                   <BookOpen className="h-5 w-5 text-primary" />
                 </div>
-                <DropdownMenu>
-                  <DropdownMenuTrigger asChild>
-                    <Button variant="ghost" size="icon" className="h-8 w-8" onClick={(ev) => ev.stopPropagation()}><MoreVertical className="h-4 w-4" /></Button>
-                  </DropdownMenuTrigger>
-                  <DropdownMenuContent align="end">
-                    <DropdownMenuItem className="text-destructive"><Trash2 className="h-4 w-4 mr-2" /> Eliminar</DropdownMenuItem>
-                  </DropdownMenuContent>
-                </DropdownMenu>
+                <Badge variant="outline" className={e.estado === "Activo" ? "bg-success/10 text-success border-success/20 text-[10px]" : "text-[10px]"}>
+                  {e.estado}
+                </Badge>
               </div>
               <h3 className="font-semibold text-foreground mb-1 group-hover:text-primary transition-colors">{e.nombre}</h3>
               {e.descripcion && <p className="text-xs text-muted-foreground mb-3 line-clamp-2">{e.descripcion}</p>}
@@ -110,42 +174,62 @@ function EscuelasView({ escuelas, allPeriodos, allMatriculas, search, setSearch,
           ))}
         </div>
       )}
-    </>
+    </div>
   );
 }
 
-// ========== PERIODOS VIEW ==========
-function PeriodosView({ escuela, periodos, allMatriculas, onBack, onSelectPeriodo }: any) {
+// ========== PERIODOS SECTION ==========
+function PeriodosSection({ escuelas, allPeriodos, allMatriculas }: any) {
+  const [selectedEscuela, setSelectedEscuela] = useState<string>("");
+  const [selectedPeriodo, setSelectedPeriodo] = useState<string | null>(null);
   const updatePeriodo = useUpdatePeriodo();
-  const enriched = useMemo(() => {
-    return (periodos || []).map((p: any) => {
-      const mats = (allMatriculas || []).filter((m: any) => m.periodo_id === p.id);
-      return { ...p, estudiantesActivos: mats.filter((m: any) => m.estado === "Activo").length, totalMatriculas: mats.length };
-    });
-  }, [periodos, allMatriculas]);
 
-  const toggleEstado = async (p: any, e: React.MouseEvent) => {
-    e.stopPropagation();
+  const periodos = useMemo(() => {
+    if (!selectedEscuela) return allPeriodos || [];
+    return (allPeriodos || []).filter((p: any) => p.escuela_id === selectedEscuela);
+  }, [allPeriodos, selectedEscuela]);
+
+  const enriched = useMemo(() => {
+    return periodos.map((p: any) => {
+      const mats = (allMatriculas || []).filter((m: any) => m.periodo_id === p.id);
+      const escuela = (escuelas || []).find((e: any) => e.id === p.escuela_id);
+      return { ...p, estudiantesActivos: mats.filter((m: any) => m.estado === "Activo").length, totalMatriculas: mats.length, escuelaNombre: escuela?.nombre || "" };
+    });
+  }, [periodos, allMatriculas, escuelas]);
+
+  const toggleEstado = async (p: any) => {
     const nuevo = p.estado === "Abierto" ? "Cerrado" : "Abierto";
     try { await updatePeriodo.mutateAsync({ id: p.id, estado: nuevo }); toast.success(`Período ${nuevo.toLowerCase()}`); }
     catch { toast.error("Error al actualizar"); }
   };
 
+  if (selectedPeriodo) {
+    const periodo = enriched.find((p: any) => p.id === selectedPeriodo);
+    const escuela = (escuelas || []).find((e: any) => e.id === periodo?.escuela_id);
+    if (periodo && escuela) {
+      return <PeriodoDetailView escuela={escuela} periodo={periodo} onBackToPeriodos={() => setSelectedPeriodo(null)} />;
+    }
+  }
+
   return (
-    <div className="animate-fade-in space-y-6">
-      <PageHeader title={escuela.nombre} description={escuela.descripcion || "Períodos académicos"}>
-        <Button variant="ghost" size="sm" onClick={onBack}><ArrowLeft className="h-4 w-4 mr-1" /> Escuelas</Button>
-        <PeriodoFormDialog escuelaId={escuela.id} />
-      </PageHeader>
-      <div className="grid grid-cols-3 gap-4">
-        <MetricCard title="Todos" value={enriched.length} icon={CalendarDays} />
-        <MetricCard title="Abiertos" value={enriched.filter((p: any) => p.estado === "Abierto").length} icon={Unlock} variant="success" />
-        <MetricCard title="Cerrados" value={enriched.filter((p: any) => p.estado === "Cerrado").length} icon={Lock} variant="accent" />
+    <div className="space-y-4">
+      <div className="flex items-center justify-between gap-3">
+        <Select value={selectedEscuela} onValueChange={setSelectedEscuela}>
+          <SelectTrigger className="w-64"><SelectValue placeholder="Todas las escuelas" /></SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all">Todas las escuelas</SelectItem>
+            {(escuelas || []).map((e: any) => (
+              <SelectItem key={e.id} value={e.id}>{e.nombre}</SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+        {selectedEscuela && selectedEscuela !== "all" && <PeriodoFormDialog escuelaId={selectedEscuela} />}
       </div>
+
       {enriched.length === 0 ? (
         <div className="rounded-xl border bg-card p-12 text-center text-muted-foreground">
           <CalendarDays className="h-12 w-12 mx-auto mb-3 opacity-40" />
-          <p className="text-sm">No hay períodos creados.</p>
+          <p className="text-sm">Selecciona una escuela para ver sus períodos.</p>
         </div>
       ) : (
         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
@@ -153,17 +237,16 @@ function PeriodosView({ escuela, periodos, allMatriculas, onBack, onSelectPeriod
             const cfg = ESTADO_PERIODO[p.estado] || ESTADO_PERIODO.Abierto;
             const Icon = cfg.icon;
             return (
-              <div key={p.id} onClick={() => onSelectPeriodo(p.id)} className="group rounded-xl border bg-card p-5 cursor-pointer hover:shadow-md transition-all hover:border-primary/30">
+              <div key={p.id} onClick={() => setSelectedPeriodo(p.id)} className="group rounded-xl border bg-card p-5 cursor-pointer hover:shadow-md transition-all hover:border-primary/30">
                 <div className="text-center mb-3">
+                  <p className="text-[10px] text-muted-foreground mb-1">{p.escuelaNombre}</p>
                   <h3 className="font-bold text-foreground uppercase text-sm group-hover:text-primary transition-colors">{p.nombre}</h3>
-                  <Badge variant="outline" className={`mt-2 text-[10px] ${cfg.color}`} onClick={(e) => toggleEstado(p, e)}>
+                  <Badge variant="outline" className={`mt-2 text-[10px] cursor-pointer ${cfg.color}`} onClick={(e) => { e.stopPropagation(); toggleEstado(p); }}>
                     <Icon className="h-3 w-3 mr-1" /> {p.estado.toUpperCase()}
                   </Badge>
                 </div>
                 <div className="text-xs text-muted-foreground space-y-1 mb-4">
-                  <p className="flex items-center gap-1"><BookOpen className="h-3 w-3" /> {escuela.nombre}</p>
                   {p.fecha_inicio && <p className="flex items-center gap-1"><CalendarDays className="h-3 w-3" /> {format(parseISO(p.fecha_inicio), "yyyy-MM-dd")}{p.fecha_fin ? ` al ${format(parseISO(p.fecha_fin), "yyyy-MM-dd")}` : ""}</p>}
-                  {p.fecha_matricula_inicio && <p className="flex items-center gap-1"><GraduationCap className="h-3 w-3" /> Mat: {format(parseISO(p.fecha_matricula_inicio), "yyyy-MM-dd")}{p.fecha_matricula_fin ? ` al ${format(parseISO(p.fecha_matricula_fin), "yyyy-MM-dd")}` : ""}</p>}
                 </div>
                 <div className="space-y-2">
                   <div className="flex items-center justify-between">
@@ -178,6 +261,453 @@ function PeriodosView({ escuela, periodos, allMatriculas, onBack, onSelectPeriod
               </div>
             );
           })}
+        </div>
+      )}
+    </div>
+  );
+}
+
+// ========== MAESTROS SECTION ==========
+function MaestrosSection({ escuelas, allPeriodos }: any) {
+  const { data: personas } = usePersonas();
+  const [search, setSearch] = useState("");
+  const [selectedMaestro, setSelectedMaestro] = useState<any>(null);
+
+  // Get all maestros: personas who are assigned to any materia or have tipo "Maestro Seminario"
+  const maestros = useMemo(() => {
+    if (!personas) return [];
+    return personas.filter((p: any) =>
+      p.tipo_persona === "Maestro Seminario" || p.tipo_persona === "Maestro"
+    );
+  }, [personas]);
+
+  const filtered = useMemo(() => {
+    if (!search) return maestros;
+    const q = search.toLowerCase();
+    return maestros.filter((m: any) => `${m.nombres} ${m.apellidos}`.toLowerCase().includes(q));
+  }, [maestros, search]);
+
+  if (selectedMaestro) {
+    return <GestionarComoMaestro maestro={selectedMaestro} escuelas={escuelas} allPeriodos={allPeriodos} onBack={() => setSelectedMaestro(null)} />;
+  }
+
+  return (
+    <div className="space-y-4">
+      <div className="flex items-center justify-between gap-3">
+        <div className="relative flex-1 max-w-md">
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+          <Input placeholder="Buscar maestro..." value={search} onChange={(e) => setSearch(e.target.value)} className="pl-10" />
+        </div>
+        <Badge variant="outline" className="text-xs">{filtered.length} Maestro(s)</Badge>
+      </div>
+
+      <p className="text-xs text-muted-foreground">
+        Aquí encontrarás el listado de los maestros. Para asignar materias, ve a un período y asigna el maestro en la materia.
+      </p>
+
+      {filtered.length === 0 ? (
+        <div className="rounded-xl border bg-card p-12 text-center text-muted-foreground">
+          <UserCheck className="h-12 w-12 mx-auto mb-3 opacity-40" />
+          <p className="text-sm">No hay maestros registrados. Asigna tipo "Maestro Seminario" a una persona.</p>
+        </div>
+      ) : (
+        <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+          {filtered.map((m: any) => {
+            const initials = `${m.nombres?.[0] || ""}${m.apellidos?.[0] || ""}`.toUpperCase();
+            return (
+              <div key={m.id} className="rounded-xl border bg-card p-4 hover:shadow-md transition-all hover:border-primary/30 cursor-pointer group"
+                onClick={() => setSelectedMaestro(m)}>
+                <div className="flex items-center gap-3 mb-3">
+                  <Avatar className="h-12 w-12">
+                    <AvatarImage src={m.foto_url || undefined} />
+                    <AvatarFallback className="text-sm font-semibold bg-primary/10 text-primary">{initials}</AvatarFallback>
+                  </Avatar>
+                  <div className="flex-1 min-w-0">
+                    <h4 className="font-semibold text-foreground text-sm group-hover:text-primary transition-colors truncate">{m.nombres} {m.apellidos}</h4>
+                    <p className="text-xs text-muted-foreground">{m.tipo_persona}</p>
+                  </div>
+                </div>
+                <div className="flex items-center justify-between">
+                  <span className="text-xs text-muted-foreground flex items-center gap-1">
+                    {m.email && <><span className="truncate max-w-[150px]">{m.email}</span></>}
+                  </span>
+                  <Button size="sm" variant="outline" className="text-xs h-7 gap-1" onClick={(e) => { e.stopPropagation(); setSelectedMaestro(m); }}>
+                    <Eye className="h-3 w-3" /> Gestionar
+                  </Button>
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      )}
+    </div>
+  );
+}
+
+// ========== GESTIONAR COMO MAESTRO ==========
+function GestionarComoMaestro({ maestro, escuelas, allPeriodos, onBack }: any) {
+  const [selectedEscuela, setSelectedEscuela] = useState<string>("");
+  const [selectedPeriodo, setSelectedPeriodo] = useState<string>("");
+  const { data: materias } = useMaterias(selectedPeriodo || null);
+  const { data: cortes } = useCortes(selectedPeriodo || null);
+  const { data: matriculas } = useMatriculas(selectedPeriodo || null);
+  const [activeTab, setActiveTab] = useState<"calificaciones" | "asistencia">("calificaciones");
+
+  // Filter materias assigned to this maestro
+  const misMaterias = useMemo(() => {
+    if (!materias) return [];
+    return materias.filter((m: any) => m.maestro_id === maestro.id);
+  }, [materias, maestro.id]);
+
+  const periodosForEscuela = useMemo(() => {
+    if (!selectedEscuela) return [];
+    return (allPeriodos || []).filter((p: any) => p.escuela_id === selectedEscuela);
+  }, [allPeriodos, selectedEscuela]);
+
+  const initials = `${maestro.nombres?.[0] || ""}${maestro.apellidos?.[0] || ""}`.toUpperCase();
+
+  return (
+    <div className="space-y-5">
+      <div className="flex items-center gap-3">
+        <Button variant="ghost" size="sm" onClick={onBack}><ArrowLeft className="h-4 w-4 mr-1" /> Maestros</Button>
+      </div>
+
+      {/* Teacher profile card */}
+      <div className="rounded-xl border bg-card p-5 flex items-center gap-4">
+        <Avatar className="h-14 w-14">
+          <AvatarImage src={maestro.foto_url || undefined} />
+          <AvatarFallback className="text-lg font-semibold bg-primary/10 text-primary">{initials}</AvatarFallback>
+        </Avatar>
+        <div>
+          <h2 className="text-lg font-bold text-foreground">{maestro.nombres} {maestro.apellidos}</h2>
+          <p className="text-sm text-muted-foreground">{maestro.tipo_persona} · Gestionar como maestro</p>
+        </div>
+      </div>
+
+      {/* Filters */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+        <div>
+          <label className="text-xs font-medium text-muted-foreground mb-1 block">Escuela:</label>
+          <Select value={selectedEscuela} onValueChange={(v) => { setSelectedEscuela(v); setSelectedPeriodo(""); }}>
+            <SelectTrigger><SelectValue placeholder="Seleccionar escuela" /></SelectTrigger>
+            <SelectContent>
+              {(escuelas || []).map((e: any) => (
+                <SelectItem key={e.id} value={e.id}>{e.nombre}</SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
+        <div>
+          <label className="text-xs font-medium text-muted-foreground mb-1 block">Período:</label>
+          <Select value={selectedPeriodo} onValueChange={setSelectedPeriodo} disabled={!selectedEscuela}>
+            <SelectTrigger><SelectValue placeholder="Seleccionar período" /></SelectTrigger>
+            <SelectContent>
+              {periodosForEscuela.map((p: any) => (
+                <SelectItem key={p.id} value={p.id}>{p.nombre}</SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
+      </div>
+
+      {selectedPeriodo && (
+        <>
+          {/* My subjects */}
+          <div className="rounded-xl border bg-card p-4">
+            <h3 className="text-sm font-semibold mb-3 flex items-center gap-2">
+              <BookText className="h-4 w-4 text-primary" /> Mis materias asignadas
+              <Badge variant="outline" className="text-[10px] ml-auto">{misMaterias.length} materia(s)</Badge>
+            </h3>
+            {misMaterias.length === 0 ? (
+              <p className="text-xs text-muted-foreground text-center py-4">No tienes materias asignadas en este período.</p>
+            ) : (
+              <div className="grid gap-2 sm:grid-cols-2">
+                {misMaterias.map((m: any) => (
+                  <div key={m.id} className="flex items-center gap-2 p-2.5 rounded-lg bg-muted/50">
+                    <BookText className="h-4 w-4 text-primary shrink-0" />
+                    <div className="min-w-0">
+                      <p className="text-sm font-medium truncate">{m.nombre}</p>
+                      {m.horario && <p className="text-[10px] text-muted-foreground">{m.horario}</p>}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+
+          {/* Tabs: Calificaciones / Asistencia */}
+          <div className="flex gap-1 border-b">
+            <button onClick={() => setActiveTab("calificaciones")}
+              className={cn("px-4 py-2 text-sm font-medium border-b-2 transition-colors", activeTab === "calificaciones" ? "border-primary text-primary" : "border-transparent text-muted-foreground hover:text-foreground")}>
+              <BarChart3 className="h-4 w-4 inline mr-1.5" />Calificaciones
+            </button>
+            <button onClick={() => setActiveTab("asistencia")}
+              className={cn("px-4 py-2 text-sm font-medium border-b-2 transition-colors", activeTab === "asistencia" ? "border-primary text-primary" : "border-transparent text-muted-foreground hover:text-foreground")}>
+              <ClipboardCheck className="h-4 w-4 inline mr-1.5" />Asistencia
+            </button>
+          </div>
+
+          {activeTab === "calificaciones" && (
+            <GradingGrid cortes={cortes} materias={misMaterias} periodoId={selectedPeriodo} />
+          )}
+
+          {activeTab === "asistencia" && (
+            <AsistenciaMateriaTab materias={misMaterias} periodoId={selectedPeriodo} />
+          )}
+        </>
+      )}
+    </div>
+  );
+}
+
+// ========== ESTUDIANTES SECTION ==========
+function EstudiantesSection({ escuelas, allPeriodos, allMatriculas }: any) {
+  const [search, setSearch] = useState("");
+  const [selectedEscuela, setSelectedEscuela] = useState<string>("");
+  const [selectedPeriodo, setSelectedPeriodo] = useState<string>("");
+
+  const periodosForEscuela = useMemo(() => {
+    if (!selectedEscuela || selectedEscuela === "all") return allPeriodos || [];
+    return (allPeriodos || []).filter((p: any) => p.escuela_id === selectedEscuela);
+  }, [allPeriodos, selectedEscuela]);
+
+  const filtered = useMemo(() => {
+    let mats = allMatriculas || [];
+    if (selectedEscuela && selectedEscuela !== "all") mats = mats.filter((m: any) => m.curso_id === selectedEscuela);
+    if (selectedPeriodo && selectedPeriodo !== "all") mats = mats.filter((m: any) => m.periodo_id === selectedPeriodo);
+    if (search) {
+      const q = search.toLowerCase();
+      mats = mats.filter((m: any) => `${m.personas?.nombres} ${m.personas?.apellidos}`.toLowerCase().includes(q));
+    }
+    return mats;
+  }, [allMatriculas, selectedEscuela, selectedPeriodo, search]);
+
+  return (
+    <div className="space-y-4">
+      <div className="flex flex-wrap gap-3">
+        <div className="relative flex-1 min-w-[200px]">
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+          <Input placeholder="Buscar por nombre..." value={search} onChange={(e) => setSearch(e.target.value)} className="pl-10" />
+        </div>
+        <Select value={selectedEscuela} onValueChange={(v) => { setSelectedEscuela(v); setSelectedPeriodo(""); }}>
+          <SelectTrigger className="w-52"><SelectValue placeholder="Todas las escuelas" /></SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all">Todas</SelectItem>
+            {(escuelas || []).map((e: any) => <SelectItem key={e.id} value={e.id}>{e.nombre}</SelectItem>)}
+          </SelectContent>
+        </Select>
+        <Select value={selectedPeriodo} onValueChange={setSelectedPeriodo}>
+          <SelectTrigger className="w-52"><SelectValue placeholder="Todos los períodos" /></SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all">Todos</SelectItem>
+            {periodosForEscuela.map((p: any) => <SelectItem key={p.id} value={p.id}>{p.nombre}</SelectItem>)}
+          </SelectContent>
+        </Select>
+      </div>
+
+      <Badge variant="outline" className="text-xs">{filtered.length} estudiante(s)</Badge>
+
+      <div className="rounded-xl border bg-card divide-y">
+        {!filtered.length ? (
+          <p className="text-xs text-muted-foreground text-center py-8">No hay estudiantes matriculados.</p>
+        ) : (
+          filtered.slice(0, 50).map((m: any) => {
+            const initials = `${m.personas?.nombres?.[0] || ""}${m.personas?.apellidos?.[0] || ""}`.toUpperCase();
+            const escuela = (escuelas || []).find((e: any) => e.id === m.curso_id);
+            return (
+              <div key={m.id} className="flex items-center gap-3 px-4 py-3 hover:bg-muted/20">
+                <Avatar className="h-9 w-9">
+                  <AvatarImage src={m.personas?.foto_url || undefined} />
+                  <AvatarFallback className="text-xs font-semibold">{initials}</AvatarFallback>
+                </Avatar>
+                <div className="flex-1 min-w-0">
+                  <p className="text-sm font-medium truncate">{m.personas?.nombres} {m.personas?.apellidos}</p>
+                  <p className="text-xs text-muted-foreground">
+                    {escuela?.nombre || m.cursos?.nombre || ""}
+                    {m.materias?.nombre && <> · {m.materias.nombre}</>}
+                  </p>
+                </div>
+                <Badge variant="outline" className={cn("text-[10px]",
+                  m.estado === "Activo" ? "bg-success/10 text-success border-success/20" :
+                  m.estado === "Completado" ? "bg-primary/10 text-primary border-primary/20" :
+                  "bg-muted text-muted-foreground"
+                )}>
+                  {m.estado}
+                </Badge>
+                {m.nota_final != null && <span className="text-xs font-semibold">{m.nota_final}</span>}
+              </div>
+            );
+          })
+        )}
+      </div>
+    </div>
+  );
+}
+
+// ========== HISTORIAL MATRICULAS SECTION ==========
+function HistorialMatriculasSection({ escuelas, allPeriodos, allMatriculas }: any) {
+  const [selectedEscuela, setSelectedEscuela] = useState<string>("");
+  const [selectedPeriodo, setSelectedPeriodo] = useState<string>("");
+  const { data: aulas } = useAulas();
+
+  const periodosForEscuela = useMemo(() => {
+    if (!selectedEscuela || selectedEscuela === "all") return allPeriodos || [];
+    return (allPeriodos || []).filter((p: any) => p.escuela_id === selectedEscuela);
+  }, [allPeriodos, selectedEscuela]);
+
+  const filtered = useMemo(() => {
+    let mats = allMatriculas || [];
+    if (selectedEscuela && selectedEscuela !== "all") mats = mats.filter((m: any) => m.curso_id === selectedEscuela);
+    if (selectedPeriodo && selectedPeriodo !== "all") mats = mats.filter((m: any) => m.periodo_id === selectedPeriodo);
+    return mats;
+  }, [allMatriculas, selectedEscuela, selectedPeriodo]);
+
+  const getResultado = (m: any) => {
+    if (m.estado === "Activo") return { label: "En curso", color: "bg-blue-500/10 text-blue-600 border-blue-500/20" };
+    if (m.estado === "Retirado") return { label: "Retirado", color: "bg-muted text-muted-foreground" };
+    if (m.nota_final != null && m.nota_final >= 3) return { label: "Aprobó", color: "bg-success/10 text-success border-success/20" };
+    if (m.nota_final != null && m.nota_final < 3) return { label: "Reprobó", color: "bg-destructive/10 text-destructive border-destructive/20" };
+    return { label: m.estado, color: "bg-muted text-muted-foreground" };
+  };
+
+  const exportExcel = () => {
+    exportToExcel({
+      title: "Historial Matrículas",
+      columns: [
+        { header: "Estudiante", key: "estudiante" },
+        { header: "Escuela", key: "escuela" },
+        { header: "Materia", key: "materia" },
+        { header: "Estado", key: "estado" },
+        { header: "Fecha Matrícula", key: "fecha" },
+        { header: "Nota Final", key: "nota" },
+        { header: "Resultado", key: "resultado" },
+      ],
+      data: filtered.map((m: any) => {
+        const escuela = (escuelas || []).find((e: any) => e.id === m.curso_id);
+        const res = getResultado(m);
+        return {
+          estudiante: `${m.personas?.nombres || ""} ${m.personas?.apellidos || ""}`,
+          escuela: escuela?.nombre || "",
+          materia: m.materias?.nombre || m.cursos?.nombre || "",
+          estado: m.estado,
+          fecha: m.fecha_matricula,
+          nota: m.nota_final ?? "",
+          resultado: res.label,
+        };
+      }),
+      filename: "historial-matriculas",
+    });
+  };
+
+  return (
+    <div className="space-y-4">
+      <p className="text-sm text-muted-foreground">Aquí encontrarás el listado de las matrículas de los periodos de cualquier escuela.</p>
+
+      <div className="flex flex-wrap gap-3">
+        <Select value={selectedEscuela} onValueChange={(v) => { setSelectedEscuela(v); setSelectedPeriodo(""); }}>
+          <SelectTrigger className="w-52"><SelectValue placeholder="Selecciona una escuela" /></SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all">Todas</SelectItem>
+            {(escuelas || []).map((e: any) => <SelectItem key={e.id} value={e.id}>{e.nombre}</SelectItem>)}
+          </SelectContent>
+        </Select>
+        <Select value={selectedPeriodo} onValueChange={setSelectedPeriodo}>
+          <SelectTrigger className="w-52"><SelectValue placeholder="Selecciona un período" /></SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all">Todos</SelectItem>
+            {periodosForEscuela.map((p: any) => <SelectItem key={p.id} value={p.id}>{p.nombre}</SelectItem>)}
+          </SelectContent>
+        </Select>
+        <Button size="sm" variant="outline" onClick={exportExcel} disabled={!filtered.length} className="gap-1.5 ml-auto">
+          <Download className="h-3.5 w-3.5" /> Exportar Excel
+        </Button>
+      </div>
+
+      <div className="rounded-xl border bg-card overflow-hidden">
+        <div className="overflow-x-auto">
+          <table className="w-full text-sm">
+            <thead>
+              <tr className="border-b bg-muted/30">
+                <th className="text-left p-3 font-medium text-muted-foreground">Estudiante</th>
+                <th className="text-left p-3 font-medium text-muted-foreground">Materia</th>
+                <th className="text-center p-3 font-medium text-muted-foreground">Estado Matrícula</th>
+                <th className="text-center p-3 font-medium text-muted-foreground">Fecha Matrícula</th>
+                <th className="text-center p-3 font-medium text-muted-foreground">Nota Final</th>
+                <th className="text-center p-3 font-medium text-muted-foreground">Resultado</th>
+              </tr>
+            </thead>
+            <tbody>
+              {!filtered.length ? (
+                <tr><td colSpan={6} className="text-center py-8 text-muted-foreground text-xs">No hay matrículas.</td></tr>
+              ) : (
+                filtered.slice(0, 100).map((m: any) => {
+                  const res = getResultado(m);
+                  return (
+                    <tr key={m.id} className="border-b last:border-0 hover:bg-muted/20">
+                      <td className="p-3">
+                        <div className="flex items-center gap-2">
+                          <Avatar className="h-7 w-7">
+                            <AvatarImage src={m.personas?.foto_url || undefined} />
+                            <AvatarFallback className="text-[10px]">{`${m.personas?.nombres?.[0] || ""}${m.personas?.apellidos?.[0] || ""}`}</AvatarFallback>
+                          </Avatar>
+                          <span className="font-medium truncate">{m.personas?.nombres} {m.personas?.apellidos}</span>
+                        </div>
+                      </td>
+                      <td className="p-3 text-muted-foreground">{m.materias?.nombre || m.cursos?.nombre || "—"}</td>
+                      <td className="p-3 text-center">
+                        <Badge variant="outline" className={cn("text-[10px]",
+                          m.estado === "Activo" ? "bg-success/10 text-success" :
+                          m.estado === "Completado" ? "bg-primary/10 text-primary" : ""
+                        )}>{m.estado}</Badge>
+                      </td>
+                      <td className="p-3 text-center text-muted-foreground">{m.fecha_matricula}</td>
+                      <td className="p-3 text-center font-semibold">{m.nota_final ?? "—"}</td>
+                      <td className="p-3 text-center">
+                        <Badge variant="outline" className={cn("text-[10px]", res.color)}>{res.label}</Badge>
+                      </td>
+                    </tr>
+                  );
+                })
+              )}
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ========== CERTIFICADOS SECTION ==========
+function CertificadosSection() {
+  const { data: certificados, isLoading } = useCertificados();
+
+  if (isLoading) return <Skeleton className="h-32" />;
+
+  return (
+    <div className="space-y-4">
+      <p className="text-sm text-muted-foreground">Certificados emitidos a estudiantes que completaron sus cursos.</p>
+      {!certificados?.length ? (
+        <div className="rounded-xl border bg-card p-12 text-center text-muted-foreground">
+          <Award className="h-12 w-12 mx-auto mb-3 opacity-40" />
+          <p className="text-sm">No hay certificados emitidos.</p>
+        </div>
+      ) : (
+        <div className="rounded-xl border bg-card divide-y">
+          {certificados.map((cert: any) => (
+            <div key={cert.id} className="flex items-center gap-3 px-4 py-3">
+              <div className="w-9 h-9 rounded-lg bg-accent/10 flex items-center justify-center shrink-0">
+                <FileText className="h-4 w-4 text-accent" />
+              </div>
+              <div className="flex-1 min-w-0">
+                <p className="text-sm font-medium truncate">{cert.personas?.nombres} {cert.personas?.apellidos}</p>
+                <p className="text-xs text-muted-foreground">{cert.cursos?.nombre}</p>
+              </div>
+              <div className="text-right shrink-0">
+                <p className="text-xs font-mono text-muted-foreground">{cert.codigo}</p>
+                <p className="text-[10px] text-muted-foreground">{format(parseISO(cert.fecha_emision), "d MMM yyyy", { locale: es })}</p>
+              </div>
+            </div>
+          ))}
         </div>
       )}
     </div>
@@ -203,7 +733,6 @@ function GradingGrid({ cortes, materias, periodoId }: any) {
     return (matriculas || []).filter((m: any) => m.estado === "Activo");
   }, [matriculas]);
 
-  // Build a map: `${matricula_id}_${item_id}` -> nota
   const [localGrades, setLocalGrades] = useState<Record<string, string>>({});
   const [initialized, setInitialized] = useState<string | null>(null);
 
@@ -265,7 +794,7 @@ function GradingGrid({ cortes, materias, periodoId }: any) {
             {c.nombre} ({c.porcentaje}%)
           </Button>
         ))}
-        {!cortes?.length && <p className="text-sm text-muted-foreground">Configura cortes en la pestaña "Información general" primero.</p>}
+        {!cortes?.length && <p className="text-sm text-muted-foreground">Configura cortes en el período primero.</p>}
       </div>
 
       {selectedCorte && (
@@ -479,7 +1008,6 @@ function AsistenciaMateriaTab({ materias, periodoId }: any) {
             )}
           </div>
 
-          {/* Materia Attendance Trend Chart */}
           <MateriaAttendanceTrendChart materias={materias || []} periodoId={periodoId} />
         </>
       )}
@@ -544,12 +1072,15 @@ function PeriodoDetailView({ escuela, periodo, onBackToPeriodos }: any) {
 
   return (
     <div className="animate-fade-in space-y-6">
-      <PageHeader title={periodo.nombre} description={`${escuela.nombre} · Período académico`}>
-        <Button variant="ghost" size="sm" onClick={onBackToPeriodos}><ArrowLeft className="h-4 w-4 mr-1" /> Períodos</Button>
+      <div className="flex items-center gap-3">
+        <Button variant="ghost" size="sm" onClick={onBackToPeriodos}><ArrowLeft className="h-4 w-4 mr-1" /> Atrás</Button>
+        <div className="flex-1">
+          <h2 className="text-lg font-bold text-foreground">{periodo.nombre}</h2>
+          <p className="text-sm text-muted-foreground">{escuela.nombre} · Período académico</p>
+        </div>
         <MatriculaFormDialog cursoId={escuela.id} periodoId={periodo.id} />
-      </PageHeader>
+      </div>
 
-      {/* Tabs */}
       <div className="flex gap-1 border-b overflow-x-auto">
         {tabs.map(t => (
           <button key={t.id} onClick={() => setActiveTab(t.id)}
@@ -559,7 +1090,6 @@ function PeriodoDetailView({ escuela, periodo, onBackToPeriodos }: any) {
         ))}
       </div>
 
-      {/* INFO TAB */}
       {activeTab === "info" && (
         <div className="space-y-6">
           <div className="rounded-xl border bg-card p-5">
@@ -590,7 +1120,6 @@ function PeriodoDetailView({ escuela, periodo, onBackToPeriodos }: any) {
             </div>
           </div>
 
-          {/* Cortes section */}
           <div className="rounded-xl border bg-card p-5">
             <div className="flex items-center justify-between mb-4">
               <h3 className="text-sm font-semibold text-foreground flex items-center gap-2">
@@ -625,7 +1154,6 @@ function PeriodoDetailView({ escuela, periodo, onBackToPeriodos }: any) {
         </div>
       )}
 
-      {/* ESTUDIANTES TAB */}
       {activeTab === "estudiantes" && (
         <div className="space-y-4">
           <div className="flex justify-end">
@@ -677,17 +1205,14 @@ function PeriodoDetailView({ escuela, periodo, onBackToPeriodos }: any) {
         </div>
       )}
 
-      {/* CALIFICACIONES TAB - Grading Grid */}
       {activeTab === "calificaciones" && (
         <GradingGrid cortes={cortes} materias={materias} periodoId={periodo.id} />
       )}
 
-      {/* ASISTENCIA TAB */}
       {activeTab === "asistencia" && (
         <AsistenciaMateriaTab materias={materias} periodoId={periodo.id} />
       )}
 
-      {/* MATERIAS TAB */}
       {activeTab === "materias" && (
         <div className="space-y-4">
           <div className="flex justify-end">
@@ -722,22 +1247,25 @@ function PeriodoDetailView({ escuela, periodo, onBackToPeriodos }: any) {
   );
 }
 
-// ========== AULAS MANAGEMENT VIEW ==========
-function AulasManagement() {
+// ========== AULAS MANAGEMENT ==========
+function AulasSection() {
   const { data: aulas, isLoading } = useAulas();
   const updateAula = useUpdateAula();
   const deleteAula = useDeleteAula();
 
   return (
-    <div className="rounded-xl border bg-card">
-      <div className="flex items-center justify-between p-4 border-b">
-        <h3 className="text-sm font-semibold flex items-center gap-2"><Building2 className="h-4 w-4 text-primary" /> Gestionar Aulas</h3>
+    <div className="space-y-4">
+      <div className="flex items-center justify-between">
+        <p className="text-sm text-muted-foreground">Gestiona las aulas y sedes disponibles.</p>
         <AulaFormDialog />
       </div>
-      {isLoading ? <Skeleton className="h-24 m-4" /> : !aulas?.length ? (
-        <p className="text-xs text-muted-foreground text-center py-8">No hay aulas registradas.</p>
+      {isLoading ? <Skeleton className="h-24" /> : !aulas?.length ? (
+        <div className="rounded-xl border bg-card p-12 text-center text-muted-foreground">
+          <Building2 className="h-12 w-12 mx-auto mb-3 opacity-40" />
+          <p className="text-sm">No hay aulas registradas.</p>
+        </div>
       ) : (
-        <div className="divide-y">
+        <div className="rounded-xl border bg-card divide-y">
           {aulas.map((a) => (
             <div key={a.id} className="flex items-center justify-between p-4">
               <div>
@@ -750,12 +1278,63 @@ function AulasManagement() {
               <div className="flex items-center gap-3">
                 <div className="flex items-center gap-2">
                   <Switch checked={a.activo} onCheckedChange={(v) => updateAula.mutateAsync({ id: a.id, activo: v })} />
-                  <span className={`text-xs font-medium ${a.activo ? "text-success" : "text-muted-foreground"}`}>{a.activo ? "Sí" : "No"}</span>
+                  <span className={`text-xs font-medium ${a.activo ? "text-success" : "text-muted-foreground"}`}>{a.activo ? "Activa" : "Inactiva"}</span>
                 </div>
                 <DeleteConfirmDialog title="Eliminar aula" description={`¿Eliminar "${a.nombre}"?`} onConfirm={() => deleteAula.mutateAsync(a.id)} />
               </div>
             </div>
           ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
+// ========== CALIFICACIONES SECTION (global) ==========
+function CalificacionesSection({ escuelas, allPeriodos }: any) {
+  const [selectedEscuela, setSelectedEscuela] = useState<string>("");
+  const [selectedPeriodo, setSelectedPeriodo] = useState<string>("");
+  const { data: materias } = useMaterias(selectedPeriodo || null);
+  const { data: cortes } = useCortes(selectedPeriodo || null);
+
+  const periodosForEscuela = useMemo(() => {
+    if (!selectedEscuela) return [];
+    return (allPeriodos || []).filter((p: any) => p.escuela_id === selectedEscuela);
+  }, [allPeriodos, selectedEscuela]);
+
+  return (
+    <div className="space-y-4">
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+        <div>
+          <label className="text-xs font-medium text-muted-foreground mb-1 block">Escuela:</label>
+          <Select value={selectedEscuela} onValueChange={(v) => { setSelectedEscuela(v); setSelectedPeriodo(""); }}>
+            <SelectTrigger><SelectValue placeholder="Seleccionar escuela" /></SelectTrigger>
+            <SelectContent>
+              {(escuelas || []).map((e: any) => (
+                <SelectItem key={e.id} value={e.id}>{e.nombre}</SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
+        <div>
+          <label className="text-xs font-medium text-muted-foreground mb-1 block">Período:</label>
+          <Select value={selectedPeriodo} onValueChange={setSelectedPeriodo} disabled={!selectedEscuela}>
+            <SelectTrigger><SelectValue placeholder="Seleccionar período" /></SelectTrigger>
+            <SelectContent>
+              {periodosForEscuela.map((p: any) => (
+                <SelectItem key={p.id} value={p.id}>{p.nombre}</SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
+      </div>
+
+      {selectedPeriodo ? (
+        <GradingGrid cortes={cortes} materias={materias} periodoId={selectedPeriodo} />
+      ) : (
+        <div className="rounded-xl border bg-card p-12 text-center text-muted-foreground">
+          <BarChart3 className="h-12 w-12 mx-auto mb-3 opacity-40" />
+          <p className="text-sm">Selecciona una escuela y período para ver las calificaciones.</p>
         </div>
       )}
     </div>
@@ -769,12 +1348,7 @@ export default function AcademiaPage() {
   const { data: allPeriodos } = useAllPeriodos();
   const { data: certificados } = useCertificados();
 
-  const [selectedEscuela, setSelectedEscuela] = useState<string | null>(null);
-  const [selectedPeriodo, setSelectedPeriodo] = useState<string | null>(null);
-  const [search, setSearch] = useState("");
-  const [mainTab, setMainTab] = useState<"escuelas" | "aulas">("escuelas");
-
-  const { data: periodos } = usePeriodos(selectedEscuela);
+  const [activeSection, setActiveSection] = useState("escuelas");
 
   const totalEscuelas = escuelas?.length || 0;
   const totalEstudiantes = new Set(allMatriculas?.map((m: any) => m.persona_id)).size;
@@ -791,69 +1365,59 @@ export default function AcademiaPage() {
     );
   }
 
-  const escuelaActual = escuelas?.find((e: any) => e.id === selectedEscuela);
-  const periodoActual = periodos?.find((p: any) => p.id === selectedPeriodo);
-
-  if (selectedEscuela && escuelaActual && selectedPeriodo && periodoActual) {
-    return <PeriodoDetailView escuela={escuelaActual} periodo={periodoActual} onBackToPeriodos={() => setSelectedPeriodo(null)} />;
-  }
-
-  if (selectedEscuela && escuelaActual) {
-    return <PeriodosView escuela={escuelaActual} periodos={periodos} allMatriculas={allMatriculas} onBack={() => setSelectedEscuela(null)} onSelectPeriodo={setSelectedPeriodo} />;
-  }
+  const sectionTitle: Record<string, string> = {
+    escuelas: "Escuelas",
+    periodos: "Períodos",
+    estudiantes: "Estudiantes",
+    maestros: "Maestros",
+    calificaciones: "Calificaciones",
+    "historial-matriculas": "Historial de Matrículas",
+    certificados: "Certificados",
+    aulas: "Gestionar Aulas",
+  };
 
   return (
-    <div className="animate-fade-in space-y-6">
-      <PageHeader title="Academia" description="Formación bíblica y escuelas de la iglesia">
-        <CursoFormDialog />
-      </PageHeader>
-
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+    <div className="animate-fade-in space-y-4">
+      {/* Header metrics */}
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
         <MetricCard title="Escuelas" value={totalEscuelas} icon={BookOpen} />
         <MetricCard title="Períodos Abiertos" value={periodosAbiertos} icon={Unlock} variant="success" />
         <MetricCard title="Estudiantes" value={totalEstudiantes} icon={Users} variant="info" />
         <MetricCard title="Certificados" value={totalCertificados} icon={Award} variant="accent" />
       </div>
 
-      {/* Main tabs: Escuelas vs Aulas */}
-      <div className="flex gap-1 border-b">
-        <button onClick={() => setMainTab("escuelas")}
-          className={`px-4 py-2 text-sm font-medium border-b-2 transition-colors ${mainTab === "escuelas" ? "border-primary text-primary" : "border-transparent text-muted-foreground hover:text-foreground"}`}>
-          <BookOpen className="h-4 w-4 inline mr-1.5" />Escuelas
-        </button>
-        <button onClick={() => setMainTab("aulas")}
-          className={`px-4 py-2 text-sm font-medium border-b-2 transition-colors ${mainTab === "aulas" ? "border-primary text-primary" : "border-transparent text-muted-foreground hover:text-foreground"}`}>
-          <Building2 className="h-4 w-4 inline mr-1.5" />Gestionar Aulas
-        </button>
-      </div>
+      {/* Mobile nav */}
+      <MobileNav activeSection={activeSection} onSectionChange={setActiveSection} />
 
-      {mainTab === "escuelas" && (
-        <>
-          <EscuelasView escuelas={escuelas} allPeriodos={allPeriodos} allMatriculas={allMatriculas} search={search} setSearch={setSearch} onSelectEscuela={setSelectedEscuela} />
-          {(certificados?.length || 0) > 0 && (
-            <div className="rounded-xl border bg-card p-5">
-              <h3 className="text-sm font-semibold text-foreground flex items-center gap-2 mb-4"><Award className="h-4 w-4 text-accent" /> Últimos Certificados</h3>
-              <div className="space-y-2">
-                {certificados!.slice(0, 5).map((cert: any) => (
-                  <div key={cert.id} className="flex items-center gap-3 p-2.5 rounded-lg bg-muted/50">
-                    <div className="w-8 h-8 rounded-lg bg-accent/10 flex items-center justify-center"><FileText className="h-4 w-4 text-accent" /></div>
-                    <div className="flex-1 min-w-0">
-                      <p className="text-sm font-medium truncate">{cert.personas?.nombres} {cert.personas?.apellidos}</p>
-                      <p className="text-xs text-muted-foreground">{cert.cursos?.nombre}</p>
-                    </div>
-                    <div className="text-right shrink-0">
-                      <p className="text-xs font-mono text-muted-foreground">{cert.codigo}</p>
-                      <p className="text-[10px] text-muted-foreground">{format(parseISO(cert.fecha_emision), "d MMM yyyy", { locale: es })}</p>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </div>
+      {/* Layout with sidebar */}
+      <div className="flex gap-0 rounded-xl border bg-background overflow-hidden min-h-[500px]">
+        <AcademiaSidebar activeSection={activeSection} onSectionChange={setActiveSection} />
+        <div className="flex-1 p-5 overflow-auto">
+          <h2 className="text-lg font-bold text-foreground mb-4">{sectionTitle[activeSection] || "Academia"}</h2>
+
+          {activeSection === "escuelas" && (
+            <EscuelasSection escuelas={escuelas} allPeriodos={allPeriodos} allMatriculas={allMatriculas}
+              onSelectEscuela={(e: any) => { /* Navigate to periodos filtered by this school */ setActiveSection("periodos"); }} />
           )}
-        </>
-      )}
-
-      {mainTab === "aulas" && <AulasManagement />}
+          {activeSection === "periodos" && (
+            <PeriodosSection escuelas={escuelas} allPeriodos={allPeriodos} allMatriculas={allMatriculas} />
+          )}
+          {activeSection === "estudiantes" && (
+            <EstudiantesSection escuelas={escuelas} allPeriodos={allPeriodos} allMatriculas={allMatriculas} />
+          )}
+          {activeSection === "maestros" && (
+            <MaestrosSection escuelas={escuelas} allPeriodos={allPeriodos} />
+          )}
+          {activeSection === "calificaciones" && (
+            <CalificacionesSection escuelas={escuelas} allPeriodos={allPeriodos} />
+          )}
+          {activeSection === "historial-matriculas" && (
+            <HistorialMatriculasSection escuelas={escuelas} allPeriodos={allPeriodos} allMatriculas={allMatriculas} />
+          )}
+          {activeSection === "certificados" && <CertificadosSection />}
+          {activeSection === "aulas" && <AulasSection />}
+        </div>
+      </div>
     </div>
   );
 }
