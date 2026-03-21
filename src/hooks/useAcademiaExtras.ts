@@ -84,7 +84,41 @@ export function useUpdatePagoMatricula() {
       const { error } = await supabase.from("pagos_matricula").update(updates).eq("id", id);
       if (error) throw error;
     },
-    onSuccess: () => qc.invalidateQueries({ queryKey: ["pagos-matricula"] }),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["pagos-matricula"] });
+      qc.invalidateQueries({ queryKey: ["pagos-escuela"] });
+    },
+  });
+}
+
+// ============ ALL PAGOS BY SCHOOL (for export & dashboard) ============
+export function usePagosEscuela(escuelaId: string | null) {
+  return useQuery({
+    queryKey: ["pagos-escuela", escuelaId],
+    enabled: !!escuelaId,
+    queryFn: async () => {
+      // Get all matriculas for this school
+      const { data: matriculas, error: mErr } = await supabase
+        .from("matriculas")
+        .select("id, persona_id, estado, personas(nombres, apellidos)")
+        .eq("curso_id", escuelaId!);
+      if (mErr) throw mErr;
+      if (!matriculas?.length) return [];
+
+      const matriculaIds = matriculas.map((m: any) => m.id);
+      const { data: pagos, error: pErr } = await supabase
+        .from("pagos_matricula")
+        .select("*, conceptos_pago(nombre, monto)")
+        .in("matricula_id", matriculaIds);
+      if (pErr) throw pErr;
+
+      // Merge persona info into each pago
+      const matriculaMap = new Map(matriculas.map((m: any) => [m.id, m]));
+      return (pagos || []).map((p: any) => ({
+        ...p,
+        matricula: matriculaMap.get(p.matricula_id),
+      }));
+    },
   });
 }
 
