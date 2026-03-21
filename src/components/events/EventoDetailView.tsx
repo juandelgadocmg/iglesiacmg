@@ -1,11 +1,11 @@
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { ArrowLeft, Save, X, Plus, Trash2, Search, Users, UserPlus } from "lucide-react";
+import { ArrowLeft, Save, X, Plus, Trash2, Search, Users, UserPlus, FileText } from "lucide-react";
 import { useUpdateEvento } from "@/hooks/useDatabase";
 import {
   useEventoCategorias, useCreateEventoCategoria, useDeleteEventoCategoria,
@@ -58,6 +58,9 @@ export default function EventoDetailView({ evento, onBack }: Props) {
   const [searchEnc, setSearchEnc] = useState("");
   const [searchSrv, setSearchSrv] = useState("");
   const [selectedClasificacion, setSelectedClasificacion] = useState("Ujier");
+  const [informeTab, setInformeTab] = useState("inscripciones");
+  const [informeFechaDesde, setInformeFechaDesde] = useState("");
+  const [informeFechaHasta, setInformeFechaHasta] = useState("");
 
   const handleSaveGeneral = async () => {
     if (!form.nombre.trim()) { toast.error("El nombre es obligatorio"); return; }
@@ -134,6 +137,7 @@ export default function EventoDetailView({ evento, onBack }: Props) {
           <TabsTrigger value="encargados">Encargados</TabsTrigger>
           <TabsTrigger value="asistencias">Asistencias</TabsTrigger>
           <TabsTrigger value="servidores">Servidores Actividad</TabsTrigger>
+          <TabsTrigger value="informes">📊 Informes</TabsTrigger>
         </TabsList>
 
         {/* TAB GENERAL */}
@@ -466,6 +470,217 @@ export default function EventoDetailView({ evento, onBack }: Props) {
                 ))}
               </div>
             )}
+          </div>
+        </TabsContent>
+
+        {/* TAB INFORMES */}
+        <TabsContent value="informes">
+          <div className="bg-card rounded-xl border p-6 space-y-6">
+            <h3 className="font-semibold text-foreground">Informes del Evento</h3>
+
+            {/* Sub-tabs for report types */}
+            <div className="flex flex-wrap gap-2">
+              {[
+                { key: "inscripciones", label: "📋 Informe de Inscripciones" },
+                { key: "pagos", label: "💰 Informe de Pagos" },
+                { key: "asistencia", label: "📊 Informe de Asistencia" },
+              ].map(tab => (
+                <button
+                  key={tab.key}
+                  onClick={() => setInformeTab(tab.key)}
+                  className={`px-4 py-2 text-sm rounded-lg border transition-colors ${informeTab === tab.key ? "bg-primary text-primary-foreground border-primary" : "bg-muted/50 text-foreground border-border hover:bg-muted"}`}
+                >
+                  {tab.label}
+                </button>
+              ))}
+            </div>
+
+            {/* Date filter */}
+            <div className="flex flex-wrap items-center gap-3">
+              <div className="flex items-center gap-2 bg-muted/50 rounded-lg px-3 py-1.5 text-sm">
+                <span className="text-muted-foreground">📅 Filtrar por fecha:</span>
+                <Input type="date" value={informeFechaDesde} onChange={e => setInformeFechaDesde(e.target.value)} className="h-7 w-36 text-xs" />
+                <span className="text-muted-foreground">a</span>
+                <Input type="date" value={informeFechaHasta} onChange={e => setInformeFechaHasta(e.target.value)} className="h-7 w-36 text-xs" />
+              </div>
+              {(informeFechaDesde || informeFechaHasta) && (
+                <Button variant="ghost" size="sm" onClick={() => { setInformeFechaDesde(""); setInformeFechaHasta(""); }}>Limpiar filtro</Button>
+              )}
+            </div>
+
+            {/* INFORME INSCRIPCIONES */}
+            {informeTab === "inscripciones" && (() => {
+              let filtered = inscripciones || [];
+              if (informeFechaDesde) filtered = filtered.filter(i => new Date(i.created_at) >= new Date(informeFechaDesde));
+              if (informeFechaHasta) filtered = filtered.filter(i => new Date(i.created_at) <= new Date(informeFechaHasta + "T23:59:59"));
+              const confirmadosCount = filtered.filter(i => i.confirmado).length;
+              const pendientesCount = filtered.length - confirmadosCount;
+
+              return (
+                <div className="space-y-4">
+                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                    <div className="bg-muted/30 rounded-lg p-4 text-center">
+                      <p className="text-xs text-muted-foreground">Total Inscritos</p>
+                      <p className="text-2xl font-bold text-foreground">{filtered.length}</p>
+                    </div>
+                    <div className="bg-muted/30 rounded-lg p-4 text-center">
+                      <p className="text-xs text-muted-foreground">Confirmados</p>
+                      <p className="text-2xl font-bold text-primary">{confirmadosCount}</p>
+                    </div>
+                    <div className="bg-muted/30 rounded-lg p-4 text-center">
+                      <p className="text-xs text-muted-foreground">Pendientes</p>
+                      <p className="text-2xl font-bold text-amber-500">{pendientesCount}</p>
+                    </div>
+                  </div>
+
+                  <div className="border rounded-lg overflow-hidden">
+                    <table className="w-full">
+                      <thead className="bg-muted/50">
+                        <tr>
+                          <th className="text-left text-xs font-semibold text-muted-foreground px-4 py-3">#</th>
+                          <th className="text-left text-xs font-semibold text-muted-foreground px-4 py-3">Persona</th>
+                          <th className="text-center text-xs font-semibold text-muted-foreground px-4 py-3">Confirmado</th>
+                          <th className="text-center text-xs font-semibold text-muted-foreground px-4 py-3">Estado Pago</th>
+                          <th className="text-center text-xs font-semibold text-muted-foreground px-4 py-3">Fecha Inscripción</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {filtered.length === 0 ? (
+                          <tr><td colSpan={5} className="text-center py-8 text-sm text-muted-foreground">No hay inscripciones registradas</td></tr>
+                        ) : filtered.map((insc, idx) => (
+                          <tr key={insc.id} className="border-t hover:bg-muted/30">
+                            <td className="px-4 py-2.5 text-sm text-muted-foreground">{idx + 1}</td>
+                            <td className="px-4 py-2.5 text-sm font-medium">{(insc as any).personas?.nombres} {(insc as any).personas?.apellidos}</td>
+                            <td className="px-4 py-2.5 text-center">
+                              <Badge variant={insc.confirmado ? "default" : "secondary"}>{insc.confirmado ? "Sí" : "No"}</Badge>
+                            </td>
+                            <td className="px-4 py-2.5 text-center">
+                              <Badge variant={insc.estado_pago === "Pagado" ? "default" : "outline"}>{insc.estado_pago || "Pendiente"}</Badge>
+                            </td>
+                            <td className="px-4 py-2.5 text-center text-sm text-muted-foreground">{new Date(insc.created_at).toLocaleDateString("es")}</td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                </div>
+              );
+            })()}
+
+            {/* INFORME PAGOS */}
+            {informeTab === "pagos" && (() => {
+              let filtered = inscripciones || [];
+              if (informeFechaDesde) filtered = filtered.filter(i => new Date(i.created_at) >= new Date(informeFechaDesde));
+              if (informeFechaHasta) filtered = filtered.filter(i => new Date(i.created_at) <= new Date(informeFechaHasta + "T23:59:59"));
+              const pagados = filtered.filter(i => i.estado_pago === "Pagado");
+              const pendientes = filtered.filter(i => i.estado_pago !== "Pagado");
+
+              return (
+                <div className="space-y-4">
+                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                    <div className="bg-muted/30 rounded-lg p-4 text-center">
+                      <p className="text-xs text-muted-foreground">Total Registros</p>
+                      <p className="text-2xl font-bold text-foreground">{filtered.length}</p>
+                    </div>
+                    <div className="bg-muted/30 rounded-lg p-4 text-center">
+                      <p className="text-xs text-muted-foreground">Pagados</p>
+                      <p className="text-2xl font-bold text-emerald-600">{pagados.length}</p>
+                    </div>
+                    <div className="bg-muted/30 rounded-lg p-4 text-center">
+                      <p className="text-xs text-muted-foreground">Pendientes de Pago</p>
+                      <p className="text-2xl font-bold text-rose-500">{pendientes.length}</p>
+                    </div>
+                  </div>
+
+                  <div className="border rounded-lg overflow-hidden">
+                    <table className="w-full">
+                      <thead className="bg-muted/50">
+                        <tr>
+                          <th className="text-left text-xs font-semibold text-muted-foreground px-4 py-3">#</th>
+                          <th className="text-left text-xs font-semibold text-muted-foreground px-4 py-3">Persona</th>
+                          <th className="text-center text-xs font-semibold text-muted-foreground px-4 py-3">Estado Pago</th>
+                          <th className="text-center text-xs font-semibold text-muted-foreground px-4 py-3">Fecha</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {filtered.length === 0 ? (
+                          <tr><td colSpan={4} className="text-center py-8 text-sm text-muted-foreground">No hay registros de pago</td></tr>
+                        ) : filtered.map((insc, idx) => (
+                          <tr key={insc.id} className="border-t hover:bg-muted/30">
+                            <td className="px-4 py-2.5 text-sm text-muted-foreground">{idx + 1}</td>
+                            <td className="px-4 py-2.5 text-sm font-medium">{(insc as any).personas?.nombres} {(insc as any).personas?.apellidos}</td>
+                            <td className="px-4 py-2.5 text-center">
+                              <Badge variant={insc.estado_pago === "Pagado" ? "default" : "outline"}>{insc.estado_pago || "Pendiente"}</Badge>
+                            </td>
+                            <td className="px-4 py-2.5 text-center text-sm text-muted-foreground">{new Date(insc.created_at).toLocaleDateString("es")}</td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                </div>
+              );
+            })()}
+
+            {/* INFORME ASISTENCIA */}
+            {informeTab === "asistencia" && (() => {
+              let filtered = inscripciones || [];
+              if (informeFechaDesde) filtered = filtered.filter(i => new Date(i.created_at) >= new Date(informeFechaDesde));
+              if (informeFechaHasta) filtered = filtered.filter(i => new Date(i.created_at) <= new Date(informeFechaHasta + "T23:59:59"));
+              const confirmadosCount = filtered.filter(i => i.confirmado).length;
+              const ausentes = filtered.length - confirmadosCount;
+              const porcentaje = filtered.length > 0 ? Math.round((confirmadosCount / filtered.length) * 100) : 0;
+
+              return (
+                <div className="space-y-4">
+                  <div className="grid grid-cols-1 sm:grid-cols-4 gap-4">
+                    <div className="bg-muted/30 rounded-lg p-4 text-center">
+                      <p className="text-xs text-muted-foreground">Total Inscritos</p>
+                      <p className="text-2xl font-bold text-foreground">{filtered.length}</p>
+                    </div>
+                    <div className="bg-muted/30 rounded-lg p-4 text-center">
+                      <p className="text-xs text-muted-foreground">Asistieron</p>
+                      <p className="text-2xl font-bold text-primary">{confirmadosCount}</p>
+                    </div>
+                    <div className="bg-muted/30 rounded-lg p-4 text-center">
+                      <p className="text-xs text-muted-foreground">Ausentes</p>
+                      <p className="text-2xl font-bold text-rose-500">{ausentes}</p>
+                    </div>
+                    <div className="bg-muted/30 rounded-lg p-4 text-center">
+                      <p className="text-xs text-muted-foreground">% Asistencia</p>
+                      <p className="text-2xl font-bold text-foreground">{porcentaje}%</p>
+                    </div>
+                  </div>
+
+                  <div className="border rounded-lg overflow-hidden">
+                    <table className="w-full">
+                      <thead className="bg-muted/50">
+                        <tr>
+                          <th className="text-left text-xs font-semibold text-muted-foreground px-4 py-3">#</th>
+                          <th className="text-left text-xs font-semibold text-muted-foreground px-4 py-3">Persona</th>
+                          <th className="text-center text-xs font-semibold text-muted-foreground px-4 py-3">Asistencia</th>
+                          <th className="text-center text-xs font-semibold text-muted-foreground px-4 py-3">Fecha Registro</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {filtered.length === 0 ? (
+                          <tr><td colSpan={4} className="text-center py-8 text-sm text-muted-foreground">No hay registros de asistencia</td></tr>
+                        ) : filtered.map((insc, idx) => (
+                          <tr key={insc.id} className="border-t hover:bg-muted/30">
+                            <td className="px-4 py-2.5 text-sm text-muted-foreground">{idx + 1}</td>
+                            <td className="px-4 py-2.5 text-sm font-medium">{(insc as any).personas?.nombres} {(insc as any).personas?.apellidos}</td>
+                            <td className="px-4 py-2.5 text-center">
+                              <Badge variant={insc.confirmado ? "default" : "destructive"}>{insc.confirmado ? "Presente" : "Ausente"}</Badge>
+                            </td>
+                            <td className="px-4 py-2.5 text-center text-sm text-muted-foreground">{new Date(insc.created_at).toLocaleDateString("es")}</td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                </div>
+              );
+            })()}
           </div>
         </TabsContent>
       </Tabs>
