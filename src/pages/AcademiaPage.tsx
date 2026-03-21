@@ -28,6 +28,7 @@ import {
   useConceptosPago, useDeleteConceptoPago, usePagosMatricula, useUpdatePagoMatricula,
   useRecursos, useAllRecursos, useDeleteRecurso,
   useHomologaciones, useDeleteHomologacion,
+  usePagosEscuela,
 } from "@/hooks/useAcademiaExtras";
 import { usePersonas } from "@/hooks/useDatabase";
 import { Skeleton } from "@/components/ui/skeleton";
