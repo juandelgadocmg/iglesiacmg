@@ -42,6 +42,19 @@ export function useNotifications() {
     staleTime: 5 * 60 * 1000,
   });
 
+  const { data: pagosVencidos } = useQuery({
+    queryKey: ["notif-pagos-vencidos"],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("pagos_matricula")
+        .select("id, estado, created_at, matricula_id, concepto_pago_id, conceptos_pago(nombre, monto), matriculas(persona_id, personas(nombres, apellidos))")
+        .eq("estado", "Pendiente");
+      if (error) throw error;
+      return data;
+    },
+    staleTime: 5 * 60 * 1000,
+  });
+
   const { data: servicios } = useQuery({
     queryKey: ["notif-servicios"],
     queryFn: async () => {
