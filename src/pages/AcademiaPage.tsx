@@ -1478,16 +1478,59 @@ function CalificacionesSection({ escuelas, allPeriodos }: any) {
 }
 
 // ========== PAGOS SECTION ==========
-function PagosSection({ escuelas }: any) {
+function PagosSection({ escuelas, allMatriculas }: any) {
   const [selectedEscuela, setSelectedEscuela] = useState<string>("");
+  const [selectedMatricula, setSelectedMatricula] = useState<string | null>(null);
+  const [searchPago, setSearchPago] = useState("");
   const { data: conceptos } = useConceptosPago(selectedEscuela || null);
+  const { data: pagos, isLoading: loadingPagos } = usePagosMatricula(selectedMatricula);
+  const updatePago = useUpdatePagoMatricula();
   const deleteConcepto = useDeleteConceptoPago();
+
+  const matriculasEscuela = useMemo(() => {
+    if (!selectedEscuela || !allMatriculas) return [];
+    return allMatriculas.filter((m: any) => m.curso_id === selectedEscuela);
+  }, [selectedEscuela, allMatriculas]);
+
+  const filteredMatriculas = useMemo(() => {
+    if (!searchPago) return matriculasEscuela;
+    const q = searchPago.toLowerCase();
+    return matriculasEscuela.filter((m: any) =>
+      `${m.personas?.nombres} ${m.personas?.apellidos}`.toLowerCase().includes(q)
+    );
+  }, [matriculasEscuela, searchPago]);
+
+  const selectedStudent = useMemo(() => {
+    if (!selectedMatricula) return null;
+    return allMatriculas?.find((m: any) => m.id === selectedMatricula);
+  }, [selectedMatricula, allMatriculas]);
+
+  const handleUpdatePago = async (pagoId: string, estado: string) => {
+    try {
+      const updates: any = { id: pagoId, estado };
+      if (estado === "Pagado") {
+        updates.fecha_pago = new Date().toISOString().split("T")[0];
+        const pago = pagos?.find((p: any) => p.id === pagoId);
+        if (pago?.conceptos_pago?.monto) updates.monto_pagado = pago.conceptos_pago.monto;
+      }
+      await updatePago.mutateAsync(updates);
+      toast.success(estado === "Pagado" ? "Pago registrado" : "Estado actualizado");
+    } catch {
+      toast.error("Error al actualizar pago");
+    }
+  };
+
+  const totalConceptos = pagos?.length || 0;
+  const totalPagados = pagos?.filter((p: any) => p.estado === "Pagado").length || 0;
+  const totalMonto = pagos?.reduce((s: number, p: any) => s + (p.conceptos_pago?.monto || 0), 0) || 0;
+  const totalPagado = pagos?.reduce((s: number, p: any) => s + (p.monto_pagado || 0), 0) || 0;
 
   return (
     <div className="space-y-4">
-      <p className="text-sm text-muted-foreground">Gestiona los conceptos de pago configurables por escuela y el estado de pagos de las matrículas.</p>
-      <div className="flex items-center gap-3">
-        <Select value={selectedEscuela} onValueChange={setSelectedEscuela}>
+      <p className="text-sm text-muted-foreground">Gestiona los conceptos de pago por escuela y el estado de pagos por estudiante.</p>
+      
+      <div className="flex items-center gap-3 flex-wrap">
+        <Select value={selectedEscuela} onValueChange={(v) => { setSelectedEscuela(v); setSelectedMatricula(null); }}>
           <SelectTrigger className="w-64"><SelectValue placeholder="Selecciona una escuela" /></SelectTrigger>
           <SelectContent>
             {(escuelas || []).map((e: any) => <SelectItem key={e.id} value={e.id}>{e.nombre}</SelectItem>)}
@@ -1497,19 +1540,153 @@ function PagosSection({ escuelas }: any) {
       </div>
 
       {selectedEscuela && (
-        <div className="rounded-xl border bg-card divide-y">
-          {!conceptos?.length ? (
-            <p className="text-xs text-muted-foreground text-center py-8">No hay conceptos de pago configurados para esta escuela.</p>
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+          {/* Conceptos de pago configurados */}
+          <div className="space-y-3">
+            <h3 className="text-sm font-semibold text-foreground">Conceptos de pago</h3>
+            <div className="rounded-xl border bg-card divide-y">
+              {!conceptos?.length ? (
+                <p className="text-xs text-muted-foreground text-center py-8">No hay conceptos configurados.</p>
+              ) : (
+                conceptos.map((c: any) => (
+                  <div key={c.id} className="flex items-center justify-between p-3">
+                    <div>
+                      <p className="text-sm font-medium">{c.nombre}</p>
+                      <p className="text-xs text-muted-foreground">${c.monto}</p>
+                    </div>
+                    <DeleteConfirmDialog title="Eliminar concepto" description={`¿Eliminar "${c.nombre}"?`} onConfirm={() => deleteConcepto.mutateAsync(c.id)} />
+                  </div>
+                ))
+              )}
+            </div>
+          </div>
+
+          {/* Lista de estudiantes matriculados */}
+          <div className="space-y-3">
+            <h3 className="text-sm font-semibold text-foreground">Estudiantes matriculados</h3>
+            <div className="relative">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+              <Input placeholder="Buscar estudiante..." value={searchPago} onChange={(e) => setSearchPago(e.target.value)} className="pl-10 h-9" />
+            </div>
+            <div className="rounded-xl border bg-card divide-y max-h-72 overflow-auto">
+              {!filteredMatriculas.length ? (
+                <p className="text-xs text-muted-foreground text-center py-8">No hay matrículas.</p>
+              ) : (
+                filteredMatriculas.map((m: any) => {
+                  const initials = `${m.personas?.nombres?.[0] || ""}${m.personas?.apellidos?.[0] || ""}`.toUpperCase();
+                  return (
+                    <button
+                      key={m.id}
+                      onClick={() => setSelectedMatricula(m.id)}
+                      className={cn(
+                        "w-full flex items-center gap-3 p-3 text-left transition-colors hover:bg-muted/30",
+                        selectedMatricula === m.id && "bg-primary/5 border-l-2 border-l-primary"
+                      )}
+                    >
+                      <Avatar className="h-8 w-8">
+                        <AvatarImage src={m.personas?.foto_url || undefined} />
+                        <AvatarFallback className="text-xs">{initials}</AvatarFallback>
+                      </Avatar>
+                      <div className="flex-1 min-w-0">
+                        <p className="text-sm font-medium truncate">{m.personas?.nombres} {m.personas?.apellidos}</p>
+                        <p className="text-xs text-muted-foreground">{m.estado}</p>
+                      </div>
+                      <ChevronRight className="h-4 w-4 text-muted-foreground shrink-0" />
+                    </button>
+                  );
+                })
+              )}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Detalle de pagos del estudiante seleccionado */}
+      {selectedMatricula && (
+        <div className="space-y-3 mt-2">
+          <div className="flex items-center justify-between">
+            <h3 className="text-sm font-semibold text-foreground flex items-center gap-2">
+              <DollarSign className="h-4 w-4 text-primary" />
+              Pagos de {selectedStudent?.personas?.nombres} {selectedStudent?.personas?.apellidos}
+            </h3>
+            <Button size="sm" variant="ghost" onClick={() => setSelectedMatricula(null)} className="text-xs gap-1">
+              <X className="h-3 w-3" /> Cerrar
+            </Button>
+          </div>
+
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+            <div className="rounded-lg border bg-card p-3 text-center">
+              <p className="text-xs text-muted-foreground">Conceptos</p>
+              <p className="text-lg font-bold text-foreground">{totalConceptos}</p>
+            </div>
+            <div className="rounded-lg border bg-card p-3 text-center">
+              <p className="text-xs text-muted-foreground">Pagados</p>
+              <p className="text-lg font-bold text-success">{totalPagados}/{totalConceptos}</p>
+            </div>
+            <div className="rounded-lg border bg-card p-3 text-center">
+              <p className="text-xs text-muted-foreground">Total</p>
+              <p className="text-lg font-bold text-foreground">${totalMonto}</p>
+            </div>
+            <div className="rounded-lg border bg-card p-3 text-center">
+              <p className="text-xs text-muted-foreground">Pagado</p>
+              <p className="text-lg font-bold text-success">${totalPagado}</p>
+            </div>
+          </div>
+
+          {loadingPagos ? <Skeleton className="h-24" /> : !pagos?.length ? (
+            <div className="rounded-xl border bg-card p-8 text-center text-muted-foreground">
+              <DollarSign className="h-10 w-10 mx-auto mb-2 opacity-40" />
+              <p className="text-sm">No hay pagos registrados para esta matrícula.</p>
+              <p className="text-xs mt-1">Los pagos se generan automáticamente al matricular según los conceptos configurados.</p>
+            </div>
           ) : (
-            conceptos.map((c: any) => (
-              <div key={c.id} className="flex items-center justify-between p-4">
-                <div>
-                  <p className="text-sm font-medium">{c.nombre}</p>
-                  <p className="text-xs text-muted-foreground">Monto: ${c.monto}</p>
-                </div>
-                <DeleteConfirmDialog title="Eliminar concepto" description={`¿Eliminar "${c.nombre}"?`} onConfirm={() => deleteConcepto.mutateAsync(c.id)} />
-              </div>
-            ))
+            <div className="rounded-xl border bg-card overflow-hidden">
+              <table className="w-full text-sm">
+                <thead>
+                  <tr className="border-b bg-muted/30">
+                    <th className="text-left p-3 font-medium text-muted-foreground">Concepto</th>
+                    <th className="text-center p-3 font-medium text-muted-foreground">Monto</th>
+                    <th className="text-center p-3 font-medium text-muted-foreground">Estado</th>
+                    <th className="text-center p-3 font-medium text-muted-foreground">Fecha pago</th>
+                    <th className="text-center p-3 font-medium text-muted-foreground">Acciones</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {pagos.map((p: any) => (
+                    <tr key={p.id} className="border-b last:border-0 hover:bg-muted/20">
+                      <td className="p-3 font-medium">{p.conceptos_pago?.nombre || "—"}</td>
+                      <td className="p-3 text-center">${p.conceptos_pago?.monto || 0}</td>
+                      <td className="p-3 text-center">
+                        <Badge variant="outline" className={cn("text-xs",
+                          p.estado === "Pagado"
+                            ? "bg-success/10 text-success border-success/20"
+                            : "bg-warning/10 text-warning border-warning/20"
+                        )}>
+                          {p.estado === "Pagado" ? <CheckCircle2 className="h-3 w-3 mr-1" /> : <Clock className="h-3 w-3 mr-1" />}
+                          {p.estado}
+                        </Badge>
+                      </td>
+                      <td className="p-3 text-center text-muted-foreground text-xs">
+                        {p.fecha_pago ? format(parseISO(p.fecha_pago), "d MMM yyyy", { locale: es }) : "—"}
+                      </td>
+                      <td className="p-3 text-center">
+                        {p.estado === "Pendiente" ? (
+                          <Button size="sm" variant="outline" className="text-xs gap-1 text-success border-success/30 hover:bg-success/10"
+                            onClick={() => handleUpdatePago(p.id, "Pagado")} disabled={updatePago.isPending}>
+                            <CheckCircle2 className="h-3 w-3" /> Marcar pagado
+                          </Button>
+                        ) : (
+                          <Button size="sm" variant="ghost" className="text-xs gap-1 text-muted-foreground"
+                            onClick={() => handleUpdatePago(p.id, "Pendiente")} disabled={updatePago.isPending}>
+                            <XCircle className="h-3 w-3" /> Revertir
+                          </Button>
+                        )}
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
           )}
         </div>
       )}
