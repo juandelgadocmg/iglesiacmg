@@ -196,7 +196,7 @@ function GradingGrid({ cortes, materias, periodoId }: any) {
 
   const materiaItems = useMemo(() => {
     if (!items || !selectedMateria) return [];
-    return items.filter((i: any) => i.materia_id === selectedMateria);
+    return items.filter((i: any) => i.materia_id === selectedMateria && i.es_calificable !== false);
   }, [items, selectedMateria]);
 
   const activeStudents = useMemo(() => {
@@ -312,7 +312,10 @@ function GradingGrid({ cortes, materias, periodoId }: any) {
                       {materiaItems.map((item: any) => (
                         <th key={item.id} className="text-center p-3 font-medium text-muted-foreground min-w-[100px]">
                           <div>{item.nombre}</div>
-                          <div className="text-[10px] font-normal">{item.porcentaje != null ? `${item.porcentaje}%` : ""}</div>
+                          <div className="text-[10px] font-normal flex items-center justify-center gap-1">
+                            <span className="text-muted-foreground">{item.tipo}</span>
+                            {item.porcentaje != null && <span>· {item.porcentaje}%</span>}
+                          </div>
                         </th>
                       ))}
                       <th className="text-center p-3 font-medium text-muted-foreground min-w-[80px]">Promedio</th>

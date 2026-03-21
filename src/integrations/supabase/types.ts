@@ -727,6 +727,7 @@ export type Database = {
         Row: {
           corte_id: string
           created_at: string
+          es_calificable: boolean
           fecha_fin: string | null
           fecha_inicio: string | null
           id: string
@@ -734,10 +735,12 @@ export type Database = {
           nombre: string
           porcentaje: number | null
           tipo: string
+          visible_estudiante: boolean
         }
         Insert: {
           corte_id: string
           created_at?: string
+          es_calificable?: boolean
           fecha_fin?: string | null
           fecha_inicio?: string | null
           id?: string
@@ -745,10 +748,12 @@ export type Database = {
           nombre: string
           porcentaje?: number | null
           tipo?: string
+          visible_estudiante?: boolean
         }
         Update: {
           corte_id?: string
           created_at?: string
+          es_calificable?: boolean
           fecha_fin?: string | null
           fecha_inicio?: string | null
           id?: string
@@ -756,6 +761,7 @@ export type Database = {
           nombre?: string
           porcentaje?: number | null
           tipo?: string
+          visible_estudiante?: boolean
         }
         Relationships: [
           {
