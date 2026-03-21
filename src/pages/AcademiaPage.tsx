@@ -1,4 +1,5 @@
 import { useState, useMemo, useCallback } from "react";
+import { supabase } from "@/integrations/supabase/client";
 import PageHeader from "@/components/shared/PageHeader";
 import MetricCard from "@/components/shared/MetricCard";
 import CursoFormDialog from "@/components/forms/CursoFormDialog";
@@ -460,7 +461,7 @@ function GestionarComoMaestro({ maestro, escuelas, allPeriodos, onBack }: any) {
           </div>
 
           {activeTab === "calificaciones" && (
-            <GradingGrid cortes={cortes} materias={misMaterias} periodoId={selectedPeriodo} />
+            <GradingGrid cortes={cortes} materias={misMaterias} periodoId={selectedPeriodo} maestroId={maestro.id} />
           )}
 
           {activeTab === "asistencia" && (
@@ -727,7 +728,7 @@ function CertificadosSection() {
 }
 
 // ========== GRADING GRID ==========
-function GradingGrid({ cortes, materias, periodoId }: any) {
+function GradingGrid({ cortes, materias, periodoId, maestroId, escuelaName }: any) {
   const [selectedCorte, setSelectedCorte] = useState<string | null>(null);
   const [selectedMateria, setSelectedMateria] = useState<string | null>(null);
   const { data: items } = useAllItemsByCorte(selectedCorte);
@@ -736,10 +737,23 @@ function GradingGrid({ cortes, materias, periodoId }: any) {
   const bulkUpsert = useBulkUpsertCalificaciones();
   const deleteItem = useDeleteItemCalificable();
 
+  // Get the selected materia object for teacher validation
+  const selectedMateriaObj = useMemo(() => {
+    return (materias || []).find((m: any) => m.id === selectedMateria);
+  }, [materias, selectedMateria]);
+
+  // VALIDATION: Check if current user is the assigned teacher
+  const isMaestroMismatch = maestroId && selectedMateriaObj?.maestro_id && selectedMateriaObj.maestro_id !== maestroId;
+
   const materiaItems = useMemo(() => {
     if (!items || !selectedMateria) return [];
     return items.filter((i: any) => i.materia_id === selectedMateria && i.es_calificable !== false);
   }, [items, selectedMateria]);
+
+  // VALIDATION: Check percentage totals
+  const totalPorcentaje = useMemo(() => {
+    return materiaItems.reduce((sum: number, i: any) => sum + (Number(i.porcentaje) || 0), 0);
+  }, [materiaItems]);
 
   const activeStudents = useMemo(() => {
     return (matriculas || []).filter((m: any) => m.estado === "Activo");
@@ -762,11 +776,32 @@ function GradingGrid({ cortes, materias, periodoId }: any) {
     setLocalGrades(prev => ({ ...prev, [`${matriculaId}_${itemId}`]: value }));
   };
 
+  // VALIDATION: Check if item is within date range
+  const isItemOutOfDate = (item: any) => {
+    const today = format(new Date(), "yyyy-MM-dd");
+    if (item.fecha_inicio && today < item.fecha_inicio) return true;
+    if (item.fecha_fin && today > item.fecha_fin) return true;
+    return false;
+  };
+
   const saveGrades = async () => {
+    // VALIDATION: Block if teacher mismatch
+    if (isMaestroMismatch) {
+      toast.error("Solo el maestro asignado puede calificar esta materia");
+      return;
+    }
+
     const records: { item_id: string; matricula_id: string; nota: number | null }[] = [];
+    let dateBlocked = false;
+
     activeStudents.forEach((m: any) => {
       materiaItems.forEach((item: any) => {
         const val = localGrades[`${m.id}_${item.id}`];
+        // VALIDATION: Check date ranges
+        if (isItemOutOfDate(item) && val !== undefined && val !== "") {
+          dateBlocked = true;
+          return;
+        }
         if (val !== undefined && val !== "") {
           records.push({ item_id: item.id, matricula_id: m.id, nota: parseFloat(val) });
         } else if (val === "") {
@@ -774,11 +809,77 @@ function GradingGrid({ cortes, materias, periodoId }: any) {
         }
       });
     });
+
+    if (dateBlocked) {
+      toast.error("No se pueden registrar calificaciones fuera de las fechas definidas");
+      return;
+    }
+
     if (!records.length) return;
     try {
       await bulkUpsert.mutateAsync(records);
+
+      // INTEGRATION: Update growth module for Discipulado schools
+      const isDiscipulado = escuelaName?.toLowerCase().includes("discipulado") || escuelaName?.toLowerCase().includes("discipul");
+      if (isDiscipulado) {
+        await syncWithGrowthModule(activeStudents, materiaItems, localGrades);
+      }
+
       toast.success("Calificaciones guardadas");
     } catch { toast.error("Error al guardar"); }
+  };
+
+  // Sync approved grades with persona_procesos
+  const syncWithGrowthModule = async (students: any[], items: any[], grades: Record<string, string>) => {
+    try {
+      // Get all procesos for matching
+      const { data: procesos } = await supabase
+        .from("procesos_crecimiento")
+        .select("*")
+        .order("orden");
+
+      if (!procesos?.length) return;
+
+      const today = format(new Date(), "yyyy-MM-dd");
+      const upsertRecords: any[] = [];
+
+      for (const student of students) {
+        // Calculate average for this student across all items
+        const studentGrades = items.map((item: any) => {
+          const val = grades[`${student.id}_${item.id}`];
+          return val ? parseFloat(val) : null;
+        }).filter((g): g is number => g !== null);
+
+        if (!studentGrades.length) continue;
+        const avg = studentGrades.reduce((s, v) => s + v, 0) / studentGrades.length;
+
+        // If student passed (avg >= 3), try to match with a growth process
+        if (avg >= 3 && selectedMateriaObj) {
+          const materiaName = selectedMateriaObj.nombre?.toLowerCase() || "";
+          const matchedProceso = procesos.find((p: any) =>
+            materiaName.includes(p.nombre.toLowerCase()) || p.nombre.toLowerCase().includes(materiaName)
+          );
+
+          if (matchedProceso) {
+            upsertRecords.push({
+              persona_id: student.persona_id,
+              proceso_id: matchedProceso.id,
+              estado: "Realizado",
+              fecha_completado: today,
+            });
+          }
+        }
+      }
+
+      if (upsertRecords.length > 0) {
+        await supabase
+          .from("persona_procesos")
+          .upsert(upsertRecords, { onConflict: "persona_id,proceso_id" });
+        toast.success(`${upsertRecords.length} proceso(s) de crecimiento actualizado(s)`);
+      }
+    } catch (err) {
+      console.error("Error syncing growth module:", err);
+    }
   };
 
   const exportGrades = () => {
@@ -823,6 +924,21 @@ function GradingGrid({ cortes, materias, periodoId }: any) {
         </div>
       )}
 
+      {/* VALIDATION warnings */}
+      {isMaestroMismatch && (
+        <div className="rounded-lg border border-destructive/30 bg-destructive/5 p-3 text-sm text-destructive flex items-center gap-2">
+          <XCircle className="h-4 w-4 shrink-0" />
+          Solo el maestro asignado puede calificar esta materia. Las notas no se guardarán.
+        </div>
+      )}
+
+      {totalPorcentaje > 0 && totalPorcentaje !== 100 && (
+        <div className="rounded-lg border border-amber-500/30 bg-amber-500/5 p-3 text-sm text-amber-700 flex items-center gap-2">
+          <XCircle className="h-4 w-4 shrink-0" />
+          Los porcentajes de los ítems suman {totalPorcentaje}% (deben sumar 100%).
+        </div>
+      )}
+
       {selectedCorte && selectedMateria && (
         <>
           <div className="flex items-center justify-between">
@@ -833,7 +949,7 @@ function GradingGrid({ cortes, materias, periodoId }: any) {
               <Button size="sm" variant="outline" onClick={exportGrades} disabled={!materiaItems.length}>
                 Exportar Excel
               </Button>
-              <Button size="sm" onClick={saveGrades} disabled={bulkUpsert.isPending} className="gap-1.5">
+              <Button size="sm" onClick={saveGrades} disabled={bulkUpsert.isPending || !!isMaestroMismatch} className="gap-1.5">
                 <Save className="h-3.5 w-3.5" /> {bulkUpsert.isPending ? "Guardando..." : "Guardar notas"}
               </Button>
             </div>
@@ -850,15 +966,19 @@ function GradingGrid({ cortes, materias, periodoId }: any) {
                   <thead>
                     <tr className="border-b bg-muted/30">
                       <th className="text-left p-3 font-medium text-muted-foreground sticky left-0 bg-muted/30 min-w-[200px]">Estudiante</th>
-                      {materiaItems.map((item: any) => (
-                        <th key={item.id} className="text-center p-3 font-medium text-muted-foreground min-w-[100px]">
-                          <div>{item.nombre}</div>
-                          <div className="text-[10px] font-normal flex items-center justify-center gap-1">
-                            <span className="text-muted-foreground">{item.tipo}</span>
-                            {item.porcentaje != null && <span>· {item.porcentaje}%</span>}
-                          </div>
-                        </th>
-                      ))}
+                      {materiaItems.map((item: any) => {
+                        const outOfDate = isItemOutOfDate(item);
+                        return (
+                          <th key={item.id} className={cn("text-center p-3 font-medium min-w-[100px]", outOfDate ? "text-destructive/60" : "text-muted-foreground")}>
+                            <div>{item.nombre}</div>
+                            <div className="text-[10px] font-normal flex items-center justify-center gap-1">
+                              <span>{item.tipo}</span>
+                              {item.porcentaje != null && <span>· {item.porcentaje}%</span>}
+                            </div>
+                            {outOfDate && <div className="text-[9px] text-destructive">Fuera de fechas</div>}
+                          </th>
+                        );
+                      })}
                       <th className="text-center p-3 font-medium text-muted-foreground min-w-[80px]">Promedio</th>
                     </tr>
                   </thead>
@@ -882,19 +1002,23 @@ function GradingGrid({ cortes, materias, periodoId }: any) {
                               <span className="text-sm font-medium truncate">{m.personas?.nombres} {m.personas?.apellidos}</span>
                             </div>
                           </td>
-                          {materiaItems.map((item: any) => (
-                            <td key={item.id} className="p-2 text-center">
-                              <Input
-                                type="number"
-                                min={0}
-                                max={5}
-                                step={0.1}
-                                className="h-8 w-20 mx-auto text-center text-sm"
-                                value={localGrades[`${m.id}_${item.id}`] ?? ""}
-                                onChange={(e) => handleGradeChange(m.id, item.id, e.target.value)}
-                              />
-                            </td>
-                          ))}
+                          {materiaItems.map((item: any) => {
+                            const outOfDate = isItemOutOfDate(item);
+                            return (
+                              <td key={item.id} className="p-2 text-center">
+                                <Input
+                                  type="number"
+                                  min={0}
+                                  max={5}
+                                  step={0.1}
+                                  className={cn("h-8 w-20 mx-auto text-center text-sm", outOfDate && "opacity-50")}
+                                  disabled={outOfDate || !!isMaestroMismatch}
+                                  value={localGrades[`${m.id}_${item.id}`] ?? ""}
+                                  onChange={(e) => handleGradeChange(m.id, item.id, e.target.value)}
+                                />
+                              </td>
+                            );
+                          })}
                           <td className="p-3 text-center font-semibold">{avg}</td>
                         </tr>
                       );
@@ -1218,7 +1342,7 @@ function PeriodoDetailView({ escuela, periodo, onBackToPeriodos }: any) {
       )}
 
       {activeTab === "calificaciones" && (
-        <GradingGrid cortes={cortes} materias={materias} periodoId={periodo.id} />
+        <GradingGrid cortes={cortes} materias={materias} periodoId={periodo.id} escuelaName={escuela?.nombre} />
       )}
 
       {activeTab === "asistencia" && (
