@@ -1905,6 +1905,8 @@ function HomologacionesSection() {
 function DashboardFinancieroSection({ escuelas, allMatriculas }: any) {
   const [allPagosData, setAllPagosData] = useState<Record<string, any[]>>({});
   const [loading, setLoading] = useState(false);
+  const [fechaDesde, setFechaDesde] = useState("");
+  const [fechaHasta, setFechaHasta] = useState("");
 
   // Fetch all payments for all schools on mount
   useEffect(() => {
@@ -1927,6 +1929,22 @@ function DashboardFinancieroSection({ escuelas, allMatriculas }: any) {
     };
     fetchAll();
   }, [escuelas, allMatriculas]);
+
+  // Filter payments by date range
+  const filteredPagosData = useMemo(() => {
+    if (!fechaDesde && !fechaHasta) return allPagosData;
+    const filtered: Record<string, any[]> = {};
+    for (const [escId, pagos] of Object.entries(allPagosData)) {
+      filtered[escId] = (pagos as any[]).filter((p: any) => {
+        const fecha = p.fecha_pago || p.created_at?.split("T")[0];
+        if (!fecha) return true;
+        if (fechaDesde && fecha < fechaDesde) return false;
+        if (fechaHasta && fecha > fechaHasta) return false;
+        return true;
+      });
+    }
+    return filtered;
+  }, [allPagosData, fechaDesde, fechaHasta]);
 
   const escuelasStats = useMemo(() => {
     return (escuelas || []).map((esc: any) => {
