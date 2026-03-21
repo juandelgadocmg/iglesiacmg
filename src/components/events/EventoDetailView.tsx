@@ -1,11 +1,11 @@
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { ArrowLeft, Save, X, Plus, Trash2, Search, Users, UserPlus } from "lucide-react";
+import { ArrowLeft, Save, X, Plus, Trash2, Search, Users, UserPlus, FileText } from "lucide-react";
 import { useUpdateEvento } from "@/hooks/useDatabase";
 import {
   useEventoCategorias, useCreateEventoCategoria, useDeleteEventoCategoria,
