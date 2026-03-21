@@ -19,7 +19,7 @@ import ExportDropdown from "@/components/shared/ExportDropdown";
 import {
   useEscuelas, useAllMatriculas, useCertificados, usePeriodos,
   useMaterias, useMatriculas, useUpdateMatricula, useCreateCertificado,
-  useUpdatePeriodo, useDeleteMateria, useAllPeriodos,
+  useUpdatePeriodo, useDeleteMateria, useUpdateMateria, useAllPeriodos,
   useAulas, useUpdateAula, useDeleteAula,
   useCortes, useAllItemsByCorte, useDeleteCorte, useDeleteItemCalificable,
   useCalificacionesByMateriaCorte, useBulkUpsertCalificaciones,
@@ -1159,11 +1159,16 @@ function PeriodoDetailView({ escuela, periodo, onBackToPeriodos }: any) {
   const { data: materias, isLoading: loadingMaterias } = useMaterias(periodo.id);
   const { data: matriculas } = useMatriculas(periodo.id);
   const { data: cortes } = useCortes(periodo.id);
+  const { data: personas } = usePersonas();
+  const { data: aulasData } = useAulas();
   const updateMatricula = useUpdateMatricula();
   const createCertificado = useCreateCertificado();
   const deleteMateria = useDeleteMateria();
+  const updateMateria = useUpdateMateria();
   const deleteCorte = useDeleteCorte();
   const [activeTab, setActiveTab] = useState<string>("info");
+  const [editingMateria, setEditingMateria] = useState<string | null>(null);
+  const [editForm, setEditForm] = useState<{ maestro_id: string; aula_id: string; horario: string }>({ maestro_id: "", aula_id: "", horario: "" });
 
   const handleEstadoMatricula = async (id: string, estado: string) => {
     try { await updateMatricula.mutateAsync({ id, estado }); toast.success("Estado actualizado"); }
@@ -1364,20 +1369,98 @@ function PeriodoDetailView({ escuela, periodo, onBackToPeriodos }: any) {
             </div>
           ) : (
             <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
-              {materias.map((m: any) => (
-                <div key={m.id} className="rounded-xl border bg-card p-4 hover:shadow-sm transition-shadow">
-                  <div className="flex items-start justify-between mb-2">
-                    <h4 className="font-semibold text-foreground text-sm">{m.nombre}</h4>
-                    <DeleteConfirmDialog title="Eliminar materia" description={`¿Eliminar "${m.nombre}"?`} onConfirm={() => deleteMateria.mutateAsync(m.id)} />
+              {materias.map((m: any) => {
+                const isEditing = editingMateria === m.id;
+                return (
+                  <div key={m.id} className="rounded-xl border bg-card p-4 hover:shadow-sm transition-shadow">
+                    <div className="flex items-start justify-between mb-2">
+                      <h4 className="font-semibold text-foreground text-sm">{m.nombre}</h4>
+                      <div className="flex items-center gap-1">
+                        {!isEditing && (
+                          <Button size="icon" variant="ghost" className="h-7 w-7" onClick={() => {
+                            setEditingMateria(m.id);
+                            setEditForm({
+                              maestro_id: m.maestro_id || "",
+                              aula_id: m.aula_id || "",
+                              horario: m.horario || "",
+                            });
+                          }}>
+                            <MoreVertical className="h-3.5 w-3.5" />
+                          </Button>
+                        )}
+                        <DeleteConfirmDialog title="Eliminar materia" description={`¿Eliminar "${m.nombre}"?`} onConfirm={() => deleteMateria.mutateAsync(m.id)} />
+                      </div>
+                    </div>
+                    {m.descripcion && <p className="text-xs text-muted-foreground mb-2 line-clamp-2">{m.descripcion}</p>}
+
+                    {isEditing ? (
+                      <div className="space-y-2 mt-2">
+                        <div>
+                          <label className="text-[10px] text-muted-foreground font-medium">Maestro</label>
+                          <Select value={editForm.maestro_id} onValueChange={(v) => setEditForm(f => ({ ...f, maestro_id: v }))}>
+                            <SelectTrigger className="h-8 text-xs"><SelectValue placeholder="Seleccionar maestro" /></SelectTrigger>
+                            <SelectContent>
+                              <SelectItem value="none">Sin maestro</SelectItem>
+                              {(personas || []).map((p: any) => (
+                                <SelectItem key={p.id} value={p.id}>{p.nombres} {p.apellidos}</SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
+                        </div>
+                        <div>
+                          <label className="text-[10px] text-muted-foreground font-medium">Aula</label>
+                          <Select value={editForm.aula_id} onValueChange={(v) => setEditForm(f => ({ ...f, aula_id: v }))}>
+                            <SelectTrigger className="h-8 text-xs"><SelectValue placeholder="Seleccionar aula" /></SelectTrigger>
+                            <SelectContent>
+                              <SelectItem value="none">Sin aula</SelectItem>
+                              {(aulasData || []).filter((a: any) => a.activo).map((a: any) => (
+                                <SelectItem key={a.id} value={a.id}>{a.nombre} {a.sede ? `(${a.sede})` : ""}</SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
+                        </div>
+                        <div>
+                          <label className="text-[10px] text-muted-foreground font-medium">Horario</label>
+                          <Input value={editForm.horario} onChange={(e) => setEditForm(f => ({ ...f, horario: e.target.value }))} className="h-8 text-xs" placeholder="Ej: 7:00 pm" />
+                        </div>
+                        <div className="flex gap-1.5 pt-1">
+                          <Button size="sm" className="h-7 text-xs flex-1" onClick={async () => {
+                            try {
+                              const maestro = (personas || []).find((p: any) => p.id === editForm.maestro_id);
+                              const aula = (aulasData || []).find((a: any) => a.id === editForm.aula_id);
+                              await updateMateria.mutateAsync({
+                                id: m.id,
+                                maestro_id: editForm.maestro_id === "none" ? null : editForm.maestro_id || null,
+                                maestro_nombre: maestro ? `${maestro.nombres} ${maestro.apellidos}` : null,
+                                aula_id: editForm.aula_id === "none" ? null : editForm.aula_id || null,
+                                aula: aula?.nombre || null,
+                                horario: editForm.horario || null,
+                              });
+                              toast.success("Materia actualizada");
+                              setEditingMateria(null);
+                            } catch { toast.error("Error al actualizar"); }
+                          }}>
+                            <Save className="h-3 w-3 mr-1" /> Guardar
+                          </Button>
+                          <Button size="sm" variant="outline" className="h-7 text-xs" onClick={() => setEditingMateria(null)}>
+                            Cancelar
+                          </Button>
+                        </div>
+                      </div>
+                    ) : (
+                      <div className="flex flex-wrap gap-x-3 gap-y-1 text-xs text-muted-foreground">
+                        {(m.personas || m.maestro_nombre) ? (
+                          <span className="flex items-center gap-1"><UserCheck className="h-3 w-3" /> {m.personas ? `${m.personas.nombres} ${m.personas.apellidos}` : m.maestro_nombre}</span>
+                        ) : (
+                          <span className="flex items-center gap-1 text-warning"><UserCheck className="h-3 w-3" /> Sin maestro asignado</span>
+                        )}
+                        {m.horario && <span className="flex items-center gap-1"><Clock className="h-3 w-3" /> {m.horario}</span>}
+                        {(m.aulas || m.aula) && <span className="flex items-center gap-1"><Building2 className="h-3 w-3" /> {m.aulas?.nombre || m.aula}</span>}
+                      </div>
+                    )}
                   </div>
-                  {m.descripcion && <p className="text-xs text-muted-foreground mb-2 line-clamp-2">{m.descripcion}</p>}
-                  <div className="flex flex-wrap gap-x-3 gap-y-1 text-xs text-muted-foreground">
-                    {(m.personas || m.maestro_nombre) && <span className="flex items-center gap-1"><UserCheck className="h-3 w-3" /> {m.personas ? `${m.personas.nombres} ${m.personas.apellidos}` : m.maestro_nombre}</span>}
-                    {m.horario && <span className="flex items-center gap-1"><Clock className="h-3 w-3" /> {m.horario}</span>}
-                    {(m.aulas || m.aula) && <span className="flex items-center gap-1"><Building2 className="h-3 w-3" /> {m.aulas?.nombre || m.aula}</span>}
-                  </div>
-                </div>
-              ))}
+                );
+              })}
             </div>
           )}
         </div>
@@ -1905,6 +1988,8 @@ function HomologacionesSection() {
 function DashboardFinancieroSection({ escuelas, allMatriculas }: any) {
   const [allPagosData, setAllPagosData] = useState<Record<string, any[]>>({});
   const [loading, setLoading] = useState(false);
+  const [fechaDesde, setFechaDesde] = useState("");
+  const [fechaHasta, setFechaHasta] = useState("");
 
   // Fetch all payments for all schools on mount
   useEffect(() => {
@@ -1928,9 +2013,25 @@ function DashboardFinancieroSection({ escuelas, allMatriculas }: any) {
     fetchAll();
   }, [escuelas, allMatriculas]);
 
+  // Filter payments by date range
+  const filteredPagosData = useMemo(() => {
+    if (!fechaDesde && !fechaHasta) return allPagosData;
+    const filtered: Record<string, any[]> = {};
+    for (const [escId, pagos] of Object.entries(allPagosData)) {
+      filtered[escId] = (pagos as any[]).filter((p: any) => {
+        const fecha = p.fecha_pago || p.created_at?.split("T")[0];
+        if (!fecha) return true;
+        if (fechaDesde && fecha < fechaDesde) return false;
+        if (fechaHasta && fecha > fechaHasta) return false;
+        return true;
+      });
+    }
+    return filtered;
+  }, [allPagosData, fechaDesde, fechaHasta]);
+
   const escuelasStats = useMemo(() => {
     return (escuelas || []).map((esc: any) => {
-      const pagos = allPagosData[esc.id] || [];
+      const pagos = filteredPagosData[esc.id] || [];
       const totalMonto = pagos.reduce((s: number, p: any) => s + (p.conceptos_pago?.monto || 0), 0);
       const totalPagado = pagos.reduce((s: number, p: any) => s + (p.monto_pagado || 0), 0);
       const totalPagados = pagos.filter((p: any) => p.estado === "Pagado").length;
@@ -1950,7 +2051,7 @@ function DashboardFinancieroSection({ escuelas, allMatriculas }: any) {
         cobranza,
       };
     });
-  }, [escuelas, allPagosData, allMatriculas]);
+  }, [escuelas, filteredPagosData, allMatriculas]);
 
   const globalTotalMonto = escuelasStats.reduce((s: number, e: any) => s + e.totalMonto, 0);
   const globalTotalPagado = escuelasStats.reduce((s: number, e: any) => s + e.totalPagado, 0);
@@ -1982,11 +2083,26 @@ function DashboardFinancieroSection({ escuelas, allMatriculas }: any) {
 
   return (
     <div className="space-y-5">
-      <div className="flex items-center justify-between">
+      <div className="flex flex-wrap items-center justify-between gap-3">
         <p className="text-sm text-muted-foreground">Resumen financiero de ingresos, cobranza y morosidad por escuela.</p>
-        <Button size="sm" variant="outline" onClick={exportDashboard} className="gap-1.5">
-          <Download className="h-3.5 w-3.5" /> Exportar
-        </Button>
+        <div className="flex items-center gap-2 flex-wrap">
+          <div className="flex items-center gap-1.5">
+            <label className="text-xs text-muted-foreground whitespace-nowrap">Desde:</label>
+            <Input type="date" value={fechaDesde} onChange={(e) => setFechaDesde(e.target.value)} className="h-8 w-36 text-xs" />
+          </div>
+          <div className="flex items-center gap-1.5">
+            <label className="text-xs text-muted-foreground whitespace-nowrap">Hasta:</label>
+            <Input type="date" value={fechaHasta} onChange={(e) => setFechaHasta(e.target.value)} className="h-8 w-36 text-xs" />
+          </div>
+          {(fechaDesde || fechaHasta) && (
+            <Button size="sm" variant="ghost" className="h-8 text-xs" onClick={() => { setFechaDesde(""); setFechaHasta(""); }}>
+              <X className="h-3 w-3 mr-1" /> Limpiar
+            </Button>
+          )}
+          <Button size="sm" variant="outline" onClick={exportDashboard} className="gap-1.5 h-8">
+            <Download className="h-3.5 w-3.5" /> Exportar
+          </Button>
+        </div>
       </div>
 
       {/* Global metrics */}
