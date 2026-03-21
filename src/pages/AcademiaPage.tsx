@@ -1168,7 +1168,7 @@ function PeriodoDetailView({ escuela, periodo, onBackToPeriodos }: any) {
   const deleteCorte = useDeleteCorte();
   const [activeTab, setActiveTab] = useState<string>("info");
   const [editingMateria, setEditingMateria] = useState<string | null>(null);
-  const [editForm, setEditForm] = useState<{ maestro_id: string; aula_id: string; horario: string }>({ maestro_id: "", aula_id: "", horario: "" });
+  const [editForm, setEditForm] = useState<{ nombre: string; descripcion: string; maestro_id: string; aula_id: string; horario: string }>({ nombre: "", descripcion: "", maestro_id: "", aula_id: "", horario: "" });
 
   const handleEstadoMatricula = async (id: string, estado: string) => {
     try { await updateMatricula.mutateAsync({ id, estado }); toast.success("Estado actualizado"); }
@@ -1380,6 +1380,8 @@ function PeriodoDetailView({ escuela, periodo, onBackToPeriodos }: any) {
                           <Button size="icon" variant="ghost" className="h-7 w-7" onClick={() => {
                             setEditingMateria(m.id);
                             setEditForm({
+                              nombre: m.nombre || "",
+                              descripcion: m.descripcion || "",
                               maestro_id: m.maestro_id || "",
                               aula_id: m.aula_id || "",
                               horario: m.horario || "",
@@ -1395,6 +1397,14 @@ function PeriodoDetailView({ escuela, periodo, onBackToPeriodos }: any) {
 
                     {isEditing ? (
                       <div className="space-y-2 mt-2">
+                        <div>
+                          <label className="text-[10px] text-muted-foreground font-medium">Nombre</label>
+                          <Input value={editForm.nombre} onChange={(e) => setEditForm(f => ({ ...f, nombre: e.target.value }))} className="h-8 text-xs" placeholder="Nombre de la materia" />
+                        </div>
+                        <div>
+                          <label className="text-[10px] text-muted-foreground font-medium">Descripción</label>
+                          <Input value={editForm.descripcion} onChange={(e) => setEditForm(f => ({ ...f, descripcion: e.target.value }))} className="h-8 text-xs" placeholder="Descripción (opcional)" />
+                        </div>
                         <div>
                           <label className="text-[10px] text-muted-foreground font-medium">Maestro</label>
                           <Select value={editForm.maestro_id} onValueChange={(v) => setEditForm(f => ({ ...f, maestro_id: v }))}>
@@ -1430,6 +1440,8 @@ function PeriodoDetailView({ escuela, periodo, onBackToPeriodos }: any) {
                               const aula = (aulasData || []).find((a: any) => a.id === editForm.aula_id);
                               await updateMateria.mutateAsync({
                                 id: m.id,
+                                nombre: editForm.nombre || m.nombre,
+                                descripcion: editForm.descripcion || null,
                                 maestro_id: editForm.maestro_id === "none" ? null : editForm.maestro_id || null,
                                 maestro_nombre: maestro ? `${maestro.nombres} ${maestro.apellidos}` : null,
                                 aula_id: editForm.aula_id === "none" ? null : editForm.aula_id || null,
