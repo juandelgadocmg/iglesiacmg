@@ -22,7 +22,7 @@ export default function ConceptoPagoFormDialog({ cursoId }: { cursoId: string })
 
   const onSubmit = async (values: z.infer<typeof schema>) => {
     try {
-      await create.mutateAsync({ ...values, curso_id: cursoId });
+      await create.mutateAsync({ nombre: values.nombre, monto: values.monto, curso_id: cursoId });
       toast.success("Concepto creado");
       form.reset();
       setOpen(false);

@@ -29,7 +29,13 @@ export default function HomologacionFormDialog() {
 
   const onSubmit = async (values: z.infer<typeof schema>) => {
     try {
-      await create.mutateAsync(values);
+      await create.mutateAsync({
+        persona_id: values.persona_id,
+        materia_nombre: values.materia_nombre,
+        institucion_origen: values.institucion_origen,
+        calificacion_obtenida: values.calificacion_obtenida,
+        observaciones: values.observaciones,
+      });
       toast.success("Homologación registrada");
       form.reset();
       setOpen(false);
