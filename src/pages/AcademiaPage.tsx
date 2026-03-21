@@ -1159,11 +1159,16 @@ function PeriodoDetailView({ escuela, periodo, onBackToPeriodos }: any) {
   const { data: materias, isLoading: loadingMaterias } = useMaterias(periodo.id);
   const { data: matriculas } = useMatriculas(periodo.id);
   const { data: cortes } = useCortes(periodo.id);
+  const { data: personas } = usePersonas();
+  const { data: aulasData } = useAulas();
   const updateMatricula = useUpdateMatricula();
   const createCertificado = useCreateCertificado();
   const deleteMateria = useDeleteMateria();
+  const updateMateria = useUpdateMateria();
   const deleteCorte = useDeleteCorte();
   const [activeTab, setActiveTab] = useState<string>("info");
+  const [editingMateria, setEditingMateria] = useState<string | null>(null);
+  const [editForm, setEditForm] = useState<{ maestro_id: string; aula_id: string; horario: string }>({ maestro_id: "", aula_id: "", horario: "" });
 
   const handleEstadoMatricula = async (id: string, estado: string) => {
     try { await updateMatricula.mutateAsync({ id, estado }); toast.success("Estado actualizado"); }
