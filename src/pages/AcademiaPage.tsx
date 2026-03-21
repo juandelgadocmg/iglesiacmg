@@ -461,7 +461,7 @@ function GestionarComoMaestro({ maestro, escuelas, allPeriodos, onBack }: any) {
           </div>
 
           {activeTab === "calificaciones" && (
-            <GradingGrid cortes={cortes} materias={misMaterias} periodoId={selectedPeriodo} />
+            <GradingGrid cortes={cortes} materias={misMaterias} periodoId={selectedPeriodo} maestroId={maestro.id} />
           )}
 
           {activeTab === "asistencia" && (
