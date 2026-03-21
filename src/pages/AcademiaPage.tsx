@@ -1439,6 +1439,8 @@ function PeriodoDetailView({ escuela, periodo, onBackToPeriodos }: any) {
                               const aula = (aulasData || []).find((a: any) => a.id === editForm.aula_id);
                               await updateMateria.mutateAsync({
                                 id: m.id,
+                                nombre: editForm.nombre || m.nombre,
+                                descripcion: editForm.descripcion || null,
                                 maestro_id: editForm.maestro_id === "none" ? null : editForm.maestro_id || null,
                                 maestro_nombre: maestro ? `${maestro.nombres} ${maestro.apellidos}` : null,
                                 aula_id: editForm.aula_id === "none" ? null : editForm.aula_id || null,
