@@ -64,6 +64,9 @@ const SIDEBAR_ITEMS = [
   { id: "maestros", label: "Maestros", icon: UserCheck },
   { id: "calificaciones", label: "Calificaciones", icon: BarChart3 },
   { id: "historial-matriculas", label: "Historial matrículas", icon: History },
+  { id: "pagos", label: "Pagos", icon: DollarSign },
+  { id: "recursos", label: "Recursos", icon: FolderOpen },
+  { id: "homologaciones", label: "Homologaciones", icon: RefreshCw },
   { id: "certificados", label: "Certificados", icon: Award },
   { id: "aulas", label: "Aulas", icon: Building2 },
 ];
