@@ -1906,7 +1906,7 @@ function DashboardFinancieroSection({ escuelas, allMatriculas }: any) {
   const [loading, setLoading] = useState(false);
 
   // Fetch all payments for all schools on mount
-  useState(() => {
+  useEffect(() => {
     if (!escuelas?.length) return;
     setLoading(true);
     const fetchAll = async () => {
