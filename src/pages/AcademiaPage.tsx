@@ -1021,7 +1021,6 @@ function GradingGrid({ cortes, materias, periodoId, maestroId, escuelaName }: an
                           <td className="p-3 text-center font-semibold">{avg}</td>
                         </tr>
                       );
-                      );
                     })}
                   </tbody>
                 </table>
