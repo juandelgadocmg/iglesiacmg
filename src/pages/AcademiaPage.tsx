@@ -2000,11 +2000,26 @@ function DashboardFinancieroSection({ escuelas, allMatriculas }: any) {
 
   return (
     <div className="space-y-5">
-      <div className="flex items-center justify-between">
+      <div className="flex flex-wrap items-center justify-between gap-3">
         <p className="text-sm text-muted-foreground">Resumen financiero de ingresos, cobranza y morosidad por escuela.</p>
-        <Button size="sm" variant="outline" onClick={exportDashboard} className="gap-1.5">
-          <Download className="h-3.5 w-3.5" /> Exportar
-        </Button>
+        <div className="flex items-center gap-2 flex-wrap">
+          <div className="flex items-center gap-1.5">
+            <label className="text-xs text-muted-foreground whitespace-nowrap">Desde:</label>
+            <Input type="date" value={fechaDesde} onChange={(e) => setFechaDesde(e.target.value)} className="h-8 w-36 text-xs" />
+          </div>
+          <div className="flex items-center gap-1.5">
+            <label className="text-xs text-muted-foreground whitespace-nowrap">Hasta:</label>
+            <Input type="date" value={fechaHasta} onChange={(e) => setFechaHasta(e.target.value)} className="h-8 w-36 text-xs" />
+          </div>
+          {(fechaDesde || fechaHasta) && (
+            <Button size="sm" variant="ghost" className="h-8 text-xs" onClick={() => { setFechaDesde(""); setFechaHasta(""); }}>
+              <X className="h-3 w-3 mr-1" /> Limpiar
+            </Button>
+          )}
+          <Button size="sm" variant="outline" onClick={exportDashboard} className="gap-1.5 h-8">
+            <Download className="h-3.5 w-3.5" /> Exportar
+          </Button>
+        </div>
       </div>
 
       {/* Global metrics */}
