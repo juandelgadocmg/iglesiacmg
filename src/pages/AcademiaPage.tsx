@@ -196,7 +196,7 @@ function GradingGrid({ cortes, materias, periodoId }: any) {
 
   const materiaItems = useMemo(() => {
     if (!items || !selectedMateria) return [];
-    return items.filter((i: any) => i.materia_id === selectedMateria);
+    return items.filter((i: any) => i.materia_id === selectedMateria && i.es_calificable !== false);
   }, [items, selectedMateria]);
 
   const activeStudents = useMemo(() => {
