@@ -1369,20 +1369,98 @@ function PeriodoDetailView({ escuela, periodo, onBackToPeriodos }: any) {
             </div>
           ) : (
             <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
-              {materias.map((m: any) => (
-                <div key={m.id} className="rounded-xl border bg-card p-4 hover:shadow-sm transition-shadow">
-                  <div className="flex items-start justify-between mb-2">
-                    <h4 className="font-semibold text-foreground text-sm">{m.nombre}</h4>
-                    <DeleteConfirmDialog title="Eliminar materia" description={`¿Eliminar "${m.nombre}"?`} onConfirm={() => deleteMateria.mutateAsync(m.id)} />
+              {materias.map((m: any) => {
+                const isEditing = editingMateria === m.id;
+                return (
+                  <div key={m.id} className="rounded-xl border bg-card p-4 hover:shadow-sm transition-shadow">
+                    <div className="flex items-start justify-between mb-2">
+                      <h4 className="font-semibold text-foreground text-sm">{m.nombre}</h4>
+                      <div className="flex items-center gap-1">
+                        {!isEditing && (
+                          <Button size="icon" variant="ghost" className="h-7 w-7" onClick={() => {
+                            setEditingMateria(m.id);
+                            setEditForm({
+                              maestro_id: m.maestro_id || "",
+                              aula_id: m.aula_id || "",
+                              horario: m.horario || "",
+                            });
+                          }}>
+                            <MoreVertical className="h-3.5 w-3.5" />
+                          </Button>
+                        )}
+                        <DeleteConfirmDialog title="Eliminar materia" description={`¿Eliminar "${m.nombre}"?`} onConfirm={() => deleteMateria.mutateAsync(m.id)} />
+                      </div>
+                    </div>
+                    {m.descripcion && <p className="text-xs text-muted-foreground mb-2 line-clamp-2">{m.descripcion}</p>}
+
+                    {isEditing ? (
+                      <div className="space-y-2 mt-2">
+                        <div>
+                          <label className="text-[10px] text-muted-foreground font-medium">Maestro</label>
+                          <Select value={editForm.maestro_id} onValueChange={(v) => setEditForm(f => ({ ...f, maestro_id: v }))}>
+                            <SelectTrigger className="h-8 text-xs"><SelectValue placeholder="Seleccionar maestro" /></SelectTrigger>
+                            <SelectContent>
+                              <SelectItem value="none">Sin maestro</SelectItem>
+                              {(personas || []).map((p: any) => (
+                                <SelectItem key={p.id} value={p.id}>{p.nombres} {p.apellidos}</SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
+                        </div>
+                        <div>
+                          <label className="text-[10px] text-muted-foreground font-medium">Aula</label>
+                          <Select value={editForm.aula_id} onValueChange={(v) => setEditForm(f => ({ ...f, aula_id: v }))}>
+                            <SelectTrigger className="h-8 text-xs"><SelectValue placeholder="Seleccionar aula" /></SelectTrigger>
+                            <SelectContent>
+                              <SelectItem value="none">Sin aula</SelectItem>
+                              {(aulasData || []).filter((a: any) => a.activo).map((a: any) => (
+                                <SelectItem key={a.id} value={a.id}>{a.nombre} {a.sede ? `(${a.sede})` : ""}</SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
+                        </div>
+                        <div>
+                          <label className="text-[10px] text-muted-foreground font-medium">Horario</label>
+                          <Input value={editForm.horario} onChange={(e) => setEditForm(f => ({ ...f, horario: e.target.value }))} className="h-8 text-xs" placeholder="Ej: 7:00 pm" />
+                        </div>
+                        <div className="flex gap-1.5 pt-1">
+                          <Button size="sm" className="h-7 text-xs flex-1" onClick={async () => {
+                            try {
+                              const maestro = (personas || []).find((p: any) => p.id === editForm.maestro_id);
+                              const aula = (aulasData || []).find((a: any) => a.id === editForm.aula_id);
+                              await updateMateria.mutateAsync({
+                                id: m.id,
+                                maestro_id: editForm.maestro_id === "none" ? null : editForm.maestro_id || null,
+                                maestro_nombre: maestro ? `${maestro.nombres} ${maestro.apellidos}` : null,
+                                aula_id: editForm.aula_id === "none" ? null : editForm.aula_id || null,
+                                aula: aula?.nombre || null,
+                                horario: editForm.horario || null,
+                              });
+                              toast.success("Materia actualizada");
+                              setEditingMateria(null);
+                            } catch { toast.error("Error al actualizar"); }
+                          }}>
+                            <Save className="h-3 w-3 mr-1" /> Guardar
+                          </Button>
+                          <Button size="sm" variant="outline" className="h-7 text-xs" onClick={() => setEditingMateria(null)}>
+                            Cancelar
+                          </Button>
+                        </div>
+                      </div>
+                    ) : (
+                      <div className="flex flex-wrap gap-x-3 gap-y-1 text-xs text-muted-foreground">
+                        {(m.personas || m.maestro_nombre) ? (
+                          <span className="flex items-center gap-1"><UserCheck className="h-3 w-3" /> {m.personas ? `${m.personas.nombres} ${m.personas.apellidos}` : m.maestro_nombre}</span>
+                        ) : (
+                          <span className="flex items-center gap-1 text-warning"><UserCheck className="h-3 w-3" /> Sin maestro asignado</span>
+                        )}
+                        {m.horario && <span className="flex items-center gap-1"><Clock className="h-3 w-3" /> {m.horario}</span>}
+                        {(m.aulas || m.aula) && <span className="flex items-center gap-1"><Building2 className="h-3 w-3" /> {m.aulas?.nombre || m.aula}</span>}
+                      </div>
+                    )}
                   </div>
-                  {m.descripcion && <p className="text-xs text-muted-foreground mb-2 line-clamp-2">{m.descripcion}</p>}
-                  <div className="flex flex-wrap gap-x-3 gap-y-1 text-xs text-muted-foreground">
-                    {(m.personas || m.maestro_nombre) && <span className="flex items-center gap-1"><UserCheck className="h-3 w-3" /> {m.personas ? `${m.personas.nombres} ${m.personas.apellidos}` : m.maestro_nombre}</span>}
-                    {m.horario && <span className="flex items-center gap-1"><Clock className="h-3 w-3" /> {m.horario}</span>}
-                    {(m.aulas || m.aula) && <span className="flex items-center gap-1"><Building2 className="h-3 w-3" /> {m.aulas?.nombre || m.aula}</span>}
-                  </div>
-                </div>
-              ))}
+                );
+              })}
             </div>
           )}
         </div>
