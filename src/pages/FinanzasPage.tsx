@@ -4,9 +4,10 @@ import MetricCard from "@/components/shared/MetricCard";
 import DataTable from "@/components/shared/DataTable";
 import StatusBadge from "@/components/shared/StatusBadge";
 import FinanzaFormDialog from "@/components/forms/FinanzaFormDialog";
+import DonacionFormDialog from "@/components/forms/DonacionFormDialog";
 import DeleteConfirmDialog from "@/components/shared/DeleteConfirmDialog";
-import { TrendingUp, TrendingDown, Wallet, Pencil, Plus, Trash2, Search } from "lucide-react";
-import { useFinanzas, useDeleteFinanza } from "@/hooks/useDatabase";
+import { TrendingUp, TrendingDown, Wallet, Pencil, Plus, Trash2, Search, Heart, DollarSign } from "lucide-react";
+import { useFinanzas, useDeleteFinanza, useDonaciones } from "@/hooks/useDatabase";
 import {
   useCategoriasFinancieras, useCreateCategoriaFinanciera,
   useUpdateCategoriaFinanciera, useDeleteCategoriaFinanciera,
