@@ -341,6 +341,8 @@ export function useCreateItemCalificable() {
       porcentaje?: number;
       fecha_inicio?: string;
       fecha_fin?: string;
+      es_calificable?: boolean;
+      visible_estudiante?: boolean;
     }) => {
       const { data, error } = await supabase.from("items_calificables").insert(item).select().single();
       if (error) throw error;
