@@ -2148,6 +2148,7 @@ export default function AcademiaPage() {
             <HistorialMatriculasSection escuelas={escuelas} allPeriodos={allPeriodos} allMatriculas={allMatriculas} />
           )}
           {activeSection === "pagos" && <PagosSection escuelas={escuelas} allMatriculas={allMatriculas} />}
+          {activeSection === "dashboard-financiero" && <DashboardFinancieroSection escuelas={escuelas} allMatriculas={allMatriculas} />}
           {activeSection === "recursos" && <RecursosSection escuelas={escuelas} allPeriodos={allPeriodos} />}
           {activeSection === "homologaciones" && <HomologacionesSection />}
           {activeSection === "certificados" && <CertificadosSection />}
