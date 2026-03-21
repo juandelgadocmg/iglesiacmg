@@ -1925,7 +1925,7 @@ function DashboardFinancieroSection({ escuelas, allMatriculas }: any) {
       setLoading(false);
     };
     fetchAll();
-  });
+  }, [escuelas, allMatriculas]);
 
   const escuelasStats = useMemo(() => {
     return (escuelas || []).map((esc: any) => {
