@@ -136,6 +136,7 @@ export default function FinanzasPage() {
       <Tabs defaultValue="movimientos" className="space-y-4">
         <TabsList className="flex flex-wrap gap-1">
           <TabsTrigger value="movimientos">📋 Movimientos</TabsTrigger>
+          <TabsTrigger value="donaciones">💝 Donaciones</TabsTrigger>
           <TabsTrigger value="reportes">📊 Reportes</TabsTrigger>
           <TabsTrigger value="categorias">⚙️ Administrar categorías</TabsTrigger>
         </TabsList>
