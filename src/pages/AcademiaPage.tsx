@@ -19,7 +19,7 @@ import ExportDropdown from "@/components/shared/ExportDropdown";
 import {
   useEscuelas, useAllMatriculas, useCertificados, usePeriodos,
   useMaterias, useMatriculas, useUpdateMatricula, useCreateCertificado,
-  useUpdatePeriodo, useDeleteMateria, useAllPeriodos,
+  useUpdatePeriodo, useDeleteMateria, useUpdateMateria, useAllPeriodos,
   useAulas, useUpdateAula, useDeleteAula,
   useCortes, useAllItemsByCorte, useDeleteCorte, useDeleteItemCalificable,
   useCalificacionesByMateriaCorte, useBulkUpsertCalificaciones,
