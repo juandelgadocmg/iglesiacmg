@@ -1380,6 +1380,8 @@ function PeriodoDetailView({ escuela, periodo, onBackToPeriodos }: any) {
                           <Button size="icon" variant="ghost" className="h-7 w-7" onClick={() => {
                             setEditingMateria(m.id);
                             setEditForm({
+                              nombre: m.nombre || "",
+                              descripcion: m.descripcion || "",
                               maestro_id: m.maestro_id || "",
                               aula_id: m.aula_id || "",
                               horario: m.horario || "",
