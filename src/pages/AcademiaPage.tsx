@@ -1434,13 +1434,17 @@ function PeriodoDetailView({ escuela, periodo, onBackToPeriodos }: any) {
                           <Input value={editForm.horario} onChange={(e) => setEditForm(f => ({ ...f, horario: e.target.value }))} className="h-8 text-xs" placeholder="Ej: 7:00 pm" />
                         </div>
                         <div className="flex gap-1.5 pt-1">
-                          <Button size="sm" className="h-7 text-xs flex-1" onClick={async () => {
+                          <Button size="sm" className="h-7 text-xs flex-1" disabled={!editForm.nombre?.trim()} onClick={async () => {
+                            if (!editForm.nombre?.trim()) {
+                              toast.error("El nombre de la materia es obligatorio");
+                              return;
+                            }
                             try {
                               const maestro = (personas || []).find((p: any) => p.id === editForm.maestro_id);
                               const aula = (aulasData || []).find((a: any) => a.id === editForm.aula_id);
                               await updateMateria.mutateAsync({
                                 id: m.id,
-                                nombre: editForm.nombre || m.nombre,
+                                nombre: editForm.nombre.trim(),
                                 descripcion: editForm.descripcion || null,
                                 maestro_id: editForm.maestro_id === "none" ? null : editForm.maestro_id || null,
                                 maestro_nombre: maestro ? `${maestro.nombres} ${maestro.apellidos}` : null,
