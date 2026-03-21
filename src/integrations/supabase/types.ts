@@ -237,6 +237,38 @@ export type Database = {
           },
         ]
       }
+      conceptos_pago: {
+        Row: {
+          created_at: string
+          curso_id: string
+          id: string
+          monto: number
+          nombre: string
+        }
+        Insert: {
+          created_at?: string
+          curso_id: string
+          id?: string
+          monto?: number
+          nombre: string
+        }
+        Update: {
+          created_at?: string
+          curso_id?: string
+          id?: string
+          monto?: number
+          nombre?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "conceptos_pago_curso_id_fkey"
+            columns: ["curso_id"]
+            isOneToOne: false
+            referencedRelation: "cursos"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       configuracion_iglesia: {
         Row: {
           ciudad: string | null
@@ -681,6 +713,57 @@ export type Database = {
           },
         ]
       }
+      homologaciones: {
+        Row: {
+          calificacion_obtenida: number | null
+          created_at: string
+          fecha_homologacion: string
+          id: string
+          institucion_origen: string
+          materia_id: string | null
+          materia_nombre: string
+          observaciones: string | null
+          persona_id: string
+        }
+        Insert: {
+          calificacion_obtenida?: number | null
+          created_at?: string
+          fecha_homologacion?: string
+          id?: string
+          institucion_origen: string
+          materia_id?: string | null
+          materia_nombre: string
+          observaciones?: string | null
+          persona_id: string
+        }
+        Update: {
+          calificacion_obtenida?: number | null
+          created_at?: string
+          fecha_homologacion?: string
+          id?: string
+          institucion_origen?: string
+          materia_id?: string | null
+          materia_nombre?: string
+          observaciones?: string | null
+          persona_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "homologaciones_materia_id_fkey"
+            columns: ["materia_id"]
+            isOneToOne: false
+            referencedRelation: "materias"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "homologaciones_persona_id_fkey"
+            columns: ["persona_id"]
+            isOneToOne: false
+            referencedRelation: "personas"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       inscripciones: {
         Row: {
           confirmado: boolean | null
@@ -902,6 +985,51 @@ export type Database = {
             columns: ["persona_id"]
             isOneToOne: false
             referencedRelation: "personas"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      pagos_matricula: {
+        Row: {
+          concepto_pago_id: string
+          created_at: string
+          estado: string
+          fecha_pago: string | null
+          id: string
+          matricula_id: string
+          monto_pagado: number | null
+        }
+        Insert: {
+          concepto_pago_id: string
+          created_at?: string
+          estado?: string
+          fecha_pago?: string | null
+          id?: string
+          matricula_id: string
+          monto_pagado?: number | null
+        }
+        Update: {
+          concepto_pago_id?: string
+          created_at?: string
+          estado?: string
+          fecha_pago?: string | null
+          id?: string
+          matricula_id?: string
+          monto_pagado?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "pagos_matricula_concepto_pago_id_fkey"
+            columns: ["concepto_pago_id"]
+            isOneToOne: false
+            referencedRelation: "conceptos_pago"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "pagos_matricula_matricula_id_fkey"
+            columns: ["matricula_id"]
+            isOneToOne: false
+            referencedRelation: "matriculas"
             referencedColumns: ["id"]
           },
         ]
@@ -1202,6 +1330,60 @@ export type Database = {
           user_id?: string
         }
         Relationships: []
+      }
+      recursos_academicos: {
+        Row: {
+          archivo_nombre: string | null
+          archivo_url: string | null
+          created_at: string
+          descripcion: string | null
+          id: string
+          maestro_id: string | null
+          materia_id: string
+          tipo: string
+          titulo: string
+          url: string | null
+        }
+        Insert: {
+          archivo_nombre?: string | null
+          archivo_url?: string | null
+          created_at?: string
+          descripcion?: string | null
+          id?: string
+          maestro_id?: string | null
+          materia_id: string
+          tipo?: string
+          titulo: string
+          url?: string | null
+        }
+        Update: {
+          archivo_nombre?: string | null
+          archivo_url?: string | null
+          created_at?: string
+          descripcion?: string | null
+          id?: string
+          maestro_id?: string | null
+          materia_id?: string
+          tipo?: string
+          titulo?: string
+          url?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "recursos_academicos_maestro_id_fkey"
+            columns: ["maestro_id"]
+            isOneToOne: false
+            referencedRelation: "personas"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "recursos_academicos_materia_id_fkey"
+            columns: ["materia_id"]
+            isOneToOne: false
+            referencedRelation: "materias"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       relaciones_familiares: {
         Row: {
