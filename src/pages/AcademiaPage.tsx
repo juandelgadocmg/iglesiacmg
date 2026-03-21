@@ -1943,7 +1943,7 @@ export default function AcademiaPage() {
           {activeSection === "historial-matriculas" && (
             <HistorialMatriculasSection escuelas={escuelas} allPeriodos={allPeriodos} allMatriculas={allMatriculas} />
           )}
-          {activeSection === "pagos" && <PagosSection escuelas={escuelas} />}
+          {activeSection === "pagos" && <PagosSection escuelas={escuelas} allMatriculas={allMatriculas} />}
           {activeSection === "recursos" && <RecursosSection escuelas={escuelas} allPeriodos={allPeriodos} />}
           {activeSection === "homologaciones" && <HomologacionesSection />}
           {activeSection === "certificados" && <CertificadosSection />}
