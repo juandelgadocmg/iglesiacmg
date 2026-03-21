@@ -1,4 +1,5 @@
 import { useState, useMemo, useCallback } from "react";
+import { supabase } from "@/integrations/supabase/client";
 import PageHeader from "@/components/shared/PageHeader";
 import MetricCard from "@/components/shared/MetricCard";
 import CursoFormDialog from "@/components/forms/CursoFormDialog";
