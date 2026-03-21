@@ -169,21 +169,32 @@ export type Database = {
           created_at: string
           id: string
           nombre: string
+          parent_id: string | null
           tipo: Database["public"]["Enums"]["tipo_finanza"]
         }
         Insert: {
           created_at?: string
           id?: string
           nombre: string
+          parent_id?: string | null
           tipo: Database["public"]["Enums"]["tipo_finanza"]
         }
         Update: {
           created_at?: string
           id?: string
           nombre?: string
+          parent_id?: string | null
           tipo?: Database["public"]["Enums"]["tipo_finanza"]
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "categorias_financieras_parent_id_fkey"
+            columns: ["parent_id"]
+            isOneToOne: false
+            referencedRelation: "categorias_financieras"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       certificados: {
         Row: {
@@ -510,12 +521,127 @@ export type Database = {
           },
         ]
       }
+      evento_categorias: {
+        Row: {
+          aforo: number | null
+          created_at: string
+          evento_id: string
+          id: string
+          inscritos: number | null
+          nombre: string
+        }
+        Insert: {
+          aforo?: number | null
+          created_at?: string
+          evento_id: string
+          id?: string
+          inscritos?: number | null
+          nombre: string
+        }
+        Update: {
+          aforo?: number | null
+          created_at?: string
+          evento_id?: string
+          id?: string
+          inscritos?: number | null
+          nombre?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "evento_categorias_evento_id_fkey"
+            columns: ["evento_id"]
+            isOneToOne: false
+            referencedRelation: "eventos"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      evento_encargados: {
+        Row: {
+          created_at: string
+          evento_id: string
+          id: string
+          persona_id: string
+          rol: string | null
+        }
+        Insert: {
+          created_at?: string
+          evento_id: string
+          id?: string
+          persona_id: string
+          rol?: string | null
+        }
+        Update: {
+          created_at?: string
+          evento_id?: string
+          id?: string
+          persona_id?: string
+          rol?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "evento_encargados_evento_id_fkey"
+            columns: ["evento_id"]
+            isOneToOne: false
+            referencedRelation: "eventos"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "evento_encargados_persona_id_fkey"
+            columns: ["persona_id"]
+            isOneToOne: false
+            referencedRelation: "personas"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      evento_servidores: {
+        Row: {
+          clasificacion: string | null
+          created_at: string
+          evento_id: string
+          id: string
+          persona_id: string
+        }
+        Insert: {
+          clasificacion?: string | null
+          created_at?: string
+          evento_id: string
+          id?: string
+          persona_id: string
+        }
+        Update: {
+          clasificacion?: string | null
+          created_at?: string
+          evento_id?: string
+          id?: string
+          persona_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "evento_servidores_evento_id_fkey"
+            columns: ["evento_id"]
+            isOneToOne: false
+            referencedRelation: "eventos"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "evento_servidores_persona_id_fkey"
+            columns: ["persona_id"]
+            isOneToOne: false
+            referencedRelation: "personas"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       eventos: {
         Row: {
+          color: string | null
           created_at: string
           cupos: number | null
           descripcion: string | null
           estado: string
+          fecha_cierre_inscripciones: string | null
           fecha_fin: string | null
           fecha_inicio: string
           id: string
@@ -525,10 +651,12 @@ export type Database = {
           updated_at: string
         }
         Insert: {
+          color?: string | null
           created_at?: string
           cupos?: number | null
           descripcion?: string | null
           estado?: string
+          fecha_cierre_inscripciones?: string | null
           fecha_fin?: string | null
           fecha_inicio: string
           id?: string
@@ -538,10 +666,12 @@ export type Database = {
           updated_at?: string
         }
         Update: {
+          color?: string | null
           created_at?: string
           cupos?: number | null
           descripcion?: string | null
           estado?: string
+          fecha_cierre_inscripciones?: string | null
           fecha_fin?: string | null
           fecha_inicio?: string
           id?: string
