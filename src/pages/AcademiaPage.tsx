@@ -1,4 +1,5 @@
 import { useState, useMemo, useCallback, useEffect } from "react";
+import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, PieChart as RechartsPie, Pie, Cell } from "recharts";
 import { supabase } from "@/integrations/supabase/client";
 import PageHeader from "@/components/shared/PageHeader";
 import MetricCard from "@/components/shared/MetricCard";
@@ -2067,6 +2068,54 @@ function DashboardFinancieroSection({ escuelas, allMatriculas }: any) {
           </tbody>
         </table>
       </div>
+
+      {/* Charts */}
+      {escuelasStats.filter((e: any) => e.totalMonto > 0).length > 0 && (
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+          {/* Bar Chart - Collection by School */}
+          <div className="rounded-xl border bg-card p-4">
+            <h3 className="text-sm font-semibold mb-3">Cobranza por escuela</h3>
+            <ResponsiveContainer width="100%" height={280}>
+              <BarChart data={escuelasStats.filter((e: any) => e.totalMonto > 0)} margin={{ top: 5, right: 10, left: 0, bottom: 5 }}>
+                <CartesianGrid strokeDasharray="3 3" className="opacity-30" />
+                <XAxis dataKey="nombre" tick={{ fontSize: 11 }} interval={0} angle={-20} textAnchor="end" height={60} />
+                <YAxis tick={{ fontSize: 11 }} tickFormatter={(v: number) => `$${v.toLocaleString()}`} />
+                <Tooltip formatter={(v: number) => `$${v.toLocaleString()}`} />
+                <Legend wrapperStyle={{ fontSize: 12 }} />
+                <Bar dataKey="totalMonto" name="Esperado" fill="hsl(var(--primary))" radius={[4, 4, 0, 0]} />
+                <Bar dataKey="totalPagado" name="Recaudado" fill="hsl(var(--success))" radius={[4, 4, 0, 0]} />
+              </BarChart>
+            </ResponsiveContainer>
+          </div>
+
+          {/* Pie Chart - Distribution */}
+          <div className="rounded-xl border bg-card p-4">
+            <h3 className="text-sm font-semibold mb-3">Distribución de cobranza</h3>
+            <ResponsiveContainer width="100%" height={280}>
+              <RechartsPie>
+                <Pie
+                  data={escuelasStats.filter((e: any) => e.totalMonto > 0).map((e: any, i: number) => ({
+                    name: e.nombre,
+                    value: e.totalPagado,
+                  }))}
+                  cx="50%"
+                  cy="50%"
+                  innerRadius={55}
+                  outerRadius={100}
+                  paddingAngle={3}
+                  dataKey="value"
+                  label={({ name, percent }: any) => `${name}: ${(percent * 100).toFixed(0)}%`}
+                >
+                  {escuelasStats.filter((e: any) => e.totalMonto > 0).map((_: any, i: number) => (
+                    <Cell key={i} fill={["hsl(var(--primary))", "hsl(var(--success))", "hsl(var(--accent))", "hsl(var(--warning))", "#8b5cf6", "#f59e0b", "#06b6d4", "#ec4899"][i % 8]} />
+                  ))}
+                </Pie>
+                <Tooltip formatter={(v: number) => `$${v.toLocaleString()}`} />
+              </RechartsPie>
+            </ResponsiveContainer>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

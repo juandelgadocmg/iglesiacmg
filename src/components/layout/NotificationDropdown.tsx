@@ -1,4 +1,4 @@
-import { Bell, CalendarDays, Cake, Church } from "lucide-react";
+import { Bell, CalendarDays, Cake, Church, DollarSign } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import {
   Popover,
@@ -13,18 +13,21 @@ const iconMap = {
   calendar: CalendarDays,
   cake: Cake,
   church: Church,
+  dollar: DollarSign,
 };
 
 const colorMap = {
   event: "bg-accent/10 text-accent",
   birthday: "bg-warning/10 text-warning",
   service: "bg-info/10 text-info",
+  payment: "bg-destructive/10 text-destructive",
 };
 
 const badgeColorMap = {
   event: "bg-accent/10 text-accent",
   birthday: "bg-warning/10 text-warning",
   service: "bg-info/10 text-info",
+  payment: "bg-destructive/10 text-destructive",
 };
 
 function NotificationItem({ notification }: { notification: AppNotification }) {

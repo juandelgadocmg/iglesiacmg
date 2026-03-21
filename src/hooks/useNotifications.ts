@@ -6,12 +6,12 @@ import { es } from "date-fns/locale";
 
 export interface AppNotification {
   id: string;
-  type: "event" | "birthday" | "service";
+  type: "event" | "birthday" | "service" | "payment";
   title: string;
   description: string;
   date: string;
   daysLeft: number;
-  icon: "calendar" | "cake" | "church";
+  icon: "calendar" | "cake" | "church" | "dollar";
 }
 
 export function useNotifications() {
@@ -36,6 +36,19 @@ export function useNotifications() {
         .gte("fecha_inicio", new Date().toISOString().split("T")[0])
         .order("fecha_inicio", { ascending: true })
         .limit(10);
+      if (error) throw error;
+      return data;
+    },
+    staleTime: 5 * 60 * 1000,
+  });
+
+  const { data: pagosVencidos } = useQuery({
+    queryKey: ["notif-pagos-vencidos"],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("pagos_matricula")
+        .select("id, estado, created_at, matricula_id, concepto_pago_id, conceptos_pago(nombre, monto), matriculas(persona_id, personas(nombres, apellidos))")
+        .eq("estado", "Pendiente");
       if (error) throw error;
       return data;
     },
@@ -121,8 +134,32 @@ export function useNotifications() {
       } catch {}
     });
 
+    // Overdue payments (pending for more than 30 days)
+    const OVERDUE_DAYS = 30;
+    (pagosVencidos || []).forEach((p: any) => {
+      try {
+        const createdDate = parseISO(p.created_at);
+        const daysSinceCreated = differenceInDays(now, createdDate);
+        if (daysSinceCreated >= OVERDUE_DAYS) {
+          const persona = p.matriculas?.personas;
+          const nombreCompleto = persona ? `${persona.nombres} ${persona.apellidos}` : "Estudiante";
+          const concepto = p.conceptos_pago?.nombre || "Pago";
+          const monto = p.conceptos_pago?.monto || 0;
+          items.push({
+            id: `pago-${p.id}`,
+            type: "payment",
+            title: `💰 ${nombreCompleto}`,
+            description: `${concepto} ($${monto}) pendiente hace ${daysSinceCreated} días`,
+            date: format(createdDate, "dd MMM", { locale: es }),
+            daysLeft: -daysSinceCreated,
+            icon: "dollar",
+          });
+        }
+      } catch {}
+    });
+
     return items.sort((a, b) => a.daysLeft - b.daysLeft);
-  }, [personas, eventos, servicios]);
+  }, [personas, eventos, servicios, pagosVencidos]);
 
   return { notifications, count: notifications.length };
 }
