@@ -1968,7 +1968,7 @@ function DashboardFinancieroSection({ escuelas, allMatriculas }: any) {
         cobranza,
       };
     });
-  }, [escuelas, allPagosData, allMatriculas]);
+  }, [escuelas, filteredPagosData, allMatriculas]);
 
   const globalTotalMonto = escuelasStats.reduce((s: number, e: any) => s + e.totalMonto, 0);
   const globalTotalPagado = escuelasStats.reduce((s: number, e: any) => s + e.totalPagado, 0);
