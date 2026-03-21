@@ -1,4 +1,4 @@
-import { useState, useMemo, useCallback } from "react";
+import { useState, useMemo, useCallback, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import PageHeader from "@/components/shared/PageHeader";
 import MetricCard from "@/components/shared/MetricCard";
@@ -28,6 +28,7 @@ import {
   useConceptosPago, useDeleteConceptoPago, usePagosMatricula, useUpdatePagoMatricula,
   useRecursos, useAllRecursos, useDeleteRecurso,
   useHomologaciones, useDeleteHomologacion,
+  usePagosEscuela,
 } from "@/hooks/useAcademiaExtras";
 import { usePersonas } from "@/hooks/useDatabase";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -43,7 +44,7 @@ import {
   MoreVertical, Trash2, BookText, ArrowLeft, Building2,
   BarChart3, Eye, ClipboardCheck, CheckCircle2, XCircle,
   Save, Check, X, History, Download, User,
-  DollarSign, FolderOpen, RefreshCw, ExternalLink, File,
+  DollarSign, FolderOpen, RefreshCw, ExternalLink, File, TrendingUp, PieChart, AlertTriangle,
 } from "lucide-react";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { toast } from "sonner";
@@ -66,6 +67,7 @@ const SIDEBAR_ITEMS = [
   { id: "calificaciones", label: "Calificaciones", icon: BarChart3 },
   { id: "historial-matriculas", label: "Historial matrículas", icon: History },
   { id: "pagos", label: "Pagos", icon: DollarSign },
+  { id: "dashboard-financiero", label: "Dashboard financiero", icon: PieChart },
   { id: "recursos", label: "Recursos", icon: FolderOpen },
   { id: "homologaciones", label: "Homologaciones", icon: RefreshCw },
   { id: "certificados", label: "Certificados", icon: Award },
@@ -1484,8 +1486,34 @@ function PagosSection({ escuelas, allMatriculas }: any) {
   const [searchPago, setSearchPago] = useState("");
   const { data: conceptos } = useConceptosPago(selectedEscuela || null);
   const { data: pagos, isLoading: loadingPagos } = usePagosMatricula(selectedMatricula);
+  const { data: allPagosEscuela } = usePagosEscuela(selectedEscuela || null);
   const updatePago = useUpdatePagoMatricula();
   const deleteConcepto = useDeleteConceptoPago();
+
+  const exportPagosExcel = () => {
+    if (!allPagosEscuela?.length) return;
+    const escuelaNombre = escuelas?.find((e: any) => e.id === selectedEscuela)?.nombre || "Escuela";
+    exportToExcel({
+      title: `Pagos - ${escuelaNombre}`,
+      columns: [
+        { header: "Estudiante", key: "estudiante" },
+        { header: "Concepto", key: "concepto" },
+        { header: "Monto", key: "monto" },
+        { header: "Estado", key: "estado" },
+        { header: "Monto Pagado", key: "monto_pagado" },
+        { header: "Fecha Pago", key: "fecha_pago" },
+      ],
+      data: allPagosEscuela.map((p: any) => ({
+        estudiante: `${p.matricula?.personas?.nombres || ""} ${p.matricula?.personas?.apellidos || ""}`.trim(),
+        concepto: p.conceptos_pago?.nombre || "",
+        monto: p.conceptos_pago?.monto || 0,
+        estado: p.estado,
+        monto_pagado: p.monto_pagado || 0,
+        fecha_pago: p.fecha_pago || "",
+      })),
+      filename: `pagos_${escuelaNombre.toLowerCase().replace(/\s+/g, "_")}`,
+    });
+  };
 
   const matriculasEscuela = useMemo(() => {
     if (!selectedEscuela || !allMatriculas) return [];
@@ -1537,6 +1565,11 @@ function PagosSection({ escuelas, allMatriculas }: any) {
           </SelectContent>
         </Select>
         {selectedEscuela && <ConceptoPagoFormDialog cursoId={selectedEscuela} />}
+        {selectedEscuela && (
+          <Button size="sm" variant="outline" onClick={exportPagosExcel} disabled={!allPagosEscuela?.length} className="gap-1.5">
+            <Download className="h-3.5 w-3.5" /> Exportar Excel
+          </Button>
+        )}
       </div>
 
       {selectedEscuela && (
@@ -1867,7 +1900,177 @@ function HomologacionesSection() {
   );
 }
 
-// ========== MAIN PAGE ==========
+// ========== DASHBOARD FINANCIERO ==========
+function DashboardFinancieroSection({ escuelas, allMatriculas }: any) {
+  const [allPagosData, setAllPagosData] = useState<Record<string, any[]>>({});
+  const [loading, setLoading] = useState(false);
+
+  // Fetch all payments for all schools on mount
+  useEffect(() => {
+    if (!escuelas?.length) return;
+    setLoading(true);
+    const fetchAll = async () => {
+      const result: Record<string, any[]> = {};
+      for (const esc of escuelas) {
+        const matriculas = (allMatriculas || []).filter((m: any) => m.curso_id === esc.id);
+        if (!matriculas.length) { result[esc.id] = []; continue; }
+        const ids = matriculas.map((m: any) => m.id);
+        const { data } = await supabase
+          .from("pagos_matricula")
+          .select("*, conceptos_pago(nombre, monto)")
+          .in("matricula_id", ids);
+        result[esc.id] = data || [];
+      }
+      setAllPagosData(result);
+      setLoading(false);
+    };
+    fetchAll();
+  }, [escuelas, allMatriculas]);
+
+  const escuelasStats = useMemo(() => {
+    return (escuelas || []).map((esc: any) => {
+      const pagos = allPagosData[esc.id] || [];
+      const totalMonto = pagos.reduce((s: number, p: any) => s + (p.conceptos_pago?.monto || 0), 0);
+      const totalPagado = pagos.reduce((s: number, p: any) => s + (p.monto_pagado || 0), 0);
+      const totalPagados = pagos.filter((p: any) => p.estado === "Pagado").length;
+      const totalPendientes = pagos.filter((p: any) => p.estado === "Pendiente").length;
+      const cobranza = totalMonto > 0 ? (totalPagado / totalMonto) * 100 : 0;
+      const matriculados = (allMatriculas || []).filter((m: any) => m.curso_id === esc.id).length;
+      return {
+        id: esc.id,
+        nombre: esc.nombre,
+        matriculados,
+        totalConceptos: pagos.length,
+        totalPagados,
+        totalPendientes,
+        totalMonto,
+        totalPagado,
+        morosidad: totalMonto - totalPagado,
+        cobranza,
+      };
+    });
+  }, [escuelas, allPagosData, allMatriculas]);
+
+  const globalTotalMonto = escuelasStats.reduce((s: number, e: any) => s + e.totalMonto, 0);
+  const globalTotalPagado = escuelasStats.reduce((s: number, e: any) => s + e.totalPagado, 0);
+  const globalMorosidad = globalTotalMonto - globalTotalPagado;
+  const globalCobranza = globalTotalMonto > 0 ? (globalTotalPagado / globalTotalMonto) * 100 : 0;
+
+  const exportDashboard = () => {
+    exportToExcel({
+      title: "Dashboard Financiero Académico",
+      columns: [
+        { header: "Escuela", key: "nombre" },
+        { header: "Matriculados", key: "matriculados" },
+        { header: "Total Esperado", key: "totalMonto" },
+        { header: "Total Pagado", key: "totalPagado" },
+        { header: "Morosidad", key: "morosidad" },
+        { header: "% Cobranza", key: "cobranza" },
+        { header: "Pagos Realizados", key: "totalPagados" },
+        { header: "Pagos Pendientes", key: "totalPendientes" },
+      ],
+      data: escuelasStats.map((e: any) => ({
+        ...e,
+        cobranza: `${e.cobranza.toFixed(1)}%`,
+      })),
+      filename: "dashboard_financiero_academico",
+    });
+  };
+
+  if (loading) return <Skeleton className="h-64" />;
+
+  return (
+    <div className="space-y-5">
+      <div className="flex items-center justify-between">
+        <p className="text-sm text-muted-foreground">Resumen financiero de ingresos, cobranza y morosidad por escuela.</p>
+        <Button size="sm" variant="outline" onClick={exportDashboard} className="gap-1.5">
+          <Download className="h-3.5 w-3.5" /> Exportar
+        </Button>
+      </div>
+
+      {/* Global metrics */}
+      <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+        <div className="rounded-xl border bg-card p-4">
+          <div className="flex items-center gap-2 mb-1">
+            <DollarSign className="h-4 w-4 text-primary" />
+            <p className="text-xs text-muted-foreground font-medium">Total esperado</p>
+          </div>
+          <p className="text-2xl font-bold text-foreground">${globalTotalMonto.toLocaleString()}</p>
+        </div>
+        <div className="rounded-xl border bg-card p-4">
+          <div className="flex items-center gap-2 mb-1">
+            <TrendingUp className="h-4 w-4 text-success" />
+            <p className="text-xs text-muted-foreground font-medium">Total recaudado</p>
+          </div>
+          <p className="text-2xl font-bold text-success">${globalTotalPagado.toLocaleString()}</p>
+        </div>
+        <div className="rounded-xl border bg-card p-4">
+          <div className="flex items-center gap-2 mb-1">
+            <AlertTriangle className="h-4 w-4 text-destructive" />
+            <p className="text-xs text-muted-foreground font-medium">Morosidad</p>
+          </div>
+          <p className="text-2xl font-bold text-destructive">${globalMorosidad.toLocaleString()}</p>
+        </div>
+        <div className="rounded-xl border bg-card p-4">
+          <div className="flex items-center gap-2 mb-1">
+            <PieChart className="h-4 w-4 text-info" />
+            <p className="text-xs text-muted-foreground font-medium">% Cobranza</p>
+          </div>
+          <p className="text-2xl font-bold text-foreground">{globalCobranza.toFixed(1)}%</p>
+          <div className="mt-2 h-2 rounded-full bg-muted overflow-hidden">
+            <div className="h-full rounded-full bg-success transition-all" style={{ width: `${Math.min(globalCobranza, 100)}%` }} />
+          </div>
+        </div>
+      </div>
+
+      {/* Per-school breakdown */}
+      <div className="rounded-xl border bg-card overflow-hidden">
+        <table className="w-full text-sm">
+          <thead>
+            <tr className="border-b bg-muted/30">
+              <th className="text-left p-3 font-medium text-muted-foreground">Escuela</th>
+              <th className="text-center p-3 font-medium text-muted-foreground">Matriculados</th>
+              <th className="text-center p-3 font-medium text-muted-foreground">Esperado</th>
+              <th className="text-center p-3 font-medium text-muted-foreground">Recaudado</th>
+              <th className="text-center p-3 font-medium text-muted-foreground">Morosidad</th>
+              <th className="text-center p-3 font-medium text-muted-foreground">% Cobranza</th>
+            </tr>
+          </thead>
+          <tbody>
+            {!escuelasStats.length ? (
+              <tr><td colSpan={6} className="text-center py-8 text-muted-foreground text-xs">No hay datos.</td></tr>
+            ) : (
+              escuelasStats.map((e: any) => (
+                <tr key={e.id} className="border-b last:border-0 hover:bg-muted/20">
+                  <td className="p-3 font-medium">{e.nombre}</td>
+                  <td className="p-3 text-center">{e.matriculados}</td>
+                  <td className="p-3 text-center">${e.totalMonto.toLocaleString()}</td>
+                  <td className="p-3 text-center text-success font-semibold">${e.totalPagado.toLocaleString()}</td>
+                  <td className="p-3 text-center">
+                    {e.morosidad > 0 ? (
+                      <span className="text-destructive font-semibold">${e.morosidad.toLocaleString()}</span>
+                    ) : (
+                      <span className="text-success">$0</span>
+                    )}
+                  </td>
+                  <td className="p-3 text-center">
+                    <div className="flex items-center gap-2 justify-center">
+                      <div className="w-16 h-2 rounded-full bg-muted overflow-hidden">
+                        <div className="h-full rounded-full bg-success transition-all" style={{ width: `${Math.min(e.cobranza, 100)}%` }} />
+                      </div>
+                      <span className="text-xs font-medium">{e.cobranza.toFixed(0)}%</span>
+                    </div>
+                  </td>
+                </tr>
+              ))
+            )}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  );
+}
+
 export default function AcademiaPage() {
   const { data: escuelas, isLoading } = useEscuelas();
   const { data: allMatriculas } = useAllMatriculas();
@@ -1899,6 +2102,7 @@ export default function AcademiaPage() {
     calificaciones: "Calificaciones",
     "historial-matriculas": "Historial de Matrículas",
     pagos: "Gestión de Pagos",
+    "dashboard-financiero": "Dashboard Financiero",
     recursos: "Recursos y Contenido",
     homologaciones: "Homologaciones",
     certificados: "Certificados",
@@ -1944,6 +2148,7 @@ export default function AcademiaPage() {
             <HistorialMatriculasSection escuelas={escuelas} allPeriodos={allPeriodos} allMatriculas={allMatriculas} />
           )}
           {activeSection === "pagos" && <PagosSection escuelas={escuelas} allMatriculas={allMatriculas} />}
+          {activeSection === "dashboard-financiero" && <DashboardFinancieroSection escuelas={escuelas} allMatriculas={allMatriculas} />}
           {activeSection === "recursos" && <RecursosSection escuelas={escuelas} allPeriodos={allPeriodos} />}
           {activeSection === "homologaciones" && <HomologacionesSection />}
           {activeSection === "certificados" && <CertificadosSection />}
