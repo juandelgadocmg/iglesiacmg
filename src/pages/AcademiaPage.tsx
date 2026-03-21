@@ -1948,7 +1948,7 @@ function DashboardFinancieroSection({ escuelas, allMatriculas }: any) {
 
   const escuelasStats = useMemo(() => {
     return (escuelas || []).map((esc: any) => {
-      const pagos = allPagosData[esc.id] || [];
+      const pagos = filteredPagosData[esc.id] || [];
       const totalMonto = pagos.reduce((s: number, p: any) => s + (p.conceptos_pago?.monto || 0), 0);
       const totalPagado = pagos.reduce((s: number, p: any) => s + (p.monto_pagado || 0), 0);
       const totalPagados = pagos.filter((p: any) => p.estado === "Pagado").length;
