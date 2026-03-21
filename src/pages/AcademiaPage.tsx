@@ -1342,7 +1342,7 @@ function PeriodoDetailView({ escuela, periodo, onBackToPeriodos }: any) {
       )}
 
       {activeTab === "calificaciones" && (
-        <GradingGrid cortes={cortes} materias={materias} periodoId={periodo.id} />
+        <GradingGrid cortes={cortes} materias={materias} periodoId={periodo.id} escuelaName={escuela?.nombre} />
       )}
 
       {activeTab === "asistencia" && (
