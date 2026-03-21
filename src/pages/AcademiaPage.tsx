@@ -2102,6 +2102,7 @@ export default function AcademiaPage() {
     calificaciones: "Calificaciones",
     "historial-matriculas": "Historial de Matrículas",
     pagos: "Gestión de Pagos",
+    "dashboard-financiero": "Dashboard Financiero",
     recursos: "Recursos y Contenido",
     homologaciones: "Homologaciones",
     certificados: "Certificados",
