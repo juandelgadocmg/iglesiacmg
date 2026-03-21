@@ -27,6 +27,7 @@ import {
 
 export default function FinanzasPage() {
   const { data: finanzas, isLoading } = useFinanzas();
+  const { data: donaciones, isLoading: loadingDon } = useDonaciones();
   const deleteFinanza = useDeleteFinanza();
   const { data: categorias, isLoading: loadingCats } = useCategoriasFinancieras();
   const createCat = useCreateCategoriaFinanciera();
