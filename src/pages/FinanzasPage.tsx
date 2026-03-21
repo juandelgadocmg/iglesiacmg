@@ -184,6 +184,75 @@ export default function FinanzasPage() {
           </div>
         </TabsContent>
 
+        {/* TAB DONACIONES */}
+        <TabsContent value="donaciones">
+          <div className="space-y-4">
+            <div className="flex flex-wrap items-center gap-3">
+              <DonacionFormDialog />
+            </div>
+
+            {(() => {
+              const donData = donaciones || [];
+              const totalDon = donData.reduce((s, d) => s + Number(d.monto), 0);
+              const tableDataDon = donData.map(d => ({
+                ...d,
+                donante: (d as any).personas ? `${(d as any).personas.nombres} ${(d as any).personas.apellidos}` : "Anónimo",
+              }));
+
+              return (
+                <>
+                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                    <div className="bg-muted/30 rounded-xl border p-4 text-center">
+                      <p className="text-xs text-muted-foreground mb-1">Total Donaciones</p>
+                      <p className="text-xl font-bold text-emerald-600">{fmt(totalDon)}</p>
+                    </div>
+                    <div className="bg-muted/30 rounded-xl border p-4 text-center">
+                      <p className="text-xs text-muted-foreground mb-1">Cantidad</p>
+                      <p className="text-xl font-bold text-foreground">{donData.length}</p>
+                    </div>
+                    <div className="bg-muted/30 rounded-xl border p-4 text-center">
+                      <p className="text-xs text-muted-foreground mb-1">Promedio</p>
+                      <p className="text-xl font-bold text-foreground">{donData.length ? `$${Math.round(totalDon / donData.length).toLocaleString()}` : "$0"}</p>
+                    </div>
+                  </div>
+
+                  <DataTable
+                    data={tableDataDon}
+                    searchKey="donante"
+                    searchPlaceholder="Buscar donante..."
+                    filterKey="tipo"
+                    filterPlaceholder="Tipo"
+                    filterOptions={[
+                      { value: "Única", label: "Única" },
+                      { value: "Diezmo", label: "Diezmo" },
+                      { value: "Ofrenda", label: "Ofrenda" },
+                      { value: "Especial", label: "Especial" },
+                    ]}
+                    columns={[
+                      {
+                        key: "donante", label: "Donante",
+                        render: (d: any) => (
+                          <div className="flex items-center gap-3">
+                            <div className="w-8 h-8 rounded-lg bg-accent/10 flex items-center justify-center">
+                              <Heart className="h-4 w-4 text-accent" />
+                            </div>
+                            <span className="font-medium text-sm">{d.donante}</span>
+                          </div>
+                        )
+                      },
+                      { key: "tipo", label: "Tipo", render: (d: any) => <StatusBadge status={d.tipo || "—"} /> },
+                      { key: "monto", label: "Monto", render: (d: any) => <span className="text-emerald-600 font-semibold">${Number(d.monto).toLocaleString()}</span> },
+                      { key: "fecha", label: "Fecha" },
+                      { key: "metodo_pago", label: "Método", render: (d: any) => d.metodo_pago || "—" },
+                      { key: "estado", label: "Estado", render: (d: any) => <StatusBadge status={d.estado || "Completada"} /> },
+                    ]}
+                  />
+                </>
+              );
+            })()}
+          </div>
+        </TabsContent>
+
         {/* TAB REPORTES */}
         <TabsContent value="reportes">
           <div className="space-y-4">
