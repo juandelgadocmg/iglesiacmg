@@ -8,6 +8,9 @@ import MatriculaFormDialog from "@/components/forms/MatriculaFormDialog";
 import AulaFormDialog from "@/components/forms/AulaFormDialog";
 import CorteFormDialog from "@/components/forms/CorteFormDialog";
 import ItemCalificableFormDialog from "@/components/forms/ItemCalificableFormDialog";
+import ConceptoPagoFormDialog from "@/components/forms/ConceptoPagoFormDialog";
+import RecursoFormDialog from "@/components/forms/RecursoFormDialog";
+import HomologacionFormDialog from "@/components/forms/HomologacionFormDialog";
 import DeleteConfirmDialog from "@/components/shared/DeleteConfirmDialog";
 import MateriaAttendanceTrendChart from "@/components/charts/MateriaAttendanceTrendChart";
 import ExportDropdown from "@/components/shared/ExportDropdown";
@@ -20,6 +23,11 @@ import {
   useCalificacionesByMateriaCorte, useBulkUpsertCalificaciones,
   useAsistenciaMaterias, useUpsertAsistenciaMateria,
 } from "@/hooks/useAcademia";
+import {
+  useConceptosPago, useDeleteConceptoPago, usePagosMatricula, useUpdatePagoMatricula,
+  useRecursos, useAllRecursos, useDeleteRecurso,
+  useHomologaciones, useDeleteHomologacion,
+} from "@/hooks/useAcademiaExtras";
 import { usePersonas } from "@/hooks/useDatabase";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Badge } from "@/components/ui/badge";
@@ -34,6 +42,7 @@ import {
   MoreVertical, Trash2, BookText, ArrowLeft, Building2,
   BarChart3, Eye, ClipboardCheck, CheckCircle2, XCircle,
   Save, Check, X, History, Download, User,
+  DollarSign, FolderOpen, RefreshCw, ExternalLink, File,
 } from "lucide-react";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { toast } from "sonner";
