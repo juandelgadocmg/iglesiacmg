@@ -1565,6 +1565,11 @@ function PagosSection({ escuelas, allMatriculas }: any) {
           </SelectContent>
         </Select>
         {selectedEscuela && <ConceptoPagoFormDialog cursoId={selectedEscuela} />}
+        {selectedEscuela && (
+          <Button size="sm" variant="outline" onClick={exportPagosExcel} disabled={!allPagosEscuela?.length} className="gap-1.5">
+            <Download className="h-3.5 w-3.5" /> Exportar Excel
+          </Button>
+        )}
       </div>
 
       {selectedEscuela && (
