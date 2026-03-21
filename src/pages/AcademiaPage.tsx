@@ -44,7 +44,7 @@ import {
   MoreVertical, Trash2, BookText, ArrowLeft, Building2,
   BarChart3, Eye, ClipboardCheck, CheckCircle2, XCircle,
   Save, Check, X, History, Download, User,
-  DollarSign, FolderOpen, RefreshCw, ExternalLink, File,
+  DollarSign, FolderOpen, RefreshCw, ExternalLink, File, TrendingUp, PieChart, AlertTriangle,
 } from "lucide-react";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { toast } from "sonner";
