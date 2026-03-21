@@ -8,6 +8,9 @@ import MatriculaFormDialog from "@/components/forms/MatriculaFormDialog";
 import AulaFormDialog from "@/components/forms/AulaFormDialog";
 import CorteFormDialog from "@/components/forms/CorteFormDialog";
 import ItemCalificableFormDialog from "@/components/forms/ItemCalificableFormDialog";
+import ConceptoPagoFormDialog from "@/components/forms/ConceptoPagoFormDialog";
+import RecursoFormDialog from "@/components/forms/RecursoFormDialog";
+import HomologacionFormDialog from "@/components/forms/HomologacionFormDialog";
 import DeleteConfirmDialog from "@/components/shared/DeleteConfirmDialog";
 import MateriaAttendanceTrendChart from "@/components/charts/MateriaAttendanceTrendChart";
 import ExportDropdown from "@/components/shared/ExportDropdown";
@@ -20,6 +23,11 @@ import {
   useCalificacionesByMateriaCorte, useBulkUpsertCalificaciones,
   useAsistenciaMaterias, useUpsertAsistenciaMateria,
 } from "@/hooks/useAcademia";
+import {
+  useConceptosPago, useDeleteConceptoPago, usePagosMatricula, useUpdatePagoMatricula,
+  useRecursos, useAllRecursos, useDeleteRecurso,
+  useHomologaciones, useDeleteHomologacion,
+} from "@/hooks/useAcademiaExtras";
 import { usePersonas } from "@/hooks/useDatabase";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Badge } from "@/components/ui/badge";
@@ -34,6 +42,7 @@ import {
   MoreVertical, Trash2, BookText, ArrowLeft, Building2,
   BarChart3, Eye, ClipboardCheck, CheckCircle2, XCircle,
   Save, Check, X, History, Download, User,
+  DollarSign, FolderOpen, RefreshCw, ExternalLink, File,
 } from "lucide-react";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { toast } from "sonner";
@@ -55,6 +64,9 @@ const SIDEBAR_ITEMS = [
   { id: "maestros", label: "Maestros", icon: UserCheck },
   { id: "calificaciones", label: "Calificaciones", icon: BarChart3 },
   { id: "historial-matriculas", label: "Historial matrículas", icon: History },
+  { id: "pagos", label: "Pagos", icon: DollarSign },
+  { id: "recursos", label: "Recursos", icon: FolderOpen },
+  { id: "homologaciones", label: "Homologaciones", icon: RefreshCw },
   { id: "certificados", label: "Certificados", icon: Award },
   { id: "aulas", label: "Aulas", icon: Building2 },
 ];
@@ -1341,6 +1353,219 @@ function CalificacionesSection({ escuelas, allPeriodos }: any) {
   );
 }
 
+// ========== PAGOS SECTION ==========
+function PagosSection({ escuelas }: any) {
+  const [selectedEscuela, setSelectedEscuela] = useState<string>("");
+  const { data: conceptos } = useConceptosPago(selectedEscuela || null);
+  const deleteConcepto = useDeleteConceptoPago();
+
+  return (
+    <div className="space-y-4">
+      <p className="text-sm text-muted-foreground">Gestiona los conceptos de pago configurables por escuela y el estado de pagos de las matrículas.</p>
+      <div className="flex items-center gap-3">
+        <Select value={selectedEscuela} onValueChange={setSelectedEscuela}>
+          <SelectTrigger className="w-64"><SelectValue placeholder="Selecciona una escuela" /></SelectTrigger>
+          <SelectContent>
+            {(escuelas || []).map((e: any) => <SelectItem key={e.id} value={e.id}>{e.nombre}</SelectItem>)}
+          </SelectContent>
+        </Select>
+        {selectedEscuela && <ConceptoPagoFormDialog cursoId={selectedEscuela} />}
+      </div>
+
+      {selectedEscuela && (
+        <div className="rounded-xl border bg-card divide-y">
+          {!conceptos?.length ? (
+            <p className="text-xs text-muted-foreground text-center py-8">No hay conceptos de pago configurados para esta escuela.</p>
+          ) : (
+            conceptos.map((c: any) => (
+              <div key={c.id} className="flex items-center justify-between p-4">
+                <div>
+                  <p className="text-sm font-medium">{c.nombre}</p>
+                  <p className="text-xs text-muted-foreground">Monto: ${c.monto}</p>
+                </div>
+                <DeleteConfirmDialog title="Eliminar concepto" description={`¿Eliminar "${c.nombre}"?`} onConfirm={() => deleteConcepto.mutateAsync(c.id)} />
+              </div>
+            ))
+          )}
+        </div>
+      )}
+    </div>
+  );
+}
+
+// ========== RECURSOS SECTION ==========
+function RecursosSection({ escuelas, allPeriodos }: any) {
+  const [selectedEscuela, setSelectedEscuela] = useState<string>("");
+  const [selectedPeriodo, setSelectedPeriodo] = useState<string>("");
+  const { data: materias } = useMaterias(selectedPeriodo || null);
+  const [selectedMateria, setSelectedMateria] = useState<string>("");
+  const { data: recursos } = useRecursos(selectedMateria || null);
+  const deleteRecurso = useDeleteRecurso();
+
+  const periodosForEscuela = useMemo(() => {
+    if (!selectedEscuela) return [];
+    return (allPeriodos || []).filter((p: any) => p.escuela_id === selectedEscuela);
+  }, [allPeriodos, selectedEscuela]);
+
+  return (
+    <div className="space-y-4">
+      <p className="text-sm text-muted-foreground">Recursos y materiales de apoyo por materia. Los maestros pueden subir archivos y enlaces.</p>
+      <div className="flex flex-wrap gap-3">
+        <Select value={selectedEscuela} onValueChange={(v) => { setSelectedEscuela(v); setSelectedPeriodo(""); setSelectedMateria(""); }}>
+          <SelectTrigger className="w-52"><SelectValue placeholder="Escuela" /></SelectTrigger>
+          <SelectContent>
+            {(escuelas || []).map((e: any) => <SelectItem key={e.id} value={e.id}>{e.nombre}</SelectItem>)}
+          </SelectContent>
+        </Select>
+        <Select value={selectedPeriodo} onValueChange={(v) => { setSelectedPeriodo(v); setSelectedMateria(""); }} disabled={!selectedEscuela}>
+          <SelectTrigger className="w-52"><SelectValue placeholder="Período" /></SelectTrigger>
+          <SelectContent>
+            {periodosForEscuela.map((p: any) => <SelectItem key={p.id} value={p.id}>{p.nombre}</SelectItem>)}
+          </SelectContent>
+        </Select>
+        <Select value={selectedMateria} onValueChange={setSelectedMateria} disabled={!selectedPeriodo}>
+          <SelectTrigger className="w-52"><SelectValue placeholder="Materia" /></SelectTrigger>
+          <SelectContent>
+            {(materias || []).map((m: any) => <SelectItem key={m.id} value={m.id}>{m.nombre}</SelectItem>)}
+          </SelectContent>
+        </Select>
+        {selectedMateria && <RecursoFormDialog materiaId={selectedMateria} />}
+      </div>
+
+      {selectedMateria && (
+        <div className="space-y-3">
+          {!recursos?.length ? (
+            <div className="rounded-xl border bg-card p-12 text-center text-muted-foreground">
+              <FolderOpen className="h-12 w-12 mx-auto mb-3 opacity-40" />
+              <p className="text-sm">No hay recursos para esta materia.</p>
+            </div>
+          ) : (
+            <div className="rounded-xl border bg-card divide-y">
+              {recursos.map((r: any) => (
+                <div key={r.id} className="flex items-center gap-3 p-4 hover:bg-muted/20">
+                  <div className={cn("w-10 h-10 rounded-lg flex items-center justify-center shrink-0",
+                    r.tipo === "enlace" ? "bg-blue-500/10" : "bg-accent/10"
+                  )}>
+                    {r.tipo === "enlace" ? <ExternalLink className="h-4 w-4 text-blue-500" /> : <File className="h-4 w-4 text-accent" />}
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <p className="text-sm font-medium truncate">{r.titulo}</p>
+                    <p className="text-xs text-muted-foreground truncate">
+                      {r.tipo === "enlace" ? r.url : r.archivo_nombre}
+                      {r.personas && <> · {r.personas.nombres} {r.personas.apellidos}</>}
+                    </p>
+                  </div>
+                  <div className="flex items-center gap-2 shrink-0">
+                    {r.tipo === "enlace" && r.url && (
+                      <Button size="sm" variant="ghost" asChild><a href={r.url} target="_blank" rel="noopener"><ExternalLink className="h-3.5 w-3.5" /></a></Button>
+                    )}
+                    {r.tipo === "archivo" && r.archivo_url && (
+                      <Button size="sm" variant="ghost" asChild><a href={r.archivo_url} target="_blank" rel="noopener"><Download className="h-3.5 w-3.5" /></a></Button>
+                    )}
+                    <DeleteConfirmDialog title="Eliminar recurso" description={`¿Eliminar "${r.titulo}"?`} onConfirm={() => deleteRecurso.mutateAsync(r.id)} />
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+      )}
+    </div>
+  );
+}
+
+// ========== HOMOLOGACIONES SECTION ==========
+function HomologacionesSection() {
+  const { data: homologaciones, isLoading } = useHomologaciones();
+  const deleteHomologacion = useDeleteHomologacion();
+  const [search, setSearch] = useState("");
+
+  const filtered = useMemo(() => {
+    if (!homologaciones) return [];
+    if (!search) return homologaciones;
+    const q = search.toLowerCase();
+    return homologaciones.filter((h: any) =>
+      `${h.personas?.nombres} ${h.personas?.apellidos} ${h.materia_nombre} ${h.institucion_origen}`.toLowerCase().includes(q)
+    );
+  }, [homologaciones, search]);
+
+  const exportExcel = () => {
+    exportToExcel({
+      title: "Homologaciones",
+      columns: [
+        { header: "Persona", key: "persona" },
+        { header: "Materia", key: "materia" },
+        { header: "Institución", key: "institucion" },
+        { header: "Calificación", key: "calificacion" },
+        { header: "Fecha", key: "fecha" },
+        { header: "Observaciones", key: "observaciones" },
+      ],
+      data: filtered.map((h: any) => ({
+        persona: `${h.personas?.nombres || ""} ${h.personas?.apellidos || ""}`,
+        materia: h.materia_nombre,
+        institucion: h.institucion_origen,
+        calificacion: h.calificacion_obtenida ?? "",
+        fecha: h.fecha_homologacion,
+        observaciones: h.observaciones || "",
+      })),
+      filename: "homologaciones",
+    });
+  };
+
+  if (isLoading) return <Skeleton className="h-32" />;
+
+  return (
+    <div className="space-y-4">
+      <p className="text-sm text-muted-foreground">Registro de materias homologadas de otras instituciones.</p>
+      <div className="flex items-center gap-3">
+        <div className="relative flex-1 max-w-md">
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+          <Input placeholder="Buscar..." value={search} onChange={(e) => setSearch(e.target.value)} className="pl-10" />
+        </div>
+        <HomologacionFormDialog />
+        <Button size="sm" variant="outline" onClick={exportExcel} disabled={!filtered.length} className="gap-1.5">
+          <Download className="h-3.5 w-3.5" /> Excel
+        </Button>
+      </div>
+
+      <div className="rounded-xl border bg-card overflow-hidden">
+        <div className="overflow-x-auto">
+          <table className="w-full text-sm">
+            <thead>
+              <tr className="border-b bg-muted/30">
+                <th className="text-left p-3 font-medium text-muted-foreground">Persona</th>
+                <th className="text-left p-3 font-medium text-muted-foreground">Materia</th>
+                <th className="text-left p-3 font-medium text-muted-foreground">Institución</th>
+                <th className="text-center p-3 font-medium text-muted-foreground">Calificación</th>
+                <th className="text-center p-3 font-medium text-muted-foreground">Fecha</th>
+                <th className="text-center p-3 font-medium text-muted-foreground">Acciones</th>
+              </tr>
+            </thead>
+            <tbody>
+              {!filtered.length ? (
+                <tr><td colSpan={6} className="text-center py-8 text-muted-foreground text-xs">No hay homologaciones registradas.</td></tr>
+              ) : (
+                filtered.map((h: any) => (
+                  <tr key={h.id} className="border-b last:border-0 hover:bg-muted/20">
+                    <td className="p-3 font-medium">{h.personas?.nombres} {h.personas?.apellidos}</td>
+                    <td className="p-3 text-muted-foreground">{h.materia_nombre}</td>
+                    <td className="p-3 text-muted-foreground">{h.institucion_origen}</td>
+                    <td className="p-3 text-center font-semibold">{h.calificacion_obtenida ?? "—"}</td>
+                    <td className="p-3 text-center text-muted-foreground">{h.fecha_homologacion}</td>
+                    <td className="p-3 text-center">
+                      <DeleteConfirmDialog title="Eliminar homologación" description="¿Eliminar esta homologación?" onConfirm={() => deleteHomologacion.mutateAsync(h.id)} />
+                    </td>
+                  </tr>
+                ))
+              )}
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 // ========== MAIN PAGE ==========
 export default function AcademiaPage() {
   const { data: escuelas, isLoading } = useEscuelas();
@@ -1372,6 +1597,9 @@ export default function AcademiaPage() {
     maestros: "Maestros",
     calificaciones: "Calificaciones",
     "historial-matriculas": "Historial de Matrículas",
+    pagos: "Gestión de Pagos",
+    recursos: "Recursos y Contenido",
+    homologaciones: "Homologaciones",
     certificados: "Certificados",
     aulas: "Gestionar Aulas",
   };
@@ -1397,7 +1625,7 @@ export default function AcademiaPage() {
 
           {activeSection === "escuelas" && (
             <EscuelasSection escuelas={escuelas} allPeriodos={allPeriodos} allMatriculas={allMatriculas}
-              onSelectEscuela={(e: any) => { /* Navigate to periodos filtered by this school */ setActiveSection("periodos"); }} />
+              onSelectEscuela={() => setActiveSection("periodos")} />
           )}
           {activeSection === "periodos" && (
             <PeriodosSection escuelas={escuelas} allPeriodos={allPeriodos} allMatriculas={allMatriculas} />
@@ -1414,6 +1642,9 @@ export default function AcademiaPage() {
           {activeSection === "historial-matriculas" && (
             <HistorialMatriculasSection escuelas={escuelas} allPeriodos={allPeriodos} allMatriculas={allMatriculas} />
           )}
+          {activeSection === "pagos" && <PagosSection escuelas={escuelas} />}
+          {activeSection === "recursos" && <RecursosSection escuelas={escuelas} allPeriodos={allPeriodos} />}
+          {activeSection === "homologaciones" && <HomologacionesSection />}
           {activeSection === "certificados" && <CertificadosSection />}
           {activeSection === "aulas" && <AulasSection />}
         </div>
