@@ -1486,8 +1486,34 @@ function PagosSection({ escuelas, allMatriculas }: any) {
   const [searchPago, setSearchPago] = useState("");
   const { data: conceptos } = useConceptosPago(selectedEscuela || null);
   const { data: pagos, isLoading: loadingPagos } = usePagosMatricula(selectedMatricula);
+  const { data: allPagosEscuela } = usePagosEscuela(selectedEscuela || null);
   const updatePago = useUpdatePagoMatricula();
   const deleteConcepto = useDeleteConceptoPago();
+
+  const exportPagosExcel = () => {
+    if (!allPagosEscuela?.length) return;
+    const escuelaNombre = escuelas?.find((e: any) => e.id === selectedEscuela)?.nombre || "Escuela";
+    exportToExcel({
+      title: `Pagos - ${escuelaNombre}`,
+      columns: [
+        { header: "Estudiante", key: "estudiante" },
+        { header: "Concepto", key: "concepto" },
+        { header: "Monto", key: "monto" },
+        { header: "Estado", key: "estado" },
+        { header: "Monto Pagado", key: "monto_pagado" },
+        { header: "Fecha Pago", key: "fecha_pago" },
+      ],
+      data: allPagosEscuela.map((p: any) => ({
+        estudiante: `${p.matricula?.personas?.nombres || ""} ${p.matricula?.personas?.apellidos || ""}`.trim(),
+        concepto: p.conceptos_pago?.nombre || "",
+        monto: p.conceptos_pago?.monto || 0,
+        estado: p.estado,
+        monto_pagado: p.monto_pagado || 0,
+        fecha_pago: p.fecha_pago || "",
+      })),
+      filename: `pagos_${escuelaNombre.toLowerCase().replace(/\s+/g, "_")}`,
+    });
+  };
 
   const matriculasEscuela = useMemo(() => {
     if (!selectedEscuela || !allMatriculas) return [];
