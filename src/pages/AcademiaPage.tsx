@@ -1405,6 +1405,7 @@ function PeriodoDetailView({ escuela, periodo, onBackToPeriodos }: any) {
                           <label className="text-[10px] text-muted-foreground font-medium">Descripción</label>
                           <Input value={editForm.descripcion} onChange={(e) => setEditForm(f => ({ ...f, descripcion: e.target.value }))} className="h-8 text-xs" placeholder="Descripción (opcional)" />
                         </div>
+                        <div>
                           <label className="text-[10px] text-muted-foreground font-medium">Maestro</label>
                           <Select value={editForm.maestro_id} onValueChange={(v) => setEditForm(f => ({ ...f, maestro_id: v }))}>
                             <SelectTrigger className="h-8 text-xs"><SelectValue placeholder="Seleccionar maestro" /></SelectTrigger>
