@@ -281,7 +281,42 @@ function PanelView({ counts, pieData, tipoCounts, tab, setTab, search, setSearch
         <Input placeholder="Buscar petición o persona..." value={search} onChange={(e) => setSearch(e.target.value)} className="pl-10" />
       </div>
 
-      {/* Results count */}
+      {/* Data table */}
+      <div className="bg-card border rounded-lg overflow-hidden">
+        <Table>
+          <TableHeader>
+            <TableRow>
+              <TableHead>#</TableHead>
+              <TableHead>Título</TableHead>
+              <TableHead>Persona</TableHead>
+              <TableHead>Tipo</TableHead>
+              <TableHead>Estado</TableHead>
+              <TableHead>Prioridad</TableHead>
+              <TableHead>Fecha</TableHead>
+            </TableRow>
+          </TableHeader>
+          <TableBody>
+            {filtered.length === 0 ? (
+              <TableRow>
+                <TableCell colSpan={7} className="text-center py-12 text-muted-foreground">No se encontraron peticiones</TableCell>
+              </TableRow>
+            ) : (
+              filtered.map((p: any, i: number) => (
+                <TableRow key={p.id}>
+                  <TableCell className="text-muted-foreground">{i + 1}</TableCell>
+                  <TableCell className="font-medium">{p.titulo}</TableCell>
+                  <TableCell>{p.personas ? `${p.personas.nombres} ${p.personas.apellidos}` : "—"}</TableCell>
+                  <TableCell><Badge variant="outline" className="text-[10px]">{p.tipo || "Sin tipo"}</Badge></TableCell>
+                  <TableCell><StatusBadge status={p.estado} /></TableCell>
+                  <TableCell><Badge className={prioridadColor[p.prioridad] || ""} variant="secondary">{p.prioridad}</Badge></TableCell>
+                  <TableCell className="text-xs text-muted-foreground">{p.created_at ? format(parseISO(p.created_at), "dd/MM/yyyy") : "—"}</TableCell>
+                </TableRow>
+              ))
+            )}
+          </TableBody>
+        </Table>
+      </div>
+
       <p className="text-xs text-muted-foreground">{filtered.length} de {counts.total} peticiones</p>
     </div>
   );
