@@ -16,21 +16,27 @@ export type Database = {
     Tables: {
       asistencia: {
         Row: {
+          clasificacion: string | null
           created_at: string
+          es_nuevo: boolean | null
           id: string
           persona_id: string
           presente: boolean
           servicio_id: string
         }
         Insert: {
+          clasificacion?: string | null
           created_at?: string
+          es_nuevo?: boolean | null
           id?: string
           persona_id: string
           presente?: boolean
           servicio_id: string
         }
         Update: {
+          clasificacion?: string | null
           created_at?: string
+          es_nuevo?: boolean | null
           id?: string
           persona_id?: string
           presente?: boolean
@@ -200,29 +206,32 @@ export type Database = {
         Row: {
           codigo: string
           created_at: string
-          curso_id: string
+          curso_id: string | null
           fecha_emision: string
           id: string
-          matricula_id: string
+          matricula_id: string | null
           persona_id: string
+          tipo_certificado: string | null
         }
         Insert: {
           codigo?: string
           created_at?: string
-          curso_id: string
+          curso_id?: string | null
           fecha_emision?: string
           id?: string
-          matricula_id: string
+          matricula_id?: string | null
           persona_id: string
+          tipo_certificado?: string | null
         }
         Update: {
           codigo?: string
           created_at?: string
-          curso_id?: string
+          curso_id?: string | null
           fecha_emision?: string
           id?: string
-          matricula_id?: string
+          matricula_id?: string | null
           persona_id?: string
+          tipo_certificado?: string | null
         }
         Relationships: [
           {
@@ -1666,41 +1675,53 @@ export type Database = {
       }
       servicios: {
         Row: {
+          aforo: number | null
           created_at: string
           descripcion: string | null
+          dia_reunion: string | null
           estado: string
           fecha: string
+          habilitado_reserva: boolean | null
           hora: string | null
           id: string
           lugar: string | null
           nombre: string
           predicador: string | null
+          sede: string | null
           tipo: Database["public"]["Enums"]["tipo_servicio"]
           updated_at: string
         }
         Insert: {
+          aforo?: number | null
           created_at?: string
           descripcion?: string | null
+          dia_reunion?: string | null
           estado?: string
           fecha: string
+          habilitado_reserva?: boolean | null
           hora?: string | null
           id?: string
           lugar?: string | null
           nombre: string
           predicador?: string | null
+          sede?: string | null
           tipo: Database["public"]["Enums"]["tipo_servicio"]
           updated_at?: string
         }
         Update: {
+          aforo?: number | null
           created_at?: string
           descripcion?: string | null
+          dia_reunion?: string | null
           estado?: string
           fecha?: string
+          habilitado_reserva?: boolean | null
           hora?: string | null
           id?: string
           lugar?: string | null
           nombre?: string
           predicador?: string | null
+          sede?: string | null
           tipo?: Database["public"]["Enums"]["tipo_servicio"]
           updated_at?: string
         }

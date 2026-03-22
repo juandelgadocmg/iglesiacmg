@@ -34,6 +34,7 @@ export default function PeticionFormDialog({ initialData, onClose }: Props) {
       titulo: fd.get("titulo") as string,
       descripcion: (fd.get("descripcion") as string) || null,
       persona_id: (fd.get("persona_id") as string) || null,
+      tipo: (fd.get("tipo") as string) || null,
       estado: (fd.get("estado") as string) || "Pendiente",
       prioridad: (fd.get("prioridad") as string) || "Normal",
       fecha_seguimiento: (fd.get("fecha_seguimiento") as string) || null,
@@ -77,9 +78,23 @@ export default function PeticionFormDialog({ initialData, onClose }: Props) {
           </div>
           <div className="grid grid-cols-2 gap-4">
             <div className="space-y-2">
-              <Label>Persona</Label>
+              <Label>Tipo Petición *</Label>
+              <Select name="tipo" defaultValue={initialData?.tipo || ""}>
+                <SelectTrigger><SelectValue placeholder="Seleccionar tipo" /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="Financiera">Financiera</SelectItem>
+                  <SelectItem value="Familiar">Familiar</SelectItem>
+                  <SelectItem value="Sanidad">Sanidad</SelectItem>
+                  <SelectItem value="Emocional">Emocional</SelectItem>
+                  <SelectItem value="Espiritual">Espiritual</SelectItem>
+                  <SelectItem value="Otros">Otros</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="space-y-2">
+              <Label>Seleccionar persona</Label>
               <Select name="persona_id" defaultValue={initialData?.persona_id || ""}>
-                <SelectTrigger><SelectValue placeholder="Sin asignar" /></SelectTrigger>
+                <SelectTrigger><SelectValue placeholder="Buscar asistente..." /></SelectTrigger>
                 <SelectContent>
                   {(personas || []).map(p => (
                     <SelectItem key={p.id} value={p.id}>{p.nombres} {p.apellidos}</SelectItem>

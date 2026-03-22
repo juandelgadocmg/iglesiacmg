@@ -1,28 +1,36 @@
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import PageHeader from "@/components/shared/PageHeader";
 import DataTable from "@/components/shared/DataTable";
 import StatusBadge from "@/components/shared/StatusBadge";
 import ServicioFormDialog from "@/components/forms/ServicioFormDialog";
 import DeleteConfirmDialog from "@/components/shared/DeleteConfirmDialog";
 import MetricCard from "@/components/shared/MetricCard";
-import { Church, Pencil, ClipboardCheck, Check, X, Save, Search, TrendingUp } from "lucide-react";
+import { Church, Pencil, ClipboardCheck, Check, X, Save, Search, TrendingUp, Calendar, Eye, FileText, Users, MapPin, Clock as ClockIcon } from "lucide-react";
 import { useServicios, useDeleteServicio, usePersonas, useAsistencia, useUpsertAsistencia } from "@/hooks/useDatabase";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Badge } from "@/components/ui/badge";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell } from "@/components/ui/table";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 import ExportDropdown from "@/components/shared/ExportDropdown";
 import AttendanceTrendChart from "@/components/charts/AttendanceTrendChart";
+
+type ActiveView = "reuniones" | "reportes" | "reporte-detalle";
 
 export default function ServiciosPage() {
   const { data: servicios, isLoading } = useServicios();
   const { data: personas, isLoading: loadingPersonas } = usePersonas();
   const deleteServicio = useDeleteServicio();
   const [editing, setEditing] = useState<any>(null);
-  const [activeTab, setActiveTab] = useState<"servicios" | "asistencia">("servicios");
+  const [activeView, setActiveView] = useState<ActiveView>("reuniones");
+  const [selectedReunion, setSelectedReunion] = useState<any>(null);
+  const [search, setSearch] = useState("");
 
   // Asistencia state
   const [selectedService, setSelectedService] = useState<string | null>(null);
@@ -32,7 +40,7 @@ export default function ServiciosPage() {
   const [initialized, setInitialized] = useState<string | null>(null);
 
   const upsertAsistencia = useUpsertAsistencia();
-  const effectiveService = selectedService || servicios?.[0]?.id || null;
+  const effectiveService = selectedService || null;
   const { data: asistenciaData, isLoading: loadingAsistencia } = useAsistencia(effectiveService);
 
   if (effectiveService && asistenciaData && initialized !== effectiveService) {
@@ -54,13 +62,19 @@ export default function ServiciosPage() {
   const handleDelete = async (id: string) => {
     try {
       await deleteServicio.mutateAsync(id);
-      toast.success("Servicio eliminado");
+      toast.success("Reunión eliminada");
     } catch { toast.error("Error al eliminar"); }
   };
 
   const personasList = personas || [];
   const serviciosList = servicios || [];
-  const currentService = serviciosList.find(s => s.id === effectiveService);
+
+  const filteredServicios = serviciosList.filter(s =>
+    s.nombre.toLowerCase().includes(search.toLowerCase())
+  );
+
+  const totalActivos = serviciosList.filter(s => s.estado !== "Cancelado").length;
+  const totalBaja = serviciosList.filter(s => s.estado === "Cancelado").length;
 
   const toggleAttendance = (personId: string) => {
     setLocalAttendance(prev => ({ ...prev, [personId]: !prev[personId] }));
@@ -81,17 +95,13 @@ export default function ServiciosPage() {
     }));
     try {
       await upsertAsistencia.mutateAsync(records);
-      toast.success("Asistencia guardada correctamente", {
-        description: `${currentService?.nombre} — ${Object.values(localAttendance).filter(Boolean).length} presentes`,
+      const svc = serviciosList.find(s => s.id === effectiveService);
+      toast.success("Asistencia guardada", {
+        description: `${svc?.nombre} — ${Object.values(localAttendance).filter(Boolean).length} presentes`,
       });
     } catch (err: any) {
-      toast.error("Error al guardar asistencia", { description: err.message });
+      toast.error("Error al guardar", { description: err.message });
     }
-  };
-
-  const handleServiceChange = (id: string) => {
-    setSelectedService(id);
-    setInitialized(null);
   };
 
   const filteredPersonas = personasList.filter(p => {
@@ -105,12 +115,19 @@ export default function ServiciosPage() {
   const totalAbsent = personasList.length - totalPresent;
   const attendanceRate = personasList.length > 0 ? Math.round((totalPresent / personasList.length) * 100) : 0;
 
+  const openReunionDetail = (s: any) => {
+    setSelectedReunion(s);
+    setActiveView("reporte-detalle");
+    setSelectedService(s.id);
+    setInitialized(null);
+  };
+
   return (
     <div className="animate-fade-in space-y-6">
-      <PageHeader title="Servicios" description="Gestión de cultos, reuniones y asistencia">
+      <PageHeader title="Reuniones" description="Lista de reuniones establecidas en la iglesia">
         <ExportDropdown
-          title="Servicios"
-          filename="servicios"
+          title="Reuniones"
+          filename="reuniones"
           columns={[
             { header: "Nombre", key: "nombre" },
             { header: "Tipo", key: "tipo" },
@@ -124,202 +141,315 @@ export default function ServiciosPage() {
         <ServicioFormDialog />
       </PageHeader>
 
-      {/* Tabs */}
+      {editing && <ServicioFormDialog initialData={editing} onClose={() => setEditing(null)} />}
+
+      {/* Navigation tabs */}
       <div className="flex gap-1 border-b">
-        <button onClick={() => setActiveTab("servicios")}
-          className={`px-4 py-2 text-sm font-medium border-b-2 transition-colors ${activeTab === "servicios" ? "border-primary text-primary" : "border-transparent text-muted-foreground hover:text-foreground"}`}>
-          <Church className="h-4 w-4 inline mr-1.5" />Servicios
+        <button onClick={() => { setActiveView("reuniones"); setSelectedReunion(null); }}
+          className={`px-4 py-2 text-sm font-medium border-b-2 transition-colors ${activeView === "reuniones" ? "border-primary text-primary" : "border-transparent text-muted-foreground hover:text-foreground"}`}>
+          <Church className="h-4 w-4 inline mr-1.5" />Lista de reuniones
         </button>
-        <button onClick={() => setActiveTab("asistencia")}
-          className={`px-4 py-2 text-sm font-medium border-b-2 transition-colors ${activeTab === "asistencia" ? "border-primary text-primary" : "border-transparent text-muted-foreground hover:text-foreground"}`}>
-          <ClipboardCheck className="h-4 w-4 inline mr-1.5" />Asistencia
+        <button onClick={() => setActiveView("reportes")}
+          className={`px-4 py-2 text-sm font-medium border-b-2 transition-colors ${activeView === "reportes" ? "border-primary text-primary" : "border-transparent text-muted-foreground hover:text-foreground"}`}>
+          <FileText className="h-4 w-4 inline mr-1.5" />Reportar reunión
         </button>
       </div>
 
-      {editing && <ServicioFormDialog initialData={editing} onClose={() => setEditing(null)} />}
+      {/* ===== REUNIONES LIST (Card Grid) ===== */}
+      {activeView === "reuniones" && (
+        <div className="space-y-6">
+          {/* Metrics */}
+          <div className="grid grid-cols-2 gap-4">
+            <Card className="border-2 border-primary/20">
+              <CardContent className="flex items-center gap-4 p-4">
+                <div className="w-12 h-12 rounded-lg bg-primary/10 flex items-center justify-center">
+                  <Church className="h-6 w-6 text-primary" />
+                </div>
+                <div>
+                  <p className="text-xs text-muted-foreground">Todos</p>
+                  <p className="text-2xl font-bold text-foreground">{totalActivos}</p>
+                </div>
+              </CardContent>
+            </Card>
+            <Card>
+              <CardContent className="flex items-center gap-4 p-4">
+                <div className="w-12 h-12 rounded-lg bg-destructive/10 flex items-center justify-center">
+                  <X className="h-6 w-6 text-destructive" />
+                </div>
+                <div>
+                  <p className="text-xs text-muted-foreground">Dados De Baja</p>
+                  <p className="text-2xl font-bold text-foreground">{totalBaja}</p>
+                </div>
+              </CardContent>
+            </Card>
+          </div>
 
-      {activeTab === "servicios" && (
-        <DataTable
-          data={servicios || []}
-          searchKey="nombre"
-          searchPlaceholder="Buscar servicio..."
-          filterKey="estado"
-          filterPlaceholder="Estado"
-          filterOptions={[
-            { value: "Programado", label: "Programado" },
-            { value: "Completado", label: "Completado" },
-            { value: "Cancelado", label: "Cancelado" },
-          ]}
-          columns={[
-            {
-              key: "nombre", label: "Servicio",
-              render: (s: any) => (
-                <div className="flex items-center gap-3">
-                  <div className="w-8 h-8 rounded-lg bg-info/10 flex items-center justify-center">
-                    <Church className="h-4 w-4 text-info" />
+          {/* Search */}
+          <div className="flex gap-3">
+            <div className="relative flex-1">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+              <Input placeholder="Buscar aquí..." value={search} onChange={e => setSearch(e.target.value)} className="pl-10" />
+            </div>
+          </div>
+
+          {/* Card grid */}
+          <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
+            {filteredServicios.map(s => (
+              <Card key={s.id} className="hover:shadow-lg transition-shadow cursor-pointer group relative overflow-hidden">
+                <div className="absolute top-0 left-0 right-0 h-1 bg-primary" />
+                <CardContent className="p-5 space-y-3">
+                  <div className="flex items-start justify-between">
+                    <h3 className="font-bold text-foreground text-sm uppercase tracking-wide">{s.nombre}</h3>
+                    <div className="flex gap-1">
+                      <Button variant="ghost" size="icon" className="h-7 w-7" onClick={(e) => { e.stopPropagation(); setEditing({ ...s }); }}>
+                        <Pencil className="h-3.5 w-3.5" />
+                      </Button>
+                      <DeleteConfirmDialog onConfirm={() => handleDelete(s.id)} title="¿Eliminar reunión?" description={`Se eliminará "${s.nombre}" permanentemente.`} />
+                    </div>
                   </div>
-                  <div>
-                    <p className="font-medium text-sm">{s.nombre}</p>
-                    <p className="text-xs text-muted-foreground">{s.tipo}</p>
+
+                  <div className="space-y-2">
+                    <div className="flex items-center gap-2">
+                      <Badge variant="outline" className="text-[10px] bg-warning/10 text-warning border-warning/30">
+                        Habilitada para reservar: No
+                      </Badge>
+                    </div>
+                    <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
+                      <MapPin className="h-3 w-3" />
+                      <Badge variant="secondary" className="text-[10px]">{(s as any).sede || "Principal"}</Badge>
+                    </div>
+                    <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
+                      <ClockIcon className="h-3 w-3" />
+                      <Badge variant="secondary" className="text-[10px]">{s.hora || "—"}</Badge>
+                    </div>
+                    <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
+                      <Calendar className="h-3 w-3" />
+                      <Badge variant="secondary" className="text-[10px]">{(s as any).dia_reunion || s.fecha}</Badge>
+                    </div>
                   </div>
-                </div>
-              )
-            },
-            { key: "fecha", label: "Fecha", render: (s: any) => `${s.fecha} · ${s.hora || ""}` },
-            { key: "predicador", label: "Predicador", render: (s: any) => s.predicador || "—" },
-            { key: "estado", label: "Estado", render: (s: any) => <StatusBadge status={s.estado} /> },
-            {
-              key: "actions", label: "",
-              render: (s: any) => (
-                <div className="flex items-center gap-1" onClick={e => e.stopPropagation()}>
-                  <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => setEditing({ ...s })}>
-                    <Pencil className="h-4 w-4" />
+
+                  <Button variant="outline" size="sm" className="w-full mt-2 text-xs" onClick={() => openReunionDetail(s)}>
+                    <Eye className="h-3.5 w-3.5 mr-1" /> Ver detalle / Reportar
                   </Button>
-                  <DeleteConfirmDialog onConfirm={() => handleDelete(s.id)} title="¿Eliminar servicio?" description={`Se eliminará "${s.nombre}" permanentemente.`} />
-                </div>
-              )
-            },
-          ]}
+                </CardContent>
+              </Card>
+            ))}
+          </div>
+
+          <p className="text-xs text-muted-foreground">1 – {filteredServicios.length} de {filteredServicios.length} registros.</p>
+        </div>
+      )}
+
+      {/* ===== REPORTAR REUNIÓN ===== */}
+      {activeView === "reportes" && (
+        <ReportarReunionView
+          servicios={serviciosList}
+          personas={personasList}
+          onSelectReunion={openReunionDetail}
         />
       )}
 
-      {activeTab === "asistencia" && (
-        <div className="space-y-6">
-          {/* Service selector */}
-          <div className="bg-card rounded-lg border p-4 flex flex-col sm:flex-row items-start sm:items-center gap-4">
-            <div className="flex items-center gap-3 flex-1">
-              <div className="w-10 h-10 rounded-lg bg-info/10 flex items-center justify-center">
-                <Church className="h-5 w-5 text-info" />
-              </div>
-              <div className="flex-1">
-                <label className="text-xs font-medium text-muted-foreground uppercase tracking-wider">Servicio</label>
-                <Select value={effectiveService || ""} onValueChange={handleServiceChange}>
-                  <SelectTrigger className="mt-1 border-0 bg-muted/30 h-9">
-                    <SelectValue placeholder="Seleccionar servicio" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {serviciosList.map(s => (
-                      <SelectItem key={s.id} value={s.id}>
-                        {s.nombre} — {s.fecha}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-            </div>
-            <div className="flex gap-2">
-              <Button variant="outline" size="sm" onClick={() => markAll(true)} className="text-xs gap-1.5">
-                <Check className="h-3.5 w-3.5" /> Marcar todos
+      {/* ===== REPORTE DETALLE ===== */}
+      {activeView === "reporte-detalle" && selectedReunion && (
+        <ReporteDetalleView
+          reunion={selectedReunion}
+          personas={personasList}
+          localAttendance={localAttendance}
+          toggleAttendance={toggleAttendance}
+          markAll={markAll}
+          saveAttendance={saveAttendance}
+          isPending={upsertAsistencia.isPending}
+          searchTerm={searchTerm}
+          setSearchTerm={setSearchTerm}
+          filterStatus={filterStatus}
+          setFilterStatus={setFilterStatus}
+          filteredPersonas={filteredPersonas}
+          totalPresent={totalPresent}
+          totalAbsent={totalAbsent}
+          attendanceRate={attendanceRate}
+          loadingAsistencia={loadingAsistencia}
+          onBack={() => { setActiveView("reuniones"); setSelectedReunion(null); }}
+        />
+      )}
+    </div>
+  );
+}
+
+// ============ REPORTAR REUNIÓN VIEW ============
+function ReportarReunionView({ servicios, personas, onSelectReunion }: any) {
+  return (
+    <div className="space-y-6">
+      <Card>
+        <CardHeader>
+          <CardTitle className="text-lg">Seleccionar reunión para reportar</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-3">
+            {servicios.map((s: any) => (
+              <Button key={s.id} variant="outline" className="h-auto p-4 flex flex-col items-start gap-1" onClick={() => onSelectReunion(s)}>
+                <span className="font-semibold text-foreground">{s.nombre}</span>
+                <span className="text-xs text-muted-foreground">{s.fecha} · {s.hora || "—"}</span>
               </Button>
-              <Button variant="outline" size="sm" onClick={() => markAll(false)} className="text-xs gap-1.5">
-                <X className="h-3.5 w-3.5" /> Desmarcar todos
-              </Button>
-              <Button size="sm" onClick={saveAttendance} disabled={upsertAsistencia.isPending} className="text-xs gap-1.5 bg-primary text-primary-foreground">
-                <Save className="h-3.5 w-3.5" /> {upsertAsistencia.isPending ? "Guardando..." : "Guardar"}
-              </Button>
-            </div>
+            ))}
+          </div>
+        </CardContent>
+      </Card>
+    </div>
+  );
+}
+
+// ============ REPORTE DETALLE VIEW ============
+function ReporteDetalleView({
+  reunion, personas, localAttendance, toggleAttendance, markAll, saveAttendance,
+  isPending, searchTerm, setSearchTerm, filterStatus, setFilterStatus,
+  filteredPersonas, totalPresent, totalAbsent, attendanceRate, loadingAsistencia, onBack
+}: any) {
+  // Classify by tipo_persona
+  const clasificacion: Record<string, number> = {};
+  const vinculacion: Record<string, number> = {};
+
+  personas.forEach((p: any) => {
+    const tipo = p.tipo_persona || "Sin tipo";
+    clasificacion[tipo] = (clasificacion[tipo] || 0) + (localAttendance[p.id] ? 1 : 0);
+    const vinc = p.vinculacion || "Sin vinculación";
+    vinculacion[vinc] = (vinculacion[vinc] || 0) + (localAttendance[p.id] ? 1 : 0);
+  });
+
+  return (
+    <div className="space-y-6">
+      <Button variant="ghost" onClick={onBack} className="gap-1.5 text-sm">
+        ← Volver a reuniones
+      </Button>
+
+      {/* Header */}
+      <Card className="border-2 border-primary/20">
+        <CardContent className="p-5">
+          <h2 className="text-xl font-bold text-foreground">REPORTE: {reunion.nombre}</h2>
+          <p className="text-sm text-muted-foreground">Fecha de reunión: {reunion.fecha}</p>
+          <div className="flex gap-4 mt-3 text-sm">
+            <span className="flex items-center gap-1"><Check className="h-4 w-4 text-success" /> Asisten: {totalPresent}</span>
+            <span className="flex items-center gap-1"><Users className="h-4 w-4 text-info" /> Crecim. Preliminar: {totalPresent}</span>
+            <span className="flex items-center gap-1"><X className="h-4 w-4 text-destructive" /> Primerizo/Invitados: 0</span>
+          </div>
+        </CardContent>
+      </Card>
+
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        {/* Left: Attendance List */}
+        <div className="space-y-4">
+          <div className="flex items-center justify-between">
+            <h3 className="font-semibold text-foreground flex items-center gap-2">
+              <ClipboardCheck className="h-5 w-5" /> Registrar Asistencia
+            </h3>
+            <Button size="sm" onClick={saveAttendance} disabled={isPending} className="gap-1.5 text-xs">
+              <Save className="h-3.5 w-3.5" /> {isPending ? "Guardando..." : "Guardar"}
+            </Button>
           </div>
 
-          {effectiveService && (
-            <ExportDropdown
-              title={`Asistencia - ${currentService?.nombre || ""}`}
-              filename={`asistencia-${currentService?.nombre || "servicio"}`}
-              columns={[
-                { header: "Nombres", key: "nombres" },
-                { header: "Apellidos", key: "apellidos" },
-                { header: "Tipo", key: "tipo_persona" },
-                { header: "Presente", key: "presente" },
-              ]}
-              data={filteredPersonas.map(p => ({
-                nombres: p.nombres,
-                apellidos: p.apellidos,
-                tipo_persona: p.tipo_persona,
-                presente: localAttendance[p.id] ? "Sí" : "No",
-              }))}
-            />
-          )}
-
-          {/* Metrics row */}
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+          <div className="grid grid-cols-3 gap-3">
             <MetricCard title="Presentes" value={totalPresent} icon={Check} variant="success" />
             <MetricCard title="Ausentes" value={totalAbsent} icon={X} variant="default" />
-            <MetricCard title="Tasa de Asistencia" value={`${attendanceRate}%`} icon={TrendingUp} variant="accent" />
+            <MetricCard title="Tasa" value={`${attendanceRate}%`} icon={TrendingUp} variant="accent" />
           </div>
 
-          {/* Attendance Trend Chart */}
-          <AttendanceTrendChart />
-
-          {/* Attendance list */}
+          {/* Rol-based attendance toggles */}
           <div className="bg-card rounded-lg border">
-            <div className="p-4 border-b flex flex-col sm:flex-row gap-3">
-              <div className="relative flex-1">
+            <div className="p-3 border-b flex gap-2">
+              <Button variant="outline" size="sm" onClick={() => markAll(true)} className="text-xs gap-1">
+                <Check className="h-3 w-3" /> Todos
+              </Button>
+              <Button variant="outline" size="sm" onClick={() => markAll(false)} className="text-xs gap-1">
+                <X className="h-3 w-3" /> Ninguno
+              </Button>
+            </div>
+            <div className="p-3 border-b">
+              <div className="relative">
                 <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                <Input
-                  placeholder="Buscar persona..."
-                  value={searchTerm}
-                  onChange={e => setSearchTerm(e.target.value)}
-                  className="pl-9 h-9 bg-muted/30 border-0"
-                />
+                <Input placeholder="Buscar persona..." value={searchTerm} onChange={e => setSearchTerm(e.target.value)} className="pl-9 h-8 text-sm" />
               </div>
-              <Select value={filterStatus} onValueChange={(v) => setFilterStatus(v as any)}>
-                <SelectTrigger className="w-44 h-9">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">Todos</SelectItem>
-                  <SelectItem value="present">Presentes</SelectItem>
-                  <SelectItem value="absent">Ausentes</SelectItem>
-                </SelectContent>
-              </Select>
             </div>
 
             {loadingAsistencia ? (
               <div className="p-8 text-center text-muted-foreground">Cargando...</div>
             ) : (
-              <div className="divide-y">
-                {filteredPersonas.map(p => {
+              <div className="divide-y max-h-[400px] overflow-y-auto">
+                {filteredPersonas.map((p: any) => {
                   const isPresent = !!localAttendance[p.id];
                   return (
-                    <div
-                      key={p.id}
-                      className="flex items-center justify-between px-4 py-3 hover:bg-muted/20 transition-colors cursor-pointer"
-                      onClick={() => toggleAttendance(p.id)}
-                    >
-                      <div className="flex items-center gap-3">
-                        <Avatar className="h-9 w-9">
-                          <AvatarFallback className="bg-primary/10 text-primary text-xs font-semibold">
-                            {p.nombres[0]}{p.apellidos[0]}
-                          </AvatarFallback>
+                    <div key={p.id} className="flex items-center justify-between px-4 py-2.5 hover:bg-muted/20 cursor-pointer" onClick={() => toggleAttendance(p.id)}>
+                      <div className="flex items-center gap-2.5">
+                        <Avatar className="h-8 w-8">
+                          <AvatarFallback className="bg-primary/10 text-primary text-xs">{p.nombres[0]}{p.apellidos[0]}</AvatarFallback>
                         </Avatar>
                         <div>
                           <p className="text-sm font-medium">{p.nombres} {p.apellidos}</p>
-                          <p className="text-xs text-muted-foreground">{p.tipo_persona}</p>
+                          <p className="text-[10px] text-muted-foreground">{p.tipo_persona}</p>
                         </div>
                       </div>
-                      <button
-                        onClick={(e) => { e.stopPropagation(); toggleAttendance(p.id); }}
-                        className={cn(
-                          "w-10 h-10 rounded-full flex items-center justify-center transition-all duration-200 shrink-0",
-                          isPresent
-                            ? "bg-success text-success-foreground shadow-sm"
-                            : "bg-muted text-muted-foreground hover:bg-muted/80"
-                        )}
-                      >
-                        {isPresent ? <Check className="h-5 w-5" /> : <X className="h-5 w-5" />}
+                      <button className={cn(
+                        "w-8 h-8 rounded-full flex items-center justify-center transition-all shrink-0",
+                        isPresent ? "bg-success text-success-foreground" : "bg-destructive/20 text-destructive"
+                      )} onClick={e => { e.stopPropagation(); toggleAttendance(p.id); }}>
+                        {isPresent ? <Check className="h-4 w-4" /> : <X className="h-4 w-4" />}
                       </button>
                     </div>
                   );
                 })}
                 {filteredPersonas.length === 0 && (
-                  <div className="px-4 py-12 text-center text-muted-foreground text-sm">
-                    No se encontraron personas
-                  </div>
+                  <div className="px-4 py-8 text-center text-muted-foreground text-sm">No se encontraron personas</div>
                 )}
               </div>
             )}
+            <div className="p-2 border-t text-xs text-muted-foreground text-center">
+              Total: {filteredPersonas.length}
+            </div>
           </div>
         </div>
-      )}
+
+        {/* Right: Classification tables */}
+        <div className="space-y-4">
+          {/* Vinculación */}
+          <Card>
+            <CardHeader className="pb-2">
+              <CardTitle className="text-sm">Vinculación</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <Table>
+                <TableBody>
+                  {Object.entries(vinculacion).map(([key, val]) => (
+                    <TableRow key={key}>
+                      <TableCell className="text-sm">{key}</TableCell>
+                      <TableCell className="text-right"><Badge variant="secondary">{val as number}</Badge></TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            </CardContent>
+          </Card>
+
+          {/* Clasificación */}
+          <Card>
+            <CardHeader className="pb-2">
+              <CardTitle className="text-sm">Clasificación</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <Table>
+                <TableBody>
+                  {Object.entries(clasificacion).map(([key, val]) => (
+                    <TableRow key={key}>
+                      <TableCell className="text-sm">{key}</TableCell>
+                      <TableCell className="text-right"><Badge variant="secondary">{val as number}</Badge></TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            </CardContent>
+          </Card>
+
+          {/* Trend chart */}
+          <AttendanceTrendChart />
+        </div>
+      </div>
     </div>
   );
 }
