@@ -27,6 +27,7 @@ import { useState, useMemo, useRef } from "react";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 import { useQueryClient } from "@tanstack/react-query";
+import { QRCodeSVG } from "qrcode.react";
 
 const tipoColor: Record<string, string> = {
   Miembro: "bg-primary text-primary-foreground",
