@@ -338,13 +338,33 @@ function ReporteDetalleView({
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         {/* Left: Attendance List */}
         <div className="space-y-4">
-          <div className="flex items-center justify-between">
+          <div className="flex items-center justify-between flex-wrap gap-2">
             <h3 className="font-semibold text-foreground flex items-center gap-2">
               <ClipboardCheck className="h-5 w-5" /> Registrar Asistencia
             </h3>
-            <Button size="sm" onClick={saveAttendance} disabled={isPending} className="gap-1.5 text-xs">
-              <Save className="h-3.5 w-3.5" /> {isPending ? "Guardando..." : "Guardar"}
-            </Button>
+            <div className="flex items-center gap-2">
+              <QrAttendanceScanner
+                servicioId={reunion.id}
+                onPersonaScanned={(personaId) => {
+                  toggleAttendance(personaId);
+                  // Force mark as present
+                  setLocalAttendance((prev: Record<string, boolean>) => ({ ...prev, [personaId]: true }));
+                }}
+              />
+              <Button
+                variant="outline" size="sm" className="gap-1.5 text-xs"
+                onClick={() => {
+                  const url = `${window.location.origin}/check-in/${reunion.id}`;
+                  navigator.clipboard.writeText(url);
+                  toast.success("Enlace copiado", { description: "Comparte el enlace para check-in con Google" });
+                }}
+              >
+                <Share2 className="h-3.5 w-3.5" /> Compartir check-in
+              </Button>
+              <Button size="sm" onClick={saveAttendance} disabled={isPending} className="gap-1.5 text-xs">
+                <Save className="h-3.5 w-3.5" /> {isPending ? "Guardando..." : "Guardar"}
+              </Button>
+            </div>
           </div>
 
           <div className="grid grid-cols-3 gap-3">
