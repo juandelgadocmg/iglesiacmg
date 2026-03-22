@@ -23,6 +23,7 @@ import PeticionesPage from "@/pages/PeticionesPage";
 import UsuariosPage from "@/pages/UsuariosPage";
 import ConfiguracionPage from "@/pages/ConfiguracionPage";
 import ResetPasswordPage from "@/pages/ResetPasswordPage";
+import CheckInPage from "@/pages/CheckInPage";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
