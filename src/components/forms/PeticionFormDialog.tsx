@@ -77,9 +77,23 @@ export default function PeticionFormDialog({ initialData, onClose }: Props) {
           </div>
           <div className="grid grid-cols-2 gap-4">
             <div className="space-y-2">
-              <Label>Persona</Label>
+              <Label>Tipo Petición *</Label>
+              <Select name="tipo" defaultValue={initialData?.tipo || ""}>
+                <SelectTrigger><SelectValue placeholder="Seleccionar tipo" /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="Financiera">Financiera</SelectItem>
+                  <SelectItem value="Familiar">Familiar</SelectItem>
+                  <SelectItem value="Sanidad">Sanidad</SelectItem>
+                  <SelectItem value="Emocional">Emocional</SelectItem>
+                  <SelectItem value="Espiritual">Espiritual</SelectItem>
+                  <SelectItem value="Otros">Otros</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="space-y-2">
+              <Label>Seleccionar persona</Label>
               <Select name="persona_id" defaultValue={initialData?.persona_id || ""}>
-                <SelectTrigger><SelectValue placeholder="Sin asignar" /></SelectTrigger>
+                <SelectTrigger><SelectValue placeholder="Buscar asistente..." /></SelectTrigger>
                 <SelectContent>
                   {(personas || []).map(p => (
                     <SelectItem key={p.id} value={p.id}>{p.nombres} {p.apellidos}</SelectItem>
