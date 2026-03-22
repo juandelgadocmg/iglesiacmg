@@ -34,6 +34,7 @@ export default function PeticionFormDialog({ initialData, onClose }: Props) {
       titulo: fd.get("titulo") as string,
       descripcion: (fd.get("descripcion") as string) || null,
       persona_id: (fd.get("persona_id") as string) || null,
+      tipo: (fd.get("tipo") as string) || null,
       estado: (fd.get("estado") as string) || "Pendiente",
       prioridad: (fd.get("prioridad") as string) || "Normal",
       fecha_seguimiento: (fd.get("fecha_seguimiento") as string) || null,

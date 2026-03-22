@@ -16,7 +16,7 @@ const menuItems = [
   { label: "Dashboard", icon: LayoutDashboard, path: "/dashboard" },
   { label: "Personas", icon: Users, path: "/personas" },
   { label: "Grupos", icon: UsersRound, path: "/grupos" },
-  { label: "Servicios", icon: Church, path: "/servicios" },
+  { label: "Reuniones", icon: Church, path: "/servicios" },
   { label: "Finanzas", icon: DollarSign, path: "/finanzas" },
   { label: "Eventos", icon: CalendarDays, path: "/eventos" },
   { label: "Academia", icon: GraduationCap, path: "/academia" },
