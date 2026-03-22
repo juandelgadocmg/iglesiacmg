@@ -3,6 +3,7 @@ import PageHeader from "@/components/shared/PageHeader";
 import DeleteConfirmDialog from "@/components/shared/DeleteConfirmDialog";
 import CertificadoIglesiaFormDialog from "@/components/forms/CertificadoIglesiaFormDialog";
 import { useCertificadosIglesia, useDeleteCertificadoIglesia } from "@/hooks/useCertificadosIglesia";
+import { useConfiguracion } from "@/hooks/useConfiguracion";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Award, Download, Search, Eye } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
@@ -12,6 +13,7 @@ import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell } from "@
 import ExportDropdown from "@/components/shared/ExportDropdown";
 import { toast } from "sonner";
 import { format, parseISO } from "date-fns";
+import jsPDF from "jspdf";
 
 const tipoBadgeColor: Record<string, string> = {
   Membresía: "bg-primary/10 text-primary",
@@ -24,8 +26,79 @@ const tipoBadgeColor: Record<string, string> = {
   Curso: "bg-secondary text-secondary-foreground",
 };
 
+function generateCertificatePDF(cert: any, config: any) {
+  const doc = new jsPDF({ orientation: "landscape", unit: "mm", format: "letter" });
+  const w = doc.internal.pageSize.getWidth();
+  const h = doc.internal.pageSize.getHeight();
+
+  // Border
+  doc.setDrawColor(59, 130, 246);
+  doc.setLineWidth(2);
+  doc.rect(10, 10, w - 20, h - 20);
+  doc.setLineWidth(0.5);
+  doc.rect(14, 14, w - 28, h - 28);
+
+  // Title
+  doc.setFontSize(28);
+  doc.setFont("helvetica", "bold");
+  doc.setTextColor(59, 130, 246);
+  doc.text("CERTIFICADO", w / 2, 40, { align: "center" });
+
+  // Subtitle
+  doc.setFontSize(16);
+  doc.setTextColor(100, 100, 100);
+  doc.text(`de ${cert.tipo}`, w / 2, 52, { align: "center" });
+
+  // Church name
+  doc.setFontSize(12);
+  doc.setTextColor(80, 80, 80);
+  const churchName = config?.nombre_iglesia || "Iglesia";
+  doc.text(churchName, w / 2, 65, { align: "center" });
+
+  // "Otorgado a"
+  doc.setFontSize(12);
+  doc.setTextColor(100, 100, 100);
+  doc.text("Se otorga el presente certificado a:", w / 2, 82, { align: "center" });
+
+  // Person name
+  doc.setFontSize(22);
+  doc.setFont("helvetica", "bold");
+  doc.setTextColor(30, 30, 30);
+  doc.text(cert.personaNombre, w / 2, 96, { align: "center" });
+
+  // Line
+  doc.setDrawColor(200, 200, 200);
+  doc.setLineWidth(0.3);
+  doc.line(w / 2 - 60, 100, w / 2 + 60, 100);
+
+  // Date
+  doc.setFontSize(11);
+  doc.setFont("helvetica", "normal");
+  doc.setTextColor(100, 100, 100);
+  const fechaStr = cert.fecha_emision ? format(parseISO(cert.fecha_emision), "dd/MM/yyyy") : "";
+  doc.text(`Fecha de expedición: ${fechaStr}`, w / 2, 112, { align: "center" });
+
+  // Code
+  doc.setFontSize(9);
+  doc.text(`Código: ${cert.codigo}`, w / 2, 120, { align: "center" });
+
+  // Pastor
+  if (config?.pastor_principal) {
+    doc.setFontSize(11);
+    doc.setFont("helvetica", "normal");
+    doc.setTextColor(60, 60, 60);
+    doc.line(w / 2 - 40, 145, w / 2 + 40, 145);
+    doc.text(config.pastor_principal, w / 2, 152, { align: "center" });
+    doc.setFontSize(9);
+    doc.text("Pastor Principal", w / 2, 158, { align: "center" });
+  }
+
+  doc.save(`Certificado_${cert.personaNombre.replace(/\s/g, "_")}_${cert.tipo}.pdf`);
+}
+
 export default function CertificadosPage() {
   const { data: certificados, isLoading } = useCertificadosIglesia();
+  const { data: config } = useConfiguracion();
   const deleteCert = useDeleteCertificadoIglesia();
   const [search, setSearch] = useState("");
 
@@ -56,8 +129,8 @@ export default function CertificadosPage() {
   };
 
   const handleDownload = (cert: any) => {
-    toast.info("Generando PDF del certificado...");
-    // PDF generation placeholder — could be enhanced with jsPDF
+    generateCertificatePDF(cert, config);
+    toast.success("Certificado descargado");
   };
 
   const exportData = filtered.map(c => ({
@@ -146,9 +219,6 @@ export default function CertificadosPage() {
                         title="¿Eliminar certificado?"
                         description={`Se eliminará el certificado de "${c.personaNombre}" permanentemente.`}
                       />
-                      <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => handleDownload(c)}>
-                        <Eye className="h-4 w-4" />
-                      </Button>
                     </div>
                   </TableCell>
                 </TableRow>

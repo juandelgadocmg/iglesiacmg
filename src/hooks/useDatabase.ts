@@ -365,7 +365,10 @@ export function useUpsertAsistencia() {
         .upsert(records, { onConflict: "servicio_id,persona_id" });
       if (error) throw error;
     },
-    onSuccess: () => qc.invalidateQueries({ queryKey: ["asistencia"] }),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["asistencia"] });
+      qc.invalidateQueries({ queryKey: ["dashboard-stats"] });
+    },
   });
 }
 

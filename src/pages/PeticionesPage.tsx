@@ -402,9 +402,11 @@ function GestionarView({ filtered, tab, setTab, search, setSearch, onEdit, onDel
                     <CheckCircle2 className="h-3.5 w-3.5" /> Respondida
                   </Button>
                 )}
-                <Button size="sm" variant="destructive" className="gap-1 text-xs" onClick={() => onDelete(p.id)}>
-                  Cancelar
-                </Button>
+                <DeleteConfirmDialog
+                  onConfirm={() => onDelete(p.id)}
+                  title="¿Eliminar petición?"
+                  description={`Se eliminará la petición "${p.titulo}" permanentemente.`}
+                />
                 <Button variant="ghost" size="icon" className="h-8 w-8 ml-auto" onClick={() => onEdit({ ...p })}>
                   <Pencil className="h-3.5 w-3.5" />
                 </Button>
