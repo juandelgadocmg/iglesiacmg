@@ -40,7 +40,12 @@ export function useUpdatePersona() {
       const { error } = await supabase.from("personas").update(updates).eq("id", id);
       if (error) throw error;
     },
-    onSuccess: () => qc.invalidateQueries({ queryKey: ["personas"] }),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["personas"] });
+      qc.invalidateQueries({ queryKey: ["peticiones_oracion"] });
+      qc.invalidateQueries({ queryKey: ["certificados_iglesia"] });
+      qc.invalidateQueries({ queryKey: ["persona-detalle"] });
+    },
   });
 }
 
