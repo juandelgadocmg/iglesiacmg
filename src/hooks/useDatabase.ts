@@ -25,7 +25,11 @@ export function useCreatePersona() {
       if (error) throw error;
       return data;
     },
-    onSuccess: () => qc.invalidateQueries({ queryKey: ["personas"] }),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["personas"] });
+      qc.invalidateQueries({ queryKey: ["peticiones_oracion"] });
+      qc.invalidateQueries({ queryKey: ["certificados_iglesia"] });
+    },
   });
 }
 
