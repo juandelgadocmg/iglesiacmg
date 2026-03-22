@@ -211,8 +211,8 @@ export default function ServiciosPage() {
 
                   <div className="space-y-2">
                     <div className="flex items-center gap-2">
-                      <Badge variant="outline" className="text-[10px] bg-warning/10 text-warning border-warning/30">
-                        Habilitada para reservar: No
+                      <Badge variant="outline" className={`text-[10px] ${s.habilitado_reserva ? "bg-success/10 text-success border-success/30" : "bg-warning/10 text-warning border-warning/30"}`}>
+                        Reservar: {s.habilitado_reserva ? "Sí" : "No"}
                       </Badge>
                     </div>
                     <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
