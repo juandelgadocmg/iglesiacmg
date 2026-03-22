@@ -302,7 +302,7 @@ function ReportarReunionView({ servicios, personas, onSelectReunion }: any) {
 
 // ============ REPORTE DETALLE VIEW ============
 function ReporteDetalleView({
-  reunion, personas, localAttendance, toggleAttendance, markAll, saveAttendance,
+  reunion, personas, localAttendance, setLocalAttendance, toggleAttendance, markAll, saveAttendance,
   isPending, searchTerm, setSearchTerm, filterStatus, setFilterStatus,
   filteredPersonas, totalPresent, totalAbsent, attendanceRate, loadingAsistencia, onBack
 }: any) {
