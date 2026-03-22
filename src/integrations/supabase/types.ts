@@ -1288,6 +1288,7 @@ export type Database = {
           nombres: string
           observaciones: string | null
           ocupacion: string | null
+          qr_code: string | null
           seguimiento_por: string | null
           sexo: string | null
           telefono: string | null
@@ -1319,6 +1320,7 @@ export type Database = {
           nombres: string
           observaciones?: string | null
           ocupacion?: string | null
+          qr_code?: string | null
           seguimiento_por?: string | null
           sexo?: string | null
           telefono?: string | null
@@ -1350,6 +1352,7 @@ export type Database = {
           nombres?: string
           observaciones?: string | null
           ocupacion?: string | null
+          qr_code?: string | null
           seguimiento_por?: string | null
           sexo?: string | null
           telefono?: string | null

@@ -5,7 +5,8 @@ import StatusBadge from "@/components/shared/StatusBadge";
 import ServicioFormDialog from "@/components/forms/ServicioFormDialog";
 import DeleteConfirmDialog from "@/components/shared/DeleteConfirmDialog";
 import MetricCard from "@/components/shared/MetricCard";
-import { Church, Pencil, ClipboardCheck, Check, X, Save, Search, TrendingUp, Calendar, Eye, FileText, Users, MapPin, Clock as ClockIcon } from "lucide-react";
+import QrAttendanceScanner from "@/components/attendance/QrAttendanceScanner";
+import { Church, Pencil, ClipboardCheck, Check, X, Save, Search, TrendingUp, Calendar, Eye, FileText, Users, MapPin, Clock as ClockIcon, QrCode, Share2 } from "lucide-react";
 import { useServicios, useDeleteServicio, usePersonas, useAsistencia, useUpsertAsistencia } from "@/hooks/useDatabase";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -210,8 +211,8 @@ export default function ServiciosPage() {
 
                   <div className="space-y-2">
                     <div className="flex items-center gap-2">
-                      <Badge variant="outline" className="text-[10px] bg-warning/10 text-warning border-warning/30">
-                        Habilitada para reservar: No
+                      <Badge variant="outline" className={`text-[10px] ${s.habilitado_reserva ? "bg-success/10 text-success border-success/30" : "bg-warning/10 text-warning border-warning/30"}`}>
+                        Reservar: {s.habilitado_reserva ? "Sí" : "No"}
                       </Badge>
                     </div>
                     <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
@@ -255,6 +256,7 @@ export default function ServiciosPage() {
           reunion={selectedReunion}
           personas={personasList}
           localAttendance={localAttendance}
+          setLocalAttendance={setLocalAttendance}
           toggleAttendance={toggleAttendance}
           markAll={markAll}
           saveAttendance={saveAttendance}
@@ -300,7 +302,7 @@ function ReportarReunionView({ servicios, personas, onSelectReunion }: any) {
 
 // ============ REPORTE DETALLE VIEW ============
 function ReporteDetalleView({
-  reunion, personas, localAttendance, toggleAttendance, markAll, saveAttendance,
+  reunion, personas, localAttendance, setLocalAttendance, toggleAttendance, markAll, saveAttendance,
   isPending, searchTerm, setSearchTerm, filterStatus, setFilterStatus,
   filteredPersonas, totalPresent, totalAbsent, attendanceRate, loadingAsistencia, onBack
 }: any) {
@@ -337,13 +339,33 @@ function ReporteDetalleView({
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         {/* Left: Attendance List */}
         <div className="space-y-4">
-          <div className="flex items-center justify-between">
+          <div className="flex items-center justify-between flex-wrap gap-2">
             <h3 className="font-semibold text-foreground flex items-center gap-2">
               <ClipboardCheck className="h-5 w-5" /> Registrar Asistencia
             </h3>
-            <Button size="sm" onClick={saveAttendance} disabled={isPending} className="gap-1.5 text-xs">
-              <Save className="h-3.5 w-3.5" /> {isPending ? "Guardando..." : "Guardar"}
-            </Button>
+            <div className="flex items-center gap-2">
+              <QrAttendanceScanner
+                servicioId={reunion.id}
+                onPersonaScanned={(personaId) => {
+                  toggleAttendance(personaId);
+                  // Force mark as present
+                  setLocalAttendance((prev: Record<string, boolean>) => ({ ...prev, [personaId]: true }));
+                }}
+              />
+              <Button
+                variant="outline" size="sm" className="gap-1.5 text-xs"
+                onClick={() => {
+                  const url = `${window.location.origin}/check-in/${reunion.id}`;
+                  navigator.clipboard.writeText(url);
+                  toast.success("Enlace copiado", { description: "Comparte el enlace para check-in con Google" });
+                }}
+              >
+                <Share2 className="h-3.5 w-3.5" /> Compartir check-in
+              </Button>
+              <Button size="sm" onClick={saveAttendance} disabled={isPending} className="gap-1.5 text-xs">
+                <Save className="h-3.5 w-3.5" /> {isPending ? "Guardando..." : "Guardar"}
+              </Button>
+            </div>
           </div>
 
           <div className="grid grid-cols-3 gap-3">

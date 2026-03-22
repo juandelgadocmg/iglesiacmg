@@ -25,7 +25,11 @@ export function useCreatePersona() {
       if (error) throw error;
       return data;
     },
-    onSuccess: () => qc.invalidateQueries({ queryKey: ["personas"] }),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["personas"] });
+      qc.invalidateQueries({ queryKey: ["peticiones_oracion"] });
+      qc.invalidateQueries({ queryKey: ["certificados_iglesia"] });
+    },
   });
 }
 
@@ -36,7 +40,12 @@ export function useUpdatePersona() {
       const { error } = await supabase.from("personas").update(updates).eq("id", id);
       if (error) throw error;
     },
-    onSuccess: () => qc.invalidateQueries({ queryKey: ["personas"] }),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["personas"] });
+      qc.invalidateQueries({ queryKey: ["peticiones_oracion"] });
+      qc.invalidateQueries({ queryKey: ["certificados_iglesia"] });
+      qc.invalidateQueries({ queryKey: ["persona-detalle"] });
+    },
   });
 }
 
@@ -356,7 +365,10 @@ export function useUpsertAsistencia() {
         .upsert(records, { onConflict: "servicio_id,persona_id" });
       if (error) throw error;
     },
-    onSuccess: () => qc.invalidateQueries({ queryKey: ["asistencia"] }),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["asistencia"] });
+      qc.invalidateQueries({ queryKey: ["dashboard-stats"] });
+    },
   });
 }
 

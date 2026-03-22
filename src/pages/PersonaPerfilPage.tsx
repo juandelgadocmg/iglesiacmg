@@ -19,7 +19,7 @@ import PersonaFormDialog from "@/components/forms/PersonaFormDialog";
 import {
   ArrowLeft, Phone, Mail, MapPin, Calendar, Church, Users, Briefcase,
   Heart, BookOpen, CheckCircle2, XCircle, Clock, User, FileText,
-  GraduationCap, Shield, Pencil, UserPlus, Trash2, Baby, HeartHandshake, Camera, Plus,
+  GraduationCap, Shield, Pencil, UserPlus, Trash2, Baby, HeartHandshake, Camera, Plus, QrCode,
 } from "lucide-react";
 import { format, parseISO, differenceInYears } from "date-fns";
 import { es } from "date-fns/locale";
@@ -27,6 +27,7 @@ import { useState, useMemo, useRef } from "react";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 import { useQueryClient } from "@tanstack/react-query";
+import { QRCodeSVG } from "qrcode.react";
 
 const tipoColor: Record<string, string> = {
   Miembro: "bg-primary text-primary-foreground",
@@ -275,6 +276,7 @@ export default function PersonaPerfilPage() {
           <TabsTrigger value="familia" className="gap-1.5"><HeartHandshake className="h-3.5 w-3.5" /> Familia</TabsTrigger>
           <TabsTrigger value="procesos" className="gap-1.5"><Heart className="h-3.5 w-3.5" /> Crecimiento</TabsTrigger>
           <TabsTrigger value="asistencia" className="gap-1.5"><Clock className="h-3.5 w-3.5" /> Asistencia</TabsTrigger>
+          <TabsTrigger value="qr" className="gap-1.5"><QrCode className="h-3.5 w-3.5" /> QR</TabsTrigger>
         </TabsList>
 
         {/* Info tab */}
@@ -711,6 +713,46 @@ export default function PersonaPerfilPage() {
                   <Clock className="h-10 w-10 mx-auto mb-2 opacity-30" />
                   <p className="text-sm">Sin registros de asistencia</p>
                 </div>
+              )}
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        {/* QR Tab */}
+        <TabsContent value="qr">
+          <Card className="max-w-sm mx-auto">
+            <CardHeader className="text-center">
+              <CardTitle className="text-sm flex items-center justify-center gap-2 text-muted-foreground uppercase tracking-wider">
+                <QrCode className="h-4 w-4" /> Código QR de Asistencia
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="flex flex-col items-center gap-4">
+              {(persona as any).qr_code ? (
+                <>
+                  <div className="p-4 bg-white rounded-xl border-2 border-border">
+                    <QRCodeSVG value={(persona as any).qr_code} size={200} level="M" />
+                  </div>
+                  <p className="text-xs text-muted-foreground text-center">
+                    Escanea este código en el módulo de Reuniones para registrar asistencia automáticamente.
+                  </p>
+                  <p className="text-[10px] text-muted-foreground font-mono">{(persona as any).qr_code}</p>
+                  <Button
+                    variant="outline" size="sm" className="gap-1.5"
+                    onClick={() => {
+                      const svg = document.querySelector(".qr-tab-svg svg") as SVGElement;
+                      if (!svg) {
+                        // Fallback: copy code
+                        navigator.clipboard.writeText((persona as any).qr_code);
+                        toast.success("Código QR copiado al portapapeles");
+                        return;
+                      }
+                    }}
+                  >
+                    Copiar código
+                  </Button>
+                </>
+              ) : (
+                <p className="text-sm text-muted-foreground">Este miembro no tiene un código QR asignado aún.</p>
               )}
             </CardContent>
           </Card>
