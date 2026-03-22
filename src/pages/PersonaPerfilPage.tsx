@@ -19,7 +19,7 @@ import PersonaFormDialog from "@/components/forms/PersonaFormDialog";
 import {
   ArrowLeft, Phone, Mail, MapPin, Calendar, Church, Users, Briefcase,
   Heart, BookOpen, CheckCircle2, XCircle, Clock, User, FileText,
-  GraduationCap, Shield, Pencil, UserPlus, Trash2, Baby, HeartHandshake, Camera, Plus,
+  GraduationCap, Shield, Pencil, UserPlus, Trash2, Baby, HeartHandshake, Camera, Plus, QrCode,
 } from "lucide-react";
 import { format, parseISO, differenceInYears } from "date-fns";
 import { es } from "date-fns/locale";
