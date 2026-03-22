@@ -256,6 +256,7 @@ export default function ServiciosPage() {
           reunion={selectedReunion}
           personas={personasList}
           localAttendance={localAttendance}
+          setLocalAttendance={setLocalAttendance}
           toggleAttendance={toggleAttendance}
           markAll={markAll}
           saveAttendance={saveAttendance}
