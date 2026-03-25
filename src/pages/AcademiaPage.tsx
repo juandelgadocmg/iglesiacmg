@@ -13,6 +13,8 @@ import ItemCalificableFormDialog from "@/components/forms/ItemCalificableFormDia
 import ConceptoPagoFormDialog from "@/components/forms/ConceptoPagoFormDialog";
 import RecursoFormDialog from "@/components/forms/RecursoFormDialog";
 import HomologacionFormDialog from "@/components/forms/HomologacionFormDialog";
+import MaestroFormDialog from "@/components/academia/MaestroFormDialog";
+import HistorialCalificacionesSection from "@/components/academia/HistorialCalificacionesSection";
 import DeleteConfirmDialog from "@/components/shared/DeleteConfirmDialog";
 import MateriaAttendanceTrendChart from "@/components/charts/MateriaAttendanceTrendChart";
 import ExportDropdown from "@/components/shared/ExportDropdown";
