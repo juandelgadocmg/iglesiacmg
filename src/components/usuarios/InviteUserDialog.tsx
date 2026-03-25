@@ -1,0 +1,185 @@
+import { useState } from "react";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Checkbox } from "@/components/ui/checkbox";
+import { UserPlus } from "lucide-react";
+import { toast } from "sonner";
+import { supabase } from "@/integrations/supabase/client";
+import { Constants } from "@/integrations/supabase/types";
+import type { Database } from "@/integrations/supabase/types";
+
+type AppRole = Database["public"]["Enums"]["app_role"];
+
+const ROLE_LABELS: Record<AppRole, string> = {
+  admin: "Usuario Principal",
+  super_admin: "Super Administrador",
+  pastor: "Pastor",
+  lider: "Líder",
+  secretaria: "Secretaria",
+  tesoreria: "Tesorería",
+  maestro: "Maestro",
+  consolidador_lider: "Consolidador Líder",
+  consolidador: "Consolidador",
+  lider_intercesion: "Líder de Intercesión",
+  lider_red: "Líder de Red",
+  lider_casa_paz: "Líder Casa de Paz",
+  consulta: "Consulta",
+};
+
+const ROLE_DESCRIPTIONS: Record<AppRole, string> = {
+  admin: "Acceso total al sistema",
+  super_admin: "Acceso completo sin restricciones",
+  pastor: "Acceso casi total excepto configuración",
+  lider: "Personas, Grupos, Servicios, Eventos",
+  secretaria: "Personas, Servicios, Eventos, Peticiones",
+  tesoreria: "Finanzas, Donaciones, Reportes",
+  maestro: "Academia y Certificados",
+  consolidador_lider: "Crear/editar personas y peticiones, sin eliminar",
+  consolidador: "Editar información de crecimiento espiritual",
+  lider_intercesion: "Ver y responder peticiones de oración",
+  lider_red: "Membresía de su red, reportes de grupos",
+  lider_casa_paz: "Crear reportes de casa de paz",
+  consulta: "Solo lectura del dashboard",
+};
+
+interface InviteUserDialogProps {
+  onSuccess: () => void;
+}
+
+export default function InviteUserDialog({ onSuccess }: InviteUserDialogProps) {
+  const [open, setOpen] = useState(false);
+  const [loading, setLoading] = useState(false);
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [displayName, setDisplayName] = useState("");
+  const [selectedRoles, setSelectedRoles] = useState<AppRole[]>([]);
+
+  const toggleRole = (role: AppRole) => {
+    setSelectedRoles((prev) =>
+      prev.includes(role) ? prev.filter((r) => r !== role) : [...prev, role]
+    );
+  };
+
+  const handleSubmit = async () => {
+    if (!email.trim() || !password.trim()) {
+      toast.error("Email y contraseña son requeridos");
+      return;
+    }
+    if (password.length < 6) {
+      toast.error("La contraseña debe tener al menos 6 caracteres");
+      return;
+    }
+    if (selectedRoles.length === 0) {
+      toast.error("Selecciona al menos un rol");
+      return;
+    }
+
+    setLoading(true);
+    try {
+      const { data, error } = await supabase.functions.invoke("invite-user", {
+        body: {
+          email: email.trim(),
+          password,
+          display_name: displayName.trim() || email.trim(),
+          roles: selectedRoles,
+        },
+      });
+
+      if (error) throw error;
+      if (data?.error) throw new Error(data.error);
+
+      toast.success("Usuario creado exitosamente");
+      setOpen(false);
+      setEmail("");
+      setPassword("");
+      setDisplayName("");
+      setSelectedRoles([]);
+      onSuccess();
+    } catch (err: any) {
+      toast.error(err.message || "Error al crear usuario");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  return (
+    <Dialog open={open} onOpenChange={setOpen}>
+      <DialogTrigger asChild>
+        <Button>
+          <UserPlus className="h-4 w-4 mr-2" /> Crear Usuario
+        </Button>
+      </DialogTrigger>
+      <DialogContent className="max-w-lg max-h-[85vh] overflow-y-auto">
+        <DialogHeader>
+          <DialogTitle>Crear Nuevo Usuario</DialogTitle>
+        </DialogHeader>
+
+        <div className="space-y-4 mt-2">
+          <div className="space-y-2">
+            <Label htmlFor="displayName">Nombre</Label>
+            <Input
+              id="displayName"
+              placeholder="Nombre del usuario"
+              value={displayName}
+              onChange={(e) => setDisplayName(e.target.value)}
+            />
+          </div>
+
+          <div className="space-y-2">
+            <Label htmlFor="email">Correo electrónico *</Label>
+            <Input
+              id="email"
+              type="email"
+              placeholder="correo@ejemplo.com"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+            />
+          </div>
+
+          <div className="space-y-2">
+            <Label htmlFor="password">Contraseña *</Label>
+            <Input
+              id="password"
+              type="password"
+              placeholder="Mínimo 6 caracteres"
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+            />
+          </div>
+
+          <div className="space-y-2">
+            <Label>Roles y permisos *</Label>
+            <div className="grid grid-cols-1 gap-2 mt-1">
+              {Constants.public.Enums.app_role.map((role) => (
+                <label
+                  key={role}
+                  className={`flex items-start gap-3 p-3 rounded-lg border cursor-pointer transition-colors ${
+                    selectedRoles.includes(role)
+                      ? "border-primary bg-primary/5"
+                      : "border-border hover:bg-muted/50"
+                  }`}
+                >
+                  <Checkbox
+                    checked={selectedRoles.includes(role)}
+                    onCheckedChange={() => toggleRole(role)}
+                    className="mt-0.5"
+                  />
+                  <div className="flex-1 min-w-0">
+                    <p className="text-sm font-medium">{ROLE_LABELS[role]}</p>
+                    <p className="text-xs text-muted-foreground">{ROLE_DESCRIPTIONS[role]}</p>
+                  </div>
+                </label>
+              ))}
+            </div>
+          </div>
+
+          <Button onClick={handleSubmit} disabled={loading} className="w-full">
+            {loading ? "Creando..." : "Crear Usuario"}
+          </Button>
+        </div>
+      </DialogContent>
+    </Dialog>
+  );
+}
