@@ -66,6 +66,7 @@ const SIDEBAR_ITEMS = [
   { id: "estudiantes", label: "Estudiantes", icon: Users },
   { id: "maestros", label: "Maestros", icon: UserCheck },
   { id: "calificaciones", label: "Calificaciones", icon: BarChart3 },
+  { id: "historial-calificaciones", label: "Historial calificaciones", icon: FileText },
   { id: "historial-matriculas", label: "Historial matrículas", icon: History },
   { id: "pagos", label: "Pagos", icon: DollarSign },
   { id: "dashboard-financiero", label: "Dashboard financiero", icon: PieChart },
