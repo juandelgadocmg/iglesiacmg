@@ -318,6 +318,7 @@ function MaestrosSection({ escuelas, allPeriodos }: any) {
           <Input placeholder="Buscar maestro..." value={search} onChange={(e) => setSearch(e.target.value)} className="pl-10" />
         </div>
         <Badge variant="outline" className="text-xs">{filtered.length} Maestro(s)</Badge>
+        <MaestroFormDialog />
       </div>
 
       <p className="text-xs text-muted-foreground">
