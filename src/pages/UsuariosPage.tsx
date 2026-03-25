@@ -16,22 +16,34 @@ import type { Database } from "@/integrations/supabase/types";
 type AppRole = Database["public"]["Enums"]["app_role"];
 
 const ROLE_LABELS: Record<AppRole, string> = {
-  admin: "Administrador",
+  admin: "Usuario Principal",
+  super_admin: "Super Administrador",
   pastor: "Pastor",
   lider: "Líder",
   secretaria: "Secretaria",
   tesoreria: "Tesorería",
   maestro: "Maestro",
+  consolidador_lider: "Consolidador Líder",
+  consolidador: "Consolidador",
+  lider_intercesion: "Líder de Intercesión",
+  lider_red: "Líder de Red",
+  lider_casa_paz: "Líder Casa de Paz",
   consulta: "Consulta",
 };
 
 const ROLE_COLORS: Record<AppRole, string> = {
   admin: "bg-destructive/10 text-destructive border-destructive/20",
+  super_admin: "bg-destructive/10 text-destructive border-destructive/20",
   pastor: "bg-primary/10 text-primary border-primary/20",
   lider: "bg-chart-2/10 text-chart-2 border-chart-2/20",
   secretaria: "bg-chart-4/10 text-chart-4 border-chart-4/20",
   tesoreria: "bg-chart-3/10 text-chart-3 border-chart-3/20",
   maestro: "bg-chart-5/10 text-chart-5 border-chart-5/20",
+  consolidador_lider: "bg-chart-2/10 text-chart-2 border-chart-2/20",
+  consolidador: "bg-accent text-accent-foreground border-border",
+  lider_intercesion: "bg-chart-4/10 text-chart-4 border-chart-4/20",
+  lider_red: "bg-chart-3/10 text-chart-3 border-chart-3/20",
+  lider_casa_paz: "bg-chart-5/10 text-chart-5 border-chart-5/20",
   consulta: "bg-muted text-muted-foreground border-border",
 };
 

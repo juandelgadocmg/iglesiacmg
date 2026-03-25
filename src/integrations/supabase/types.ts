@@ -1770,6 +1770,12 @@ export type Database = {
         | "tesoreria"
         | "maestro"
         | "consulta"
+        | "super_admin"
+        | "consolidador_lider"
+        | "consolidador"
+        | "lider_intercesion"
+        | "lider_red"
+        | "lider_casa_paz"
       estado_iglesia: "Activo" | "Inactivo" | "En proceso"
       tipo_finanza: "Ingreso" | "Gasto"
       tipo_grupo:
@@ -1941,6 +1947,12 @@ export const Constants = {
         "tesoreria",
         "maestro",
         "consulta",
+        "super_admin",
+        "consolidador_lider",
+        "consolidador",
+        "lider_intercesion",
+        "lider_red",
+        "lider_casa_paz",
       ],
       estado_iglesia: ["Activo", "Inactivo", "En proceso"],
       tipo_finanza: ["Ingreso", "Gasto"],
