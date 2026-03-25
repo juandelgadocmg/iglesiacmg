@@ -55,6 +55,12 @@ export default function UsuariosPage() {
   const assignRole = useAssignRole();
   const removeRole = useRemoveRole();
   const { user } = useAuth();
+  const queryClient = useQueryClient();
+
+  const handleInviteSuccess = () => {
+    queryClient.invalidateQueries({ queryKey: ["profiles"] });
+    queryClient.invalidateQueries({ queryKey: ["user_roles"] });
+  };
 
   const [selectedUser, setSelectedUser] = useState<string | null>(null);
   const [selectedRole, setSelectedRole] = useState<AppRole | "">("");
