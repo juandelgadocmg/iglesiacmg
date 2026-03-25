@@ -109,7 +109,9 @@ export default function UsuariosPage() {
 
   return (
     <div className="animate-fade-in">
-      <PageHeader title="Usuarios y Roles" description="Gestión de usuarios y permisos del sistema" />
+      <PageHeader title="Usuarios y Roles" description="Gestión de usuarios y permisos del sistema">
+        <InviteUserDialog onSuccess={handleInviteSuccess} />
+      </PageHeader>
 
       {/* Stats */}
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-6">
