@@ -13,6 +13,8 @@ import ItemCalificableFormDialog from "@/components/forms/ItemCalificableFormDia
 import ConceptoPagoFormDialog from "@/components/forms/ConceptoPagoFormDialog";
 import RecursoFormDialog from "@/components/forms/RecursoFormDialog";
 import HomologacionFormDialog from "@/components/forms/HomologacionFormDialog";
+import MaestroFormDialog from "@/components/academia/MaestroFormDialog";
+import HistorialCalificacionesSection from "@/components/academia/HistorialCalificacionesSection";
 import DeleteConfirmDialog from "@/components/shared/DeleteConfirmDialog";
 import MateriaAttendanceTrendChart from "@/components/charts/MateriaAttendanceTrendChart";
 import ExportDropdown from "@/components/shared/ExportDropdown";
@@ -66,6 +68,7 @@ const SIDEBAR_ITEMS = [
   { id: "estudiantes", label: "Estudiantes", icon: Users },
   { id: "maestros", label: "Maestros", icon: UserCheck },
   { id: "calificaciones", label: "Calificaciones", icon: BarChart3 },
+  { id: "historial-calificaciones", label: "Historial calificaciones", icon: FileText },
   { id: "historial-matriculas", label: "Historial matrículas", icon: History },
   { id: "pagos", label: "Pagos", icon: DollarSign },
   { id: "dashboard-financiero", label: "Dashboard financiero", icon: PieChart },
@@ -315,6 +318,7 @@ function MaestrosSection({ escuelas, allPeriodos }: any) {
           <Input placeholder="Buscar maestro..." value={search} onChange={(e) => setSearch(e.target.value)} className="pl-10" />
         </div>
         <Badge variant="outline" className="text-xs">{filtered.length} Maestro(s)</Badge>
+        <MaestroFormDialog />
       </div>
 
       <p className="text-xs text-muted-foreground">
@@ -635,7 +639,38 @@ function HistorialMatriculasSection({ escuelas, allPeriodos, allMatriculas }: an
           </SelectContent>
         </Select>
         <Button size="sm" variant="outline" onClick={exportExcel} disabled={!filtered.length} className="gap-1.5 ml-auto">
-          <Download className="h-3.5 w-3.5" /> Exportar Excel
+          <Download className="h-3.5 w-3.5" /> Excel
+        </Button>
+        <Button size="sm" variant="outline" disabled={!filtered.length} className="gap-1.5" onClick={() => {
+          const jsPDFModule = import("jspdf");
+          const autoTableModule = import("jspdf-autotable");
+          Promise.all([jsPDFModule, autoTableModule]).then(([{ default: jsPDF }, { default: autoTable }]) => {
+            const doc = new jsPDF();
+            doc.setFontSize(14);
+            doc.text("Historial de Matrículas", 14, 20);
+            const body = filtered.map((m: any) => {
+              const esc = (escuelas || []).find((e: any) => e.id === m.curso_id);
+              const res = getResultado(m);
+              return [
+                `${m.personas?.nombres || ""} ${m.personas?.apellidos || ""}`,
+                m.materias?.nombre || m.cursos?.nombre || "",
+                m.estado,
+                m.fecha_matricula,
+                m.nota_final ?? "—",
+                res.label,
+              ];
+            });
+            autoTable(doc, {
+              head: [["Estudiante", "Materia", "Estado", "Fecha", "Nota", "Resultado"]],
+              body,
+              startY: 30,
+              styles: { fontSize: 9 },
+              headStyles: { fillColor: [99, 102, 241] },
+            });
+            doc.save("historial-matriculas.pdf");
+          });
+        }}>
+          <FileText className="h-3.5 w-3.5" /> PDF
         </Button>
       </div>
 
@@ -2281,6 +2316,7 @@ export default function AcademiaPage() {
     estudiantes: "Estudiantes",
     maestros: "Maestros",
     calificaciones: "Calificaciones",
+    "historial-calificaciones": "Historial de Calificaciones",
     "historial-matriculas": "Historial de Matrículas",
     pagos: "Gestión de Pagos",
     "dashboard-financiero": "Dashboard Financiero",
@@ -2328,6 +2364,7 @@ export default function AcademiaPage() {
           {activeSection === "historial-matriculas" && (
             <HistorialMatriculasSection escuelas={escuelas} allPeriodos={allPeriodos} allMatriculas={allMatriculas} />
           )}
+          {activeSection === "historial-calificaciones" && <HistorialCalificacionesSection />}
           {activeSection === "pagos" && <PagosSection escuelas={escuelas} allMatriculas={allMatriculas} />}
           {activeSection === "dashboard-financiero" && <DashboardFinancieroSection escuelas={escuelas} allMatriculas={allMatriculas} />}
           {activeSection === "recursos" && <RecursosSection escuelas={escuelas} allPeriodos={allPeriodos} />}

@@ -100,23 +100,30 @@ export default function ItemCalificableFormDialog({ corteId, materiaId }: Props)
               )} />
             </div>
 
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-3 gap-3">
               <FormField control={form.control} name="es_calificable" render={({ field }) => (
-                <FormItem className="flex items-center justify-between rounded-lg border p-3">
-                  <FormLabel className="text-sm">¿Calificable?</FormLabel>
+                <FormItem className="flex flex-col items-center justify-between rounded-lg border p-3">
+                  <FormLabel className="text-xs text-center">¿Calificable?</FormLabel>
                   <FormControl>
                     <Switch checked={field.value} onCheckedChange={field.onChange} />
                   </FormControl>
                 </FormItem>
               )} />
               <FormField control={form.control} name="visible_estudiante" render={({ field }) => (
-                <FormItem className="flex items-center justify-between rounded-lg border p-3">
-                  <FormLabel className="text-sm">¿Visible?</FormLabel>
+                <FormItem className="flex flex-col items-center justify-between rounded-lg border p-3">
+                  <FormLabel className="text-xs text-center">¿Visible para el estudiante?</FormLabel>
                   <FormControl>
                     <Switch checked={field.value} onCheckedChange={field.onChange} />
                   </FormControl>
                 </FormItem>
               )} />
+              <div className="flex flex-col items-center justify-between rounded-lg border p-3">
+                <label className="text-xs text-center font-medium">¿Es de tipo asistencia?</label>
+                <Switch
+                  checked={form.watch("tipo") === "Clase"}
+                  onCheckedChange={(v) => form.setValue("tipo", v ? "Clase" : "Actividad")}
+                />
+              </div>
             </div>
 
             {esCalificable && (
