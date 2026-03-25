@@ -2285,6 +2285,7 @@ export default function AcademiaPage() {
     estudiantes: "Estudiantes",
     maestros: "Maestros",
     calificaciones: "Calificaciones",
+    "historial-calificaciones": "Historial de Calificaciones",
     "historial-matriculas": "Historial de Matrículas",
     pagos: "Gestión de Pagos",
     "dashboard-financiero": "Dashboard Financiero",
