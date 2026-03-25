@@ -1,6 +1,8 @@
 import { useState } from "react";
 import PageHeader from "@/components/shared/PageHeader";
 import { useProfiles, useUserRoles, useAssignRole, useRemoveRole } from "@/hooks/useUsuarios";
+import InviteUserDialog from "@/components/usuarios/InviteUserDialog";
+import { useQueryClient } from "@tanstack/react-query";
 import { useAuth } from "@/hooks/useAuth";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
