@@ -1,6 +1,8 @@
 import { useState } from "react";
 import PageHeader from "@/components/shared/PageHeader";
 import { useProfiles, useUserRoles, useAssignRole, useRemoveRole } from "@/hooks/useUsuarios";
+import InviteUserDialog from "@/components/usuarios/InviteUserDialog";
+import { useQueryClient } from "@tanstack/react-query";
 import { useAuth } from "@/hooks/useAuth";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
@@ -53,6 +55,12 @@ export default function UsuariosPage() {
   const assignRole = useAssignRole();
   const removeRole = useRemoveRole();
   const { user } = useAuth();
+  const queryClient = useQueryClient();
+
+  const handleInviteSuccess = () => {
+    queryClient.invalidateQueries({ queryKey: ["profiles"] });
+    queryClient.invalidateQueries({ queryKey: ["user_roles"] });
+  };
 
   const [selectedUser, setSelectedUser] = useState<string | null>(null);
   const [selectedRole, setSelectedRole] = useState<AppRole | "">("");
@@ -101,7 +109,9 @@ export default function UsuariosPage() {
 
   return (
     <div className="animate-fade-in">
-      <PageHeader title="Usuarios y Roles" description="Gestión de usuarios y permisos del sistema" />
+      <PageHeader title="Usuarios y Roles" description="Gestión de usuarios y permisos del sistema">
+        <InviteUserDialog onSuccess={handleInviteSuccess} />
+      </PageHeader>
 
       {/* Stats */}
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-6">
