@@ -53,7 +53,7 @@ export default function DashboardTemaSemana({ titulo, descripcion, url }: Props)
         </div>
         <h3 className="font-bold text-lg">Tema de la semana</h3>
         <p className="text-sm mt-2 uppercase tracking-wide font-semibold opacity-95">
-          {descripcion || titulo}
+          {isEmpty ? "Sin tema configurado" : (descripcion || titulo)}
         </p>
         <div className="flex items-center justify-center gap-2 mt-4 flex-wrap">
           <button
