@@ -165,7 +165,7 @@ export function useFinanzas() {
     queryFn: async () => {
       const { data, error } = await supabase
         .from("finanzas")
-        .select("*")
+        .select("*, personas(nombres, apellidos)")
         .order("fecha", { ascending: false });
       if (error) throw error;
       return data;
