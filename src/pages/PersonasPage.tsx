@@ -193,7 +193,7 @@ export default function PersonasPage() {
                           <Phone className="h-3 w-3" />
                           <span>{p.telefono}</span>
                           <a
-                            href={`https://wa.me/${p.telefono.replace(/[\s\-\(\)]/g, '')}`}
+                            href={`https://api.whatsapp.com/send?phone=${(p.telefono || "").replace(/\D/g, "")}`}
                             target="_blank"
                             rel="noopener noreferrer"
                             onClick={e => e.stopPropagation()}
