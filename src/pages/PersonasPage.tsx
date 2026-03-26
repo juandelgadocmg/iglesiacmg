@@ -75,6 +75,10 @@ export default function PersonasPage() {
     });
   }, [personas, search, tipoFilter, estadoFilter]);
 
+  // Reset page on filter change
+  const filterKey = `${search}-${tipoFilter}-${estadoFilter}`;
+  useMemo(() => setPage(1), [filterKey]);
+
   const counts = useMemo(() => {
     if (!personas) return {} as Record<string, number>;
     const c: Record<string, number> = { total: personas.length };
