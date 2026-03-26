@@ -66,6 +66,10 @@ export default function EventoDetailView({ evento, onBack }: Props) {
   const [informeTab, setInformeTab] = useState("inscripciones");
   const [informeFechaDesde, setInformeFechaDesde] = useState("");
   const [informeFechaHasta, setInformeFechaHasta] = useState("");
+  const [cancelDialogOpen, setCancelDialogOpen] = useState(false);
+  const [motivoCancelacion, setMotivoCancelacion] = useState("");
+  const [cancelando, setCancelando] = useState(false);
+  const [searchAsistencia, setSearchAsistencia] = useState("");
 
   const handleSaveGeneral = async () => {
     if (!form.nombre.trim()) { toast.error("El nombre es obligatorio"); return; }
