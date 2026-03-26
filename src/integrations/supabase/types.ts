@@ -128,6 +128,33 @@ export type Database = {
         }
         Relationships: []
       }
+      banners: {
+        Row: {
+          created_at: string
+          estado: string
+          id: string
+          imagen_url: string
+          orden: number
+          titulo: string
+        }
+        Insert: {
+          created_at?: string
+          estado?: string
+          id?: string
+          imagen_url: string
+          orden?: number
+          titulo: string
+        }
+        Update: {
+          created_at?: string
+          estado?: string
+          id?: string
+          imagen_url?: string
+          orden?: number
+          titulo?: string
+        }
+        Relationships: []
+      }
       calificaciones: {
         Row: {
           created_at: string
@@ -304,8 +331,13 @@ export type Database = {
           nombre_iglesia: string
           pais: string | null
           pastor_principal: string | null
+          senal_en_vivo_activa: boolean | null
+          senal_en_vivo_url: string | null
           sitio_web: string | null
           telefono: string | null
+          tema_semana_descripcion: string | null
+          tema_semana_titulo: string | null
+          tema_semana_url: string | null
           updated_at: string
           zona_horaria: string | null
         }
@@ -323,8 +355,13 @@ export type Database = {
           nombre_iglesia?: string
           pais?: string | null
           pastor_principal?: string | null
+          senal_en_vivo_activa?: boolean | null
+          senal_en_vivo_url?: string | null
           sitio_web?: string | null
           telefono?: string | null
+          tema_semana_descripcion?: string | null
+          tema_semana_titulo?: string | null
+          tema_semana_url?: string | null
           updated_at?: string
           zona_horaria?: string | null
         }
@@ -342,8 +379,13 @@ export type Database = {
           nombre_iglesia?: string
           pais?: string | null
           pastor_principal?: string | null
+          senal_en_vivo_activa?: boolean | null
+          senal_en_vivo_url?: string | null
           sitio_web?: string | null
           telefono?: string | null
+          tema_semana_descripcion?: string | null
+          tema_semana_titulo?: string | null
+          tema_semana_url?: string | null
           updated_at?: string
           zona_horaria?: string | null
         }
@@ -1745,6 +1787,33 @@ export type Database = {
           id?: string
           role?: Database["public"]["Enums"]["app_role"]
           user_id?: string
+        }
+        Relationships: []
+      }
+      videos_iglesia: {
+        Row: {
+          created_at: string
+          estado: string
+          id: string
+          orden: number
+          titulo: string
+          youtube_url: string
+        }
+        Insert: {
+          created_at?: string
+          estado?: string
+          id?: string
+          orden?: number
+          titulo: string
+          youtube_url: string
+        }
+        Update: {
+          created_at?: string
+          estado?: string
+          id?: string
+          orden?: number
+          titulo?: string
+          youtube_url?: string
         }
         Relationships: []
       }

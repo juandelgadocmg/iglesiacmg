@@ -5,11 +5,17 @@ import { useDashboardStats, usePersonas } from "@/hooks/useDatabase";
 import { useCursos, useAllMatriculas, useCertificados } from "@/hooks/useAcademia";
 import { usePeticiones } from "@/hooks/usePeticiones";
 import { useReportesGrupos } from "@/hooks/useReportesGrupos";
+import { useActiveBanners } from "@/hooks/useBanners";
+import { useActiveVideos } from "@/hooks/useVideosIglesia";
+import { useConfiguracion } from "@/hooks/useConfiguracion";
 import MetricCard from "@/components/shared/MetricCard";
 import StatusBadge from "@/components/shared/StatusBadge";
 import EventCalendar from "@/components/events/EventCalendar";
 import DashboardAlertCards from "@/components/dashboard/DashboardAlertCards";
 import DashboardBirthdayGrid from "@/components/dashboard/DashboardBirthdayGrid";
+import DashboardBannerCarousel from "@/components/dashboard/DashboardBannerCarousel";
+import DashboardVideoSection from "@/components/dashboard/DashboardVideoSection";
+import DashboardTemaSemana from "@/components/dashboard/DashboardTemaSemana";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -33,11 +39,13 @@ export default function Dashboard() {
   const { data: certificados } = useCertificados();
   const { data: peticiones } = usePeticiones();
   const { data: reportes } = useReportesGrupos();
+  const { data: banners } = useActiveBanners();
+  const { data: videos } = useActiveVideos();
+  const { data: config } = useConfiguracion();
 
   const totalMiembros = stats?.totalPersonas || 0;
   const nuevos = stats?.nuevosEsteMes || 0;
 
-  // Prayer stats
   const peticionStats = useMemo(() => {
     if (!peticiones) return { pendientes: 0, enOracion: 0, respondidas: 0 };
     return {
@@ -47,7 +55,6 @@ export default function Dashboard() {
     };
   }, [peticiones]);
 
-  // Growth trend (last 6 months)
   const growthTrend = useMemo(() => {
     if (!personas) return [];
     const now = new Date();
@@ -67,21 +74,14 @@ export default function Dashboard() {
     return months;
   }, [personas]);
 
-  // Upcoming events for calendar
   const calendarEvents = useMemo(() => {
     if (!stats?.eventos) return [];
     return stats.eventos.map((e: any) => ({
-      id: e.id,
-      nombre: e.nombre,
-      fecha_inicio: e.fecha_inicio,
-      fecha_fin: e.fecha_fin,
-      color: e.color,
-      tipo: e.tipo,
-      estado: e.estado,
+      id: e.id, nombre: e.nombre, fecha_inicio: e.fecha_inicio, fecha_fin: e.fecha_fin,
+      color: e.color, tipo: e.tipo, estado: e.estado,
     }));
   }, [stats]);
 
-  // Upcoming events list
   const upcomingEvents = useMemo(() => {
     if (!stats?.eventos) return [];
     return stats.eventos.map((e: any) => {
@@ -91,7 +91,6 @@ export default function Dashboard() {
     });
   }, [stats]);
 
-  // Birthdays this month
   const birthdays = useMemo(() => {
     if (!personas) return [];
     const now = new Date();
@@ -110,7 +109,6 @@ export default function Dashboard() {
       }));
   }, [personas]);
 
-  // Alert card data
   const alertData = useMemo(() => {
     const pendingReportes = reportes?.filter((r: any) => r.estado === "Pendiente").length || 0;
     return { pendingReportes };
@@ -124,12 +122,9 @@ export default function Dashboard() {
     return (
       <div className="space-y-6 animate-fade-in">
         <Skeleton className="h-16 w-72" />
+        <Skeleton className="h-48 w-full" />
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
           {[...Array(4)].map((_, i) => <Skeleton key={i} className="h-28" />)}
-        </div>
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-          <Skeleton className="h-[320px]" />
-          <Skeleton className="h-[320px]" />
         </div>
       </div>
     );
@@ -148,6 +143,11 @@ export default function Dashboard() {
         </div>
       </div>
 
+      {/* Banner Carousel */}
+      {banners && banners.length > 0 && (
+        <DashboardBannerCarousel banners={banners} />
+      )}
+
       {/* KPIs */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
         <MetricCard title="Total Miembros" value={totalMiembros} icon={Users} variant="default" trend={nuevos > 0 ? { value: `+${nuevos} este mes`, positive: true } : undefined} />
@@ -156,7 +156,7 @@ export default function Dashboard() {
         <MetricCard title="Cursos Activos" value={cursos?.filter(c => c.estado === "Activo").length || 0} icon={GraduationCap} variant="info" />
       </div>
 
-      {/* Row 2: Calendar + Alert Cards */}
+      {/* Row 2: Calendar + Alert Cards + Tema */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
         <div className="lg:col-span-2">
           <div className="mb-3">
@@ -167,18 +167,26 @@ export default function Dashboard() {
               <h2 className="text-base font-bold text-foreground">Calendario de Actividades</h2>
             </div>
           </div>
-          <EventCalendar
-            events={calendarEvents}
-            onEventClick={(e) => navigate("/eventos")}
-          />
+          <EventCalendar events={calendarEvents} onEventClick={() => navigate("/eventos")} />
         </div>
 
-        <DashboardAlertCards pendingReportes={alertData.pendingReportes} />
+        <div className="space-y-4">
+          <DashboardAlertCards pendingReportes={alertData.pendingReportes} />
+          <DashboardTemaSemana
+            titulo={config?.tema_semana_titulo}
+            descripcion={config?.tema_semana_descripcion}
+            url={config?.tema_semana_url}
+          />
+        </div>
       </div>
 
-      {/* Row 3: Growth + Quick Stats */}
+      {/* Row 3: Videos Section */}
+      {videos && videos.length > 0 && (
+        <DashboardVideoSection videos={videos} />
+      )}
+
+      {/* Row 4: Growth + Quick Stats */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-        {/* Growth Trend */}
         <Card>
           <CardHeader className="pb-2">
             <CardTitle className="text-sm font-semibold flex items-center gap-2">
@@ -202,7 +210,6 @@ export default function Dashboard() {
           </CardContent>
         </Card>
 
-        {/* Quick Stats + Services */}
         <div className="space-y-4">
           <Card>
             <CardContent className="pt-5 space-y-3">
@@ -249,9 +256,8 @@ export default function Dashboard() {
         </div>
       </div>
 
-      {/* Row 4: Upcoming Events + Birthdays */}
+      {/* Row 5: Upcoming Events + Birthdays */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
-        {/* Upcoming Events */}
         <Card>
           <CardHeader className="pb-3">
             <CardTitle className="text-sm font-semibold flex items-center gap-2">
@@ -287,7 +293,6 @@ export default function Dashboard() {
           </CardContent>
         </Card>
 
-        {/* Birthdays */}
         <div className="lg:col-span-2">
           <DashboardBirthdayGrid birthdays={birthdays} />
         </div>

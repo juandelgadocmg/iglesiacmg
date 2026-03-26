@@ -9,7 +9,7 @@ import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Separator } from "@/components/ui/separator";
-import { Church, Globe, Clock, Palette, Save } from "lucide-react";
+import { Church, Globe, Clock, Palette, Save, BookOpen } from "lucide-react";
 import { toast } from "sonner";
 
 const MONEDAS = [
@@ -50,6 +50,9 @@ export default function ConfiguracionPage() {
         moneda: config.moneda || "USD",
         zona_horaria: config.zona_horaria || "America/Bogota",
         color_primario: config.color_primario || "#6366f1",
+        tema_semana_titulo: config.tema_semana_titulo || "",
+        tema_semana_descripcion: config.tema_semana_descripcion || "",
+        tema_semana_url: config.tema_semana_url || "",
       });
     }
   }, [config]);
@@ -195,6 +198,30 @@ export default function ConfiguracionPage() {
                 />
                 <Input value={form.color_primario || ""} onChange={e => set("color_primario", e.target.value)} className="flex-1" placeholder="#6366f1" />
               </div>
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* Tema de la Semana */}
+        <Card>
+          <CardHeader>
+            <CardTitle className="text-base flex items-center gap-2">
+              <BookOpen className="h-4 w-4" /> Tema de la Semana
+            </CardTitle>
+            <CardDescription>Configura el tema semanal que se muestra en el dashboard</CardDescription>
+          </CardHeader>
+          <CardContent className="grid gap-4 sm:grid-cols-2">
+            <div className="space-y-2 sm:col-span-2">
+              <Label>Título del Tema</Label>
+              <Input value={form.tema_semana_titulo || ""} onChange={e => set("tema_semana_titulo", e.target.value)} placeholder="Ej: Tema de la semana" />
+            </div>
+            <div className="space-y-2 sm:col-span-2">
+              <Label>Descripción</Label>
+              <Input value={form.tema_semana_descripcion || ""} onChange={e => set("tema_semana_descripcion", e.target.value)} placeholder="Ej: LA COMUNIÓN CON EL ESPÍRITU SANTO" />
+            </div>
+            <div className="space-y-2 sm:col-span-2">
+              <Label>URL del enlace (opcional)</Label>
+              <Input value={form.tema_semana_url || ""} onChange={e => set("tema_semana_url", e.target.value)} placeholder="https://..." />
             </div>
           </CardContent>
         </Card>
