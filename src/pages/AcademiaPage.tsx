@@ -1201,6 +1201,7 @@ function PeriodoDetailView({ escuela, periodo, onBackToPeriodos }: any) {
   const deleteMateria = useDeleteMateria();
   const updateMateria = useUpdateMateria();
   const deleteCorte = useDeleteCorte();
+  const updatePeriodo = useUpdatePeriodo();
   const [activeTab, setActiveTab] = useState<string>("info");
   const [editingMateria, setEditingMateria] = useState<string | null>(null);
   const [editForm, setEditForm] = useState<{ nombre: string; descripcion: string; maestro_id: string; aula_id: string; horario: string }>({ nombre: "", descripcion: "", maestro_id: "", aula_id: "", horario: "" });
@@ -1243,6 +1244,7 @@ function PeriodoDetailView({ escuela, periodo, onBackToPeriodos }: any) {
 
   const tabs = [
     { id: "info", label: "Información general", icon: Eye },
+    { id: "pensum", label: "Pensum", icon: BookText },
     { id: "estudiantes", label: "Alumnos", icon: Users },
     { id: "calificaciones", label: "Calificaciones", icon: BarChart3 },
     { id: "asistencia", label: "Asistencia", icon: ClipboardCheck },
@@ -1257,7 +1259,32 @@ function PeriodoDetailView({ escuela, periodo, onBackToPeriodos }: any) {
           <h2 className="text-lg font-bold text-foreground">{periodo.nombre}</h2>
           <p className="text-sm text-muted-foreground">{escuela.nombre} · Período académico</p>
         </div>
-        <MatriculaFormDialog cursoId={escuela.id} periodoId={periodo.id} />
+        <div className="flex gap-2">
+          {periodo.estado === "Abierto" && (
+            <Button size="sm" variant="outline" className="gap-1.5 text-destructive border-destructive/30 hover:bg-destructive/10"
+              onClick={async () => {
+                if (!confirm("¿Estás seguro de finalizar este período? Se cerrará y no se podrán realizar cambios.")) return;
+                try {
+                  await updatePeriodo.mutateAsync({ id: periodo.id, estado: "Cerrado" });
+                  toast.success("Período finalizado");
+                } catch { toast.error("Error al finalizar período"); }
+              }}>
+              <Lock className="h-3.5 w-3.5" /> Finalizar período
+            </Button>
+          )}
+          {periodo.estado === "Cerrado" && (
+            <Button size="sm" variant="outline" className="gap-1.5"
+              onClick={async () => {
+                try {
+                  await updatePeriodo.mutateAsync({ id: periodo.id, estado: "Abierto" });
+                  toast.success("Período reabierto");
+                } catch { toast.error("Error al reabrir"); }
+              }}>
+              <Unlock className="h-3.5 w-3.5" /> Reabrir período
+            </Button>
+          )}
+          <MatriculaFormDialog cursoId={escuela.id} periodoId={periodo.id} />
+        </div>
       </div>
 
       <div className="flex gap-1 border-b overflow-x-auto">
@@ -1381,6 +1408,101 @@ function PeriodoDetailView({ escuela, periodo, onBackToPeriodos }: any) {
               })
             )}
           </div>
+        </div>
+      )}
+
+      {activeTab === "pensum" && (
+        <div className="space-y-4">
+          <div className="flex items-center justify-between">
+            <p className="text-sm text-muted-foreground">
+              Materias del pensum del período <strong>{periodo.nombre}</strong>.
+            </p>
+            <MateriaFormDialog periodoId={periodo.id} />
+          </div>
+          {loadingMaterias ? <Skeleton className="h-32" /> : !materias?.length ? (
+            <div className="rounded-xl border bg-card p-12 text-center text-muted-foreground">
+              <BookText className="h-12 w-12 mx-auto mb-3 opacity-40" />
+              <p className="text-sm">No hay materias en el pensum. Agrega una materia.</p>
+            </div>
+          ) : (
+            <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+              {materias.map((m: any) => {
+                const matriculasMateria = (matriculas || []).filter((mat: any) => mat.materia_id === m.id && mat.estado === "Activo").length;
+                return (
+                  <div key={m.id} className="rounded-xl border bg-card p-4 space-y-3 hover:shadow-sm transition-shadow">
+                    <div className="flex items-start justify-between">
+                      <div>
+                        <h4 className="font-bold text-foreground text-sm uppercase">{m.nombre}</h4>
+                        {m.codigo && <p className="text-[10px] text-muted-foreground font-mono">CÓDIGO: {m.codigo}</p>}
+                      </div>
+                      <Badge variant="outline" className={cn("text-[10px]",
+                        (m as any).estado === "Finalizada" ? "bg-destructive/10 text-destructive border-destructive/20" : "bg-success/10 text-success border-success/20"
+                      )}>
+                        {(m as any).estado || "En Curso"}
+                      </Badge>
+                    </div>
+
+                    <div className="space-y-1.5 text-xs text-muted-foreground">
+                      <div className="flex items-center justify-between">
+                        <span>Hab. calificaciones:</span>
+                        <Badge variant="outline" className={cn("text-[10px]", (m as any).hab_calificaciones !== false ? "text-success" : "text-destructive")}>
+                          {(m as any).hab_calificaciones !== false ? "SÍ" : "NO"}
+                        </Badge>
+                      </div>
+                      <div className="flex items-center justify-between">
+                        <span>Hab. asistencia:</span>
+                        <Badge variant="outline" className={cn("text-[10px]", (m as any).hab_asistencia !== false ? "text-success" : "text-destructive")}>
+                          {(m as any).hab_asistencia !== false ? "SÍ" : "NO"}
+                        </Badge>
+                      </div>
+                      <div className="flex items-center justify-between">
+                        <span>Hab. auto matrícula:</span>
+                        <Badge variant="outline" className={cn("text-[10px]", (m as any).hab_auto_matricula ? "text-success" : "text-destructive")}>
+                          {(m as any).hab_auto_matricula ? "SÍ" : "NO"}
+                        </Badge>
+                      </div>
+                      <div className="flex items-center justify-between">
+                        <span>Asistencias mínimas:</span>
+                        <span className="font-semibold text-foreground">{(m as any).asistencias_minimas || 0}</span>
+                      </div>
+                      {(m as any).alerta_inasistencias && (
+                        <div className="flex items-center justify-between">
+                          <span className="flex items-center gap-1"><AlertTriangle className="h-3 w-3 text-warning" /> Alerta inasistencias:</span>
+                          <span className="font-semibold text-foreground">{(m as any).cantidad_inasistencias_alerta || 0}</span>
+                        </div>
+                      )}
+                    </div>
+
+                    <div className="pt-2 border-t border-border space-y-1 text-xs text-muted-foreground">
+                      {(m.personas || m.maestro_nombre) && (
+                        <span className="flex items-center gap-1"><UserCheck className="h-3 w-3" /> {m.personas ? `${m.personas.nombres} ${m.personas.apellidos}` : m.maestro_nombre}</span>
+                      )}
+                      {m.horario && <span className="flex items-center gap-1"><Clock className="h-3 w-3" /> {m.horario}</span>}
+                      {(m.aulas || m.aula) && <span className="flex items-center gap-1"><Building2 className="h-3 w-3" /> {m.aulas?.nombre || m.aula}</span>}
+                      {(m as any).cupos && <span className="flex items-center gap-1"><Users className="h-3 w-3" /> Cupos: {(m as any).cupos}</span>}
+                      <span className="flex items-center gap-1 font-medium text-foreground"><GraduationCap className="h-3 w-3" /> {matriculasMateria} matriculados</span>
+                    </div>
+
+                    <div className="flex gap-1.5 pt-1">
+                      {(m as any).estado !== "Finalizada" && (
+                        <Button size="sm" variant="outline" className="h-7 text-[10px] flex-1 gap-1"
+                          onClick={async () => {
+                            if (!confirm(`¿Finalizar la materia "${m.nombre}"?`)) return;
+                            try {
+                              await updateMateria.mutateAsync({ id: m.id, estado: "Finalizada" });
+                              toast.success("Materia finalizada");
+                            } catch { toast.error("Error"); }
+                          }}>
+                          <Lock className="h-3 w-3" /> Finalizar
+                        </Button>
+                      )}
+                      <DeleteConfirmDialog title="Eliminar materia" description={`¿Eliminar "${m.nombre}"?`} onConfirm={() => deleteMateria.mutateAsync(m.id)} />
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          )}
         </div>
       )}
 

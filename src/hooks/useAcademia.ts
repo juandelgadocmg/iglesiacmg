@@ -218,6 +218,15 @@ export function useCreateMateria() {
       maestro_id?: string;
       aula?: string;
       aula_id?: string;
+      codigo?: string;
+      cupos?: number;
+      hab_calificaciones?: boolean;
+      hab_asistencia?: boolean;
+      hab_auto_matricula?: boolean;
+      asistencias_minimas?: number;
+      alerta_inasistencias?: boolean;
+      cantidad_inasistencias_alerta?: number;
+      estado?: string;
     }) => {
       const { data, error } = await supabase.from("materias").insert(materia).select().single();
       if (error) throw error;

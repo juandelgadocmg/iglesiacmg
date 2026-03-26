@@ -1046,10 +1046,19 @@ export type Database = {
       }
       materias: {
         Row: {
+          alerta_inasistencias: boolean
+          asistencias_minimas: number
           aula: string | null
           aula_id: string | null
+          cantidad_inasistencias_alerta: number
+          codigo: string | null
           created_at: string
+          cupos: number | null
           descripcion: string | null
+          estado: string
+          hab_asistencia: boolean
+          hab_auto_matricula: boolean
+          hab_calificaciones: boolean
           horario: string | null
           id: string
           maestro_id: string | null
@@ -1058,10 +1067,19 @@ export type Database = {
           periodo_id: string
         }
         Insert: {
+          alerta_inasistencias?: boolean
+          asistencias_minimas?: number
           aula?: string | null
           aula_id?: string | null
+          cantidad_inasistencias_alerta?: number
+          codigo?: string | null
           created_at?: string
+          cupos?: number | null
           descripcion?: string | null
+          estado?: string
+          hab_asistencia?: boolean
+          hab_auto_matricula?: boolean
+          hab_calificaciones?: boolean
           horario?: string | null
           id?: string
           maestro_id?: string | null
@@ -1070,10 +1088,19 @@ export type Database = {
           periodo_id: string
         }
         Update: {
+          alerta_inasistencias?: boolean
+          asistencias_minimas?: number
           aula?: string | null
           aula_id?: string | null
+          cantidad_inasistencias_alerta?: number
+          codigo?: string | null
           created_at?: string
+          cupos?: number | null
           descripcion?: string | null
+          estado?: string
+          hab_asistencia?: boolean
+          hab_auto_matricula?: boolean
+          hab_calificaciones?: boolean
           horario?: string | null
           id?: string
           maestro_id?: string | null
