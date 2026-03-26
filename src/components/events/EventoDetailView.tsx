@@ -383,20 +383,34 @@ export default function EventoDetailView({ evento, onBack }: Props) {
         {/* TAB ASISTENCIAS */}
         <TabsContent value="asistencias">
           <div className="bg-card rounded-xl border p-6 space-y-4">
-            <h3 className="font-semibold text-foreground">Asistencias del Evento</h3>
+            <div className="flex items-center justify-between flex-wrap gap-3">
+              <h3 className="font-semibold text-foreground">Asistencias del Evento</h3>
+              <QrEventoScanner eventoId={evento.id} onAsistenciaMarked={() => queryClient.invalidateQueries({ queryKey: ["inscripciones", evento.id] })} />
+            </div>
+
             <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">
               <div className="bg-muted/30 rounded-lg p-4 text-center">
                 <p className="text-xs text-muted-foreground">Total Inscritos</p>
                 <p className="text-2xl font-bold text-foreground">{totalInscritos}</p>
               </div>
               <div className="bg-muted/30 rounded-lg p-4 text-center">
-                <p className="text-xs text-muted-foreground">Confirmados</p>
+                <p className="text-xs text-muted-foreground">Presentes</p>
                 <p className="text-2xl font-bold text-primary">{confirmados}</p>
               </div>
               <div className="bg-muted/30 rounded-lg p-4 text-center">
                 <p className="text-xs text-muted-foreground">Pendientes</p>
-                <p className="text-2xl font-bold text-amber-500">{totalInscritos - confirmados}</p>
+                <p className="text-2xl font-bold text-destructive">{totalInscritos - confirmados}</p>
               </div>
+            </div>
+
+            <div className="relative">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+              <Input
+                placeholder="Buscar asistente por nombre o cédula..."
+                value={searchAsistencia}
+                onChange={e => setSearchAsistencia(e.target.value)}
+                className="pl-10"
+              />
             </div>
 
             {(inscripciones || []).length === 0 ? (
@@ -410,19 +424,31 @@ export default function EventoDetailView({ evento, onBack }: Props) {
                   <thead className="bg-muted/50">
                     <tr>
                       <th className="text-left text-xs font-semibold text-muted-foreground px-4 py-3">Persona</th>
-                      <th className="text-center text-xs font-semibold text-muted-foreground px-4 py-3">Confirmado</th>
+                      <th className="text-center text-xs font-semibold text-muted-foreground px-4 py-3">Asistencia</th>
                       <th className="text-center text-xs font-semibold text-muted-foreground px-4 py-3">Pago</th>
                       <th className="text-center text-xs font-semibold text-muted-foreground px-4 py-3">Fecha</th>
                     </tr>
                   </thead>
                   <tbody>
-                    {(inscripciones || []).map(insc => (
+                    {(inscripciones || [])
+                      .filter(insc => {
+                        if (!searchAsistencia) return true;
+                        const name = `${(insc as any).personas?.nombres || ""} ${(insc as any).personas?.apellidos || ""}`.toLowerCase();
+                        return name.includes(searchAsistencia.toLowerCase());
+                      })
+                      .map(insc => (
                       <tr key={insc.id} className="border-t">
                         <td className="px-4 py-3 text-sm">{(insc as any).personas?.nombres} {(insc as any).personas?.apellidos}</td>
                         <td className="px-4 py-3 text-center">
-                          <Badge variant={insc.confirmado ? "default" : "secondary"}>
-                            {insc.confirmado ? "Sí" : "No"}
-                          </Badge>
+                          <Button
+                            variant={insc.confirmado ? "default" : "outline"}
+                            size="sm"
+                            className="gap-1.5 text-xs"
+                            onClick={() => handleToggleAsistencia(insc.id, !!insc.confirmado)}
+                          >
+                            <CheckCircle2 className="h-3.5 w-3.5" />
+                            {insc.confirmado ? "Presente" : "Ausente"}
+                          </Button>
                         </td>
                         <td className="px-4 py-3 text-center">
                           <Badge variant={insc.estado_pago === "Pagado" ? "default" : "outline"}>
