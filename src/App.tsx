@@ -23,9 +23,6 @@ import UsuariosPage from "@/pages/UsuariosPage";
 import ConfiguracionPage from "@/pages/ConfiguracionPage";
 import ResetPasswordPage from "@/pages/ResetPasswordPage";
 import CheckInPage from "@/pages/CheckInPage";
-import BannersPage from "@/pages/BannersPage";
-import VideosPage from "@/pages/VideosPage";
-import SenalEnVivoPage from "@/pages/SenalEnVivoPage";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
