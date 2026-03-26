@@ -179,9 +179,14 @@ export default function EventoDetailView({ evento, onBack }: Props) {
               <Button onClick={handleSaveGeneral} disabled={updateEvento.isPending} className="gap-2">
                 <Save className="h-4 w-4" /> Guardar
               </Button>
-              <Button variant="destructive" onClick={onBack} className="gap-2">
-                <X className="h-4 w-4" /> Cancelar
+              <Button variant="outline" onClick={onBack} className="gap-2">
+                <ArrowLeft className="h-4 w-4" /> Volver
               </Button>
+              {evento.estado !== "Cancelado" && (
+                <Button variant="destructive" onClick={() => setCancelDialogOpen(true)} className="gap-2">
+                  <Ban className="h-4 w-4" /> Cancelar Actividad
+                </Button>
+              )}
             </div>
 
             <div>
