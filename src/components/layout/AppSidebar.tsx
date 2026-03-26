@@ -9,7 +9,7 @@ import {
   LayoutDashboard, Users, UsersRound, Church,
   DollarSign, CalendarDays, GraduationCap,
   Award, BarChart3, Settings, UserCog, ChevronLeft, ChevronRight,
-  LogOut, HandHeart, ImageIcon, Video, Radio
+  LogOut, HandHeart
 } from "lucide-react";
 
 const menuItems = [
