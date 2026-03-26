@@ -9,7 +9,7 @@ import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Separator } from "@/components/ui/separator";
-import { Church, Globe, Clock, Palette, Save } from "lucide-react";
+import { Church, Globe, Clock, Palette, Save, BookOpen } from "lucide-react";
 import { toast } from "sonner";
 
 const MONEDAS = [
