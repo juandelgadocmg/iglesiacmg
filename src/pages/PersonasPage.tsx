@@ -57,6 +57,8 @@ export default function PersonasPage() {
   const [search, setSearch] = useState("");
   const [tipoFilter, setTipoFilter] = useState("Todos");
   const [estadoFilter, setEstadoFilter] = useState("all");
+  const [page, setPage] = useState(1);
+  const pageSize = 9;
 
   const filtered = useMemo(() => {
     if (!personas) return [];
