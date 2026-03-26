@@ -11,7 +11,7 @@ interface Props {
 export default function DashboardTemaSemana({ titulo, descripcion, url }: Props) {
   const navigate = useNavigate();
 
-  if (!titulo && !descripcion) return null;
+  const isEmpty = !titulo && !descripcion;
 
   const handleDownloadPDF = () => {
     const doc = new jsPDF();
