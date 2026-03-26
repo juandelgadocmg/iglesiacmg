@@ -31,7 +31,7 @@ export default function VideosPage() {
   const [open, setOpen] = useState(false);
   const [titulo, setTitulo] = useState("");
   const [youtubeUrl, setYoutubeUrl] = useState("");
-  const [deleteId, setDeleteId] = useState<string | null>(null);
+  
 
   const handleCreate = async () => {
     if (!titulo || !youtubeUrl) { toast.error("Completa todos los campos"); return; }
