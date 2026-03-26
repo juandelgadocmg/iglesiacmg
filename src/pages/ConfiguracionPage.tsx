@@ -50,6 +50,9 @@ export default function ConfiguracionPage() {
         moneda: config.moneda || "USD",
         zona_horaria: config.zona_horaria || "America/Bogota",
         color_primario: config.color_primario || "#6366f1",
+        tema_semana_titulo: config.tema_semana_titulo || "",
+        tema_semana_descripcion: config.tema_semana_descripcion || "",
+        tema_semana_url: config.tema_semana_url || "",
       });
     }
   }, [config]);
