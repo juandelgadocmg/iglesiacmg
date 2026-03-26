@@ -110,13 +110,6 @@ export default function VideosPage() {
         )}
       </div>
 
-      <DeleteConfirmDialog
-        open={!!deleteId}
-        onOpenChange={() => setDeleteId(null)}
-        onConfirm={handleDelete}
-        title="¿Eliminar video?"
-        description="Esta acción no se puede deshacer."
-      />
     </div>
   );
 }

@@ -108,13 +108,6 @@ export default function BannersPage() {
         )}
       </div>
 
-      <DeleteConfirmDialog
-        open={!!deleteId}
-        onOpenChange={() => setDeleteId(null)}
-        onConfirm={handleDelete}
-        title="¿Eliminar banner?"
-        description="Esta acción no se puede deshacer."
-      />
     </div>
   );
 }
