@@ -91,6 +91,29 @@ export default function EventoDetailView({ evento, onBack }: Props) {
     } catch { toast.error("Error al guardar"); }
   };
 
+  const handleCancelarActividad = async () => {
+    if (!motivoCancelacion.trim()) { toast.error("Ingresa el motivo de cancelación"); return; }
+    setCancelando(true);
+    try {
+      await updateEvento.mutateAsync({
+        id: evento.id,
+        estado: "Cancelado",
+        motivo_cancelacion: motivoCancelacion.trim(),
+      } as any);
+      toast.success("Actividad cancelada");
+      setCancelDialogOpen(false);
+      onBack();
+    } catch { toast.error("Error al cancelar"); }
+    finally { setCancelando(false); }
+  };
+
+  const handleToggleAsistencia = async (inscId: string, currentValue: boolean) => {
+    try {
+      await updateInscripcion.mutateAsync({ id: inscId, confirmado: !currentValue });
+      queryClient.invalidateQueries({ queryKey: ["inscripciones", evento.id] });
+    } catch { toast.error("Error al actualizar asistencia"); }
+  };
+
   const handleAddCategoria = async () => {
     if (!newCatName.trim()) return;
     try {
