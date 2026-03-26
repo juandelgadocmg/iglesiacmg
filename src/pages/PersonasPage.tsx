@@ -119,22 +119,13 @@ export default function PersonasPage() {
       {editing && <PersonaFormDialog initialData={editing} onClose={() => setEditing(null)} />}
 
       {/* Metrics */}
-      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-4">
+      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-4">
         <MetricCard title="Total" value={counts.total || 0} icon={Users} />
         <MetricCard title="Miembros" value={counts["Miembro"] || 0} icon={Church} variant="default" />
         <MetricCard title="Visitantes" value={counts["Visitante"] || 0} icon={UserPlus} variant="info" />
-        <MetricCard title="Líderes" value={counts["Líder"] || 0} icon={Users} variant="accent" />
-        <MetricCard title="Servidores" value={counts["Servidor"] || 0} icon={Users} variant="success" />
-        <MetricCard title="CDP" value={counts["CDP"] || 0} icon={Users} variant="default" />
-        <MetricCard title="Discípulos" value={counts["Discípulo"] || 0} icon={Users} variant="info" />
-        <MetricCard title="Mentores" value={counts["Mentor"] || 0} icon={Users} variant="accent" />
+        <MetricCard title="Discípulos" value={counts["Discípulo"] || 0} icon={Users} variant="accent" />
         <MetricCard title="Líderes CDP" value={counts["Líder Casa de Paz"] || 0} icon={Users} variant="success" />
         <MetricCard title="Líderes Red" value={counts["Líder de Red"] || 0} icon={Users} variant="accent" />
-        <MetricCard title="Iglesia Virtual" value={counts["Iglesia Virtual"] || 0} icon={Users} variant="default" />
-        <MetricCard title="Est. Seminario" value={counts["Estudiante Seminario"] || 0} icon={Users} variant="info" />
-        <MetricCard title="Mtro. Seminario" value={counts["Maestro Seminario"] || 0} icon={Users} variant="accent" />
-        <MetricCard title="No Activos" value={counts["Miembro No Activo"] || 0} icon={Users} variant="default" />
-        <MetricCard title="Pastor Principal" value={counts["Pastor Principal"] || 0} icon={Users} variant="accent" />
       </div>
 
       {/* Filters */}
