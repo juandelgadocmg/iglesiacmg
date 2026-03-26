@@ -1258,7 +1258,32 @@ function PeriodoDetailView({ escuela, periodo, onBackToPeriodos }: any) {
           <h2 className="text-lg font-bold text-foreground">{periodo.nombre}</h2>
           <p className="text-sm text-muted-foreground">{escuela.nombre} · Período académico</p>
         </div>
-        <MatriculaFormDialog cursoId={escuela.id} periodoId={periodo.id} />
+        <div className="flex gap-2">
+          {periodo.estado === "Abierto" && (
+            <Button size="sm" variant="outline" className="gap-1.5 text-destructive border-destructive/30 hover:bg-destructive/10"
+              onClick={async () => {
+                if (!confirm("¿Estás seguro de finalizar este período? Se cerrará y no se podrán realizar cambios.")) return;
+                try {
+                  await updatePeriodo.mutateAsync({ id: periodo.id, estado: "Cerrado" });
+                  toast.success("Período finalizado");
+                } catch { toast.error("Error al finalizar período"); }
+              }}>
+              <Lock className="h-3.5 w-3.5" /> Finalizar período
+            </Button>
+          )}
+          {periodo.estado === "Cerrado" && (
+            <Button size="sm" variant="outline" className="gap-1.5"
+              onClick={async () => {
+                try {
+                  await updatePeriodo.mutateAsync({ id: periodo.id, estado: "Abierto" });
+                  toast.success("Período reabierto");
+                } catch { toast.error("Error al reabrir"); }
+              }}>
+              <Unlock className="h-3.5 w-3.5" /> Reabrir período
+            </Button>
+          )}
+          <MatriculaFormDialog cursoId={escuela.id} periodoId={periodo.id} />
+        </div>
       </div>
 
       <div className="flex gap-1 border-b overflow-x-auto">
