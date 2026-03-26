@@ -1494,6 +1494,95 @@ export type Database = {
           },
         ]
       }
+      planificaciones_grupo: {
+        Row: {
+          casa_de_paz: string | null
+          created_at: string
+          created_by: string | null
+          evaluacion_equipo: Json | null
+          fecha_ayuno: string | null
+          fecha_evangelizacion: string | null
+          grupo_id: string
+          id: string
+          lider_nombre: string
+          medios_invitacion: string[] | null
+          medios_recordar: string[] | null
+          personas_invitadas: number | null
+          red: string | null
+          responsable_adoracion: string | null
+          responsable_ayudas: string | null
+          responsable_consolidacion: string | null
+          responsable_datos: string | null
+          responsable_dinamicas: string | null
+          responsable_invitacion: string | null
+          responsable_oracion: string | null
+          responsable_predicacion: string | null
+          responsable_recordar: string | null
+          responsable_seguimiento: string | null
+          responsable_testimonios: string | null
+        }
+        Insert: {
+          casa_de_paz?: string | null
+          created_at?: string
+          created_by?: string | null
+          evaluacion_equipo?: Json | null
+          fecha_ayuno?: string | null
+          fecha_evangelizacion?: string | null
+          grupo_id: string
+          id?: string
+          lider_nombre: string
+          medios_invitacion?: string[] | null
+          medios_recordar?: string[] | null
+          personas_invitadas?: number | null
+          red?: string | null
+          responsable_adoracion?: string | null
+          responsable_ayudas?: string | null
+          responsable_consolidacion?: string | null
+          responsable_datos?: string | null
+          responsable_dinamicas?: string | null
+          responsable_invitacion?: string | null
+          responsable_oracion?: string | null
+          responsable_predicacion?: string | null
+          responsable_recordar?: string | null
+          responsable_seguimiento?: string | null
+          responsable_testimonios?: string | null
+        }
+        Update: {
+          casa_de_paz?: string | null
+          created_at?: string
+          created_by?: string | null
+          evaluacion_equipo?: Json | null
+          fecha_ayuno?: string | null
+          fecha_evangelizacion?: string | null
+          grupo_id?: string
+          id?: string
+          lider_nombre?: string
+          medios_invitacion?: string[] | null
+          medios_recordar?: string[] | null
+          personas_invitadas?: number | null
+          red?: string | null
+          responsable_adoracion?: string | null
+          responsable_ayudas?: string | null
+          responsable_consolidacion?: string | null
+          responsable_datos?: string | null
+          responsable_dinamicas?: string | null
+          responsable_invitacion?: string | null
+          responsable_oracion?: string | null
+          responsable_predicacion?: string | null
+          responsable_recordar?: string | null
+          responsable_seguimiento?: string | null
+          responsable_testimonios?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "planificaciones_grupo_grupo_id_fkey"
+            columns: ["grupo_id"]
+            isOneToOne: false
+            referencedRelation: "grupos"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       procesos_crecimiento: {
         Row: {
           created_at: string
