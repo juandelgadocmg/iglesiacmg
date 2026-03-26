@@ -1243,6 +1243,7 @@ function PeriodoDetailView({ escuela, periodo, onBackToPeriodos }: any) {
 
   const tabs = [
     { id: "info", label: "Información general", icon: Eye },
+    { id: "pensum", label: "Pensum", icon: BookText },
     { id: "estudiantes", label: "Alumnos", icon: Users },
     { id: "calificaciones", label: "Calificaciones", icon: BarChart3 },
     { id: "asistencia", label: "Asistencia", icon: ClipboardCheck },
