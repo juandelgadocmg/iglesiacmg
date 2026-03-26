@@ -9,7 +9,7 @@ import {
   LayoutDashboard, Users, UsersRound, Church,
   DollarSign, CalendarDays, GraduationCap,
   Award, BarChart3, Settings, UserCog, ChevronLeft, ChevronRight,
-  LogOut, HandHeart
+  LogOut, HandHeart, ImageIcon, Video, Radio
 } from "lucide-react";
 
 const menuItems = [
@@ -23,6 +23,9 @@ const menuItems = [
   { label: "Certificados", icon: Award, path: "/certificados" },
   { label: "Peticiones", icon: HandHeart, path: "/peticiones" },
   { label: "Reportes", icon: BarChart3, path: "/reportes" },
+  { label: "Banners", icon: ImageIcon, path: "/banners" },
+  { label: "Videos", icon: Video, path: "/videos" },
+  { label: "Señal En Vivo", icon: Radio, path: "/senal-en-vivo" },
   { label: "Usuarios", icon: UserCog, path: "/usuarios" },
   { label: "Configuración", icon: Settings, path: "/configuracion" },
 ];

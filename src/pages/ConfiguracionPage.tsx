@@ -201,6 +201,30 @@ export default function ConfiguracionPage() {
             </div>
           </CardContent>
         </Card>
+
+        {/* Tema de la Semana */}
+        <Card>
+          <CardHeader>
+            <CardTitle className="text-base flex items-center gap-2">
+              <BookOpen className="h-4 w-4" /> Tema de la Semana
+            </CardTitle>
+            <CardDescription>Configura el tema semanal que se muestra en el dashboard</CardDescription>
+          </CardHeader>
+          <CardContent className="grid gap-4 sm:grid-cols-2">
+            <div className="space-y-2 sm:col-span-2">
+              <Label>Título del Tema</Label>
+              <Input value={form.tema_semana_titulo || ""} onChange={e => set("tema_semana_titulo", e.target.value)} placeholder="Ej: Tema de la semana" />
+            </div>
+            <div className="space-y-2 sm:col-span-2">
+              <Label>Descripción</Label>
+              <Input value={form.tema_semana_descripcion || ""} onChange={e => set("tema_semana_descripcion", e.target.value)} placeholder="Ej: LA COMUNIÓN CON EL ESPÍRITU SANTO" />
+            </div>
+            <div className="space-y-2 sm:col-span-2">
+              <Label>URL del enlace (opcional)</Label>
+              <Input value={form.tema_semana_url || ""} onChange={e => set("tema_semana_url", e.target.value)} placeholder="https://..." />
+            </div>
+          </CardContent>
+        </Card>
       </div>
     </div>
   );
