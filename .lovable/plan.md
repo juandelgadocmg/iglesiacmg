@@ -1,70 +1,61 @@
 
 
-## Plan: Reorganizar Sidebar, Dashboard Tema PDF, Personas Paginadas, Formulario de Planificación de Grupos
+## Plan: Dashboard Tema Semana, WhatsApp en Personas, Ajustes Eventos y Finanzas
 
 ---
 
-### Resumen
+### 1. Dashboard — Tema de la Semana siempre visible
 
-1. Mover Banners, Videos y Señal en Vivo dentro de Configuración (como pestañas), eliminando sus entradas del sidebar y sus rutas independientes.
-2. Rediseñar el "Tema de la semana" en el Dashboard con botones Ver (modal/PDF descargable), Abrir link, Editar — estilo de la imagen de referencia.
-3. Reducir las métricas de Personas a solo 6 (Total, Miembros, Visitantes, Discípulos, Líderes CDP, Líderes de Red) y agregar paginación a las tarjetas de personas.
-4. Crear un formulario de "Hoja de Planificación" en el módulo de Grupos, replicando el formulario de Google Forms de CMG.
+**Problema**: `DashboardTemaSemana` retorna `null` si no hay título ni descripción configurados.
+
+**Solución**: Eliminar la condición que oculta el componente. Mostrar siempre la tarjeta con un mensaje por defecto ("Sin tema configurado") y el botón "Editar" para ir a Configuración.
+
+**Archivo**: `src/components/dashboard/DashboardTemaSemana.tsx`
 
 ---
 
-### 1. Consolidar Banners/Videos/Señal en Vivo dentro de Configuración
+### 2. Personas — Link de WhatsApp en el teléfono
 
-**Cambios:**
-- **`ConfiguracionPage.tsx`**: Agregar pestañas (Tabs) — "General", "Banners", "Videos", "Señal en Vivo". Importar el contenido de los 3 módulos existentes directamente como componentes dentro de las pestañas.
-- **`AppSidebar.tsx`**: Eliminar las 3 entradas del menú (Banners, Videos, Señal en Vivo).
-- **`App.tsx`**: Eliminar las 3 rutas `/banners`, `/videos`, `/senal-en-vivo`.
-- **`permissions.ts`**: Limpiar las rutas eliminadas.
+**Cambio**: En `PersonasPage.tsx`, convertir la línea del teléfono en un enlace clickeable que abra WhatsApp (`https://wa.me/<número>`). Se limpiará el número (quitar espacios, guiones) y se agregará un ícono de WhatsApp junto al ícono de teléfono.
 
-### 2. Dashboard — Tema de la Semana con descarga PDF
+**Archivo**: `src/pages/PersonasPage.tsx` (línea ~191)
 
-**Cambios:**
-- **`DashboardTemaSemana.tsx`**: Rediseñar con estilo teal (como la imagen de referencia) con icono de documento grande, título "Tema de la semana", el texto del tema, y 3 botones:
-  - **Ver**: Abre un modal/dialog mostrando el detalle del tema.
-  - **Abrir link**: Abre el URL externo (si existe).
-  - **Editar**: Navega a `/configuracion`.
-  - **Descargar PDF**: Genera un PDF sencillo con jsPDF conteniendo el título y descripción del tema.
+---
 
-### 3. Personas — Reducir métricas y paginar tarjetas
+### 3. Eventos — Selección de tipo de evento y cancelación
 
-**Cambios:**
-- **`PersonasPage.tsx`**:
-  - Reducir el grid de métricas a 6 tarjetas: Total, Miembros, Visitantes, Discípulos, Líderes CDP, Líderes de Red.
-  - Agregar estado de paginación (`page`, `pageSize = 9`) sobre el array `filtered`.
-  - Mostrar solo `pageSize` tarjetas por página.
-  - Agregar controles de paginación debajo del grid (usando componente `Pagination` existente) con indicador "1 - 9 de X registros".
+Según el documento:
+- **Tipo de evento**: El formulario actual tiene tipos como "Conferencia", "Retiro", etc. pero el documento pide tipos como "Evento Gratuito", "Evento Cerrado", "Evento Abierto". Se agregarán estos tipos al `Select` del `EventoFormDialog`.
+- **Cancelar/Eliminar evento**: Agregar estado "Cancelado" al formulario de edición y un botón "Cancelar Evento" en `EventoDetailView` con un diálogo de confirmación que pida motivo de cancelación.
+- **Link de inscripción**: Generar un enlace compartible basado en el ID del evento para que las personas puedan inscribirse externamente.
 
-### 4. Grupos — Formulario de Planificación (Hoja de Planeación)
+**Archivos**:
+- `src/components/forms/EventoFormDialog.tsx` — agregar tipos de evento (Gratuito/Cerrado/Abierto) y estado "Cancelado"
+- `src/components/events/EventoDetailView.tsx` — botón cancelar evento con motivo, y mostrar link de inscripción copiable
 
-**Database:**
-- Nueva tabla `planificaciones_grupo` con columnas: `id`, `grupo_id` (FK), `red`, `lider_nombre`, `evaluacion_equipo` (jsonb — grid SI/NO para 12 actividades), `responsable_invitacion`, `medios_invitacion` (text[]), `personas_invitadas` (int), `responsable_recordar`, `medios_recordar` (text[]), `fecha_ayuno` (date), `fecha_evangelizacion` (date), `responsable_oracion`, `responsable_adoracion`, `responsable_dinamicas`, `responsable_predicacion`, `responsable_testimonios`, `responsable_ayudas`, `responsable_datos`, `responsable_consolidacion`, `responsable_seguimiento`, `created_at`, `created_by`.
+---
 
-**Archivos nuevos:**
-- **`src/components/forms/PlanificacionGrupoFormDialog.tsx`**: Formulario multi-sección replicando las 4 secciones del Google Form:
-  1. Datos del grupo (Red, Líder, Casa de Paz)
-  2. Evaluación del equipo de trabajo (grid SI/NO con las 12 actividades)
-  3. Antes de la Casa de Paz (responsables, medios, fechas de ayuno/evangelización)
-  4. Durante/Después (7 responsables de actividades + consolidación y seguimiento)
-- **`src/hooks/usePlanificaciones.ts`**: Hook para CRUD de planificaciones.
+### 4. Finanzas — Persona asociada (proveedor/cliente) y PUC
 
-**Cambios:**
-- **`GruposPage.tsx`**: Agregar una pestaña "Planificación" que liste las planificaciones existentes y permita crear nuevas con el formulario.
+Según el documento, se necesita:
+- **Asociar persona**: Campo para vincular una persona existente al registro financiero (como "proveedor" para gastos o "diezmador" para ingresos). Esto permite generar certificados de donaciones por persona.
+- **Código PUC**: Campo de texto para el código contable en el formulario financiero.
+- **Informe por persona**: En la pestaña de Donaciones o Reportes, poder filtrar por persona y descargar un certificado/informe detallado de sus diezmos y ofrendas.
+
+**Database**: Migración para agregar columnas `persona_id` (FK a personas) y `codigo_puc` (text) a la tabla `finanzas`.
+
+**Archivos**:
+- `src/components/forms/FinanzaFormDialog.tsx` — agregar selector de persona y campo PUC
+- `src/pages/FinanzasPage.tsx` — mostrar persona asociada en la tabla, agregar filtro por persona en reportes con opción de descargar certificado PDF de donaciones
 
 ---
 
 ### Detalle técnico
 
-| Área | Archivos afectados |
-|------|-------------------|
-| Sidebar/Rutas | `AppSidebar.tsx`, `App.tsx`, `permissions.ts` |
-| Configuración | `ConfiguracionPage.tsx` (tabs con contenido de Banners/Videos/Señal) |
-| Dashboard | `DashboardTemaSemana.tsx` (rediseño + PDF con jsPDF) |
-| Personas | `PersonasPage.tsx` (6 métricas + paginación) |
-| Grupos | `GruposPage.tsx`, nuevo `PlanificacionGrupoFormDialog.tsx`, nuevo `usePlanificaciones.ts` |
-| Database | 1 migración: tabla `planificaciones_grupo` con RLS |
+| Área | Archivos | Cambio |
+|------|----------|--------|
+| Dashboard | `DashboardTemaSemana.tsx` | Siempre visible, estado vacío amigable |
+| Personas | `PersonasPage.tsx` | Link WhatsApp en teléfono |
+| Eventos | `EventoFormDialog.tsx`, `EventoDetailView.tsx` | Tipos Gratuito/Cerrado/Abierto, cancelar evento, link inscripción |
+| Finanzas | Migración SQL, `FinanzaFormDialog.tsx`, `FinanzasPage.tsx` | persona_id, codigo_puc, certificado donaciones |
 
