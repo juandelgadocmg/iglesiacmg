@@ -75,12 +75,14 @@ export default function EventoFormDialog({ initialData, onClose }: Props) {
               <Select name="tipo" defaultValue={initialData?.tipo || ""}>
                 <SelectTrigger><SelectValue placeholder="Seleccionar" /></SelectTrigger>
                 <SelectContent>
+                  <SelectItem value="Evento Gratuito">Evento Gratuito</SelectItem>
+                  <SelectItem value="Evento Cerrado">Evento Cerrado</SelectItem>
+                  <SelectItem value="Evento Abierto">Evento Abierto</SelectItem>
                   <SelectItem value="Conferencia">Conferencia</SelectItem>
                   <SelectItem value="Retiro">Retiro</SelectItem>
                   <SelectItem value="Campamento">Campamento</SelectItem>
                   <SelectItem value="Taller">Taller</SelectItem>
                   <SelectItem value="Concierto">Concierto</SelectItem>
-                  <SelectItem value="Otro">Otro</SelectItem>
                 </SelectContent>
               </Select>
             </div>
@@ -92,6 +94,7 @@ export default function EventoFormDialog({ initialData, onClose }: Props) {
                   <SelectItem value="Próximo">Próximo</SelectItem>
                   <SelectItem value="En curso">En curso</SelectItem>
                   <SelectItem value="Finalizado">Finalizado</SelectItem>
+                  <SelectItem value="Cancelado">Cancelado</SelectItem>
                 </SelectContent>
               </Select>
             </div>

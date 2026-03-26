@@ -162,6 +162,7 @@ export default function FinanzasPage() {
               columns={[
                 { key: "tipo", label: "Tipo", render: (f: any) => <StatusBadge status={f.tipo} /> },
                 { key: "categoria_nombre", label: "Categoría", render: (f: any) => f.categoria_nombre || "—" },
+                { key: "persona", label: "Persona", render: (f: any) => f.personas ? `${f.personas.nombres} ${f.personas.apellidos}` : "—" },
                 { key: "descripcion", label: "Concepto", render: (f: any) => f.descripcion || "—" },
                 { key: "monto", label: "Cantidad", render: (f: any) => (
                   <span className={f.tipo === "Ingreso" ? "text-emerald-600 font-semibold" : "text-rose-600 font-semibold"}>
@@ -170,6 +171,7 @@ export default function FinanzasPage() {
                 )},
                 { key: "fecha", label: "Fecha" },
                 { key: "metodo_pago", label: "Método", render: (f: any) => f.metodo_pago || "—" },
+                { key: "codigo_puc", label: "PUC", render: (f: any) => f.codigo_puc || "—" },
                 {
                   key: "actions", label: "",
                   render: (f: any) => (

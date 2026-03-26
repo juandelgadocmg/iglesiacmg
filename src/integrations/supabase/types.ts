@@ -737,6 +737,7 @@ export type Database = {
         Row: {
           categoria_id: string | null
           categoria_nombre: string | null
+          codigo_puc: string | null
           comprobante: string | null
           created_at: string
           descripcion: string | null
@@ -752,6 +753,7 @@ export type Database = {
         Insert: {
           categoria_id?: string | null
           categoria_nombre?: string | null
+          codigo_puc?: string | null
           comprobante?: string | null
           created_at?: string
           descripcion?: string | null
@@ -767,6 +769,7 @@ export type Database = {
         Update: {
           categoria_id?: string | null
           categoria_nombre?: string | null
+          codigo_puc?: string | null
           comprobante?: string | null
           created_at?: string
           descripcion?: string | null

@@ -192,6 +192,7 @@ export default function EventoDetailView({ evento, onBack }: Props) {
                       <SelectItem value="Próximo">Próximo</SelectItem>
                       <SelectItem value="En curso">En curso</SelectItem>
                       <SelectItem value="Finalizado">Finalizado</SelectItem>
+                      <SelectItem value="Cancelado">Cancelado</SelectItem>
                     </SelectContent>
                   </Select>
                 </div>

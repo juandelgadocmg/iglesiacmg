@@ -1,0 +1,1 @@
+ALTER TABLE public.finanzas ADD COLUMN IF NOT EXISTS codigo_puc text DEFAULT NULL;

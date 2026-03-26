@@ -11,7 +11,7 @@ interface Props {
 export default function DashboardTemaSemana({ titulo, descripcion, url }: Props) {
   const navigate = useNavigate();
 
-  if (!titulo && !descripcion) return null;
+  const isEmpty = !titulo && !descripcion;
 
   const handleDownloadPDF = () => {
     const doc = new jsPDF();
@@ -53,15 +53,17 @@ export default function DashboardTemaSemana({ titulo, descripcion, url }: Props)
         </div>
         <h3 className="font-bold text-lg">Tema de la semana</h3>
         <p className="text-sm mt-2 uppercase tracking-wide font-semibold opacity-95">
-          {descripcion || titulo}
+          {isEmpty ? "Sin tema configurado" : (descripcion || titulo)}
         </p>
         <div className="flex items-center justify-center gap-2 mt-4 flex-wrap">
-          <button
-            onClick={handleDownloadPDF}
-            className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold rounded-lg bg-white/20 hover:bg-white/30 transition-colors"
-          >
-            <Download className="h-3.5 w-3.5" /> Descargar PDF
-          </button>
+          {!isEmpty && (
+            <button
+              onClick={handleDownloadPDF}
+              className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold rounded-lg bg-white/20 hover:bg-white/30 transition-colors"
+            >
+              <Download className="h-3.5 w-3.5" /> Descargar PDF
+            </button>
+          )}
           {url && (
             <a
               href={url}
