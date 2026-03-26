@@ -1201,6 +1201,7 @@ function PeriodoDetailView({ escuela, periodo, onBackToPeriodos }: any) {
   const deleteMateria = useDeleteMateria();
   const updateMateria = useUpdateMateria();
   const deleteCorte = useDeleteCorte();
+  const updatePeriodo = useUpdatePeriodo();
   const [activeTab, setActiveTab] = useState<string>("info");
   const [editingMateria, setEditingMateria] = useState<string | null>(null);
   const [editForm, setEditForm] = useState<{ nombre: string; descripcion: string; maestro_id: string; aula_id: string; horario: string }>({ nombre: "", descripcion: "", maestro_id: "", aula_id: "", horario: "" });
