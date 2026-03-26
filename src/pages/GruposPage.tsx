@@ -234,9 +234,53 @@ export default function GruposPage() {
             <GraficoMinisterioContent />
           </Suspense>
         </TabsContent>
+
+        <TabsContent value="planificacion">
+          <div className="space-y-4">
+            <div className="flex items-center justify-between">
+              <div>
+                <h3 className="text-lg font-semibold">Hojas de Planeación</h3>
+                <p className="text-sm text-muted-foreground">Planificación semanal de Casas de Paz</p>
+              </div>
+              <Button onClick={() => setShowPlanForm(true)} className="gap-2">
+                <Plus className="h-4 w-4" /> Nueva Planificación
+              </Button>
+            </div>
+
+            {planificaciones && planificaciones.length > 0 ? (
+              <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+                {planificaciones.map((p: any) => (
+                  <div key={p.id} className="rounded-xl border bg-card p-4 space-y-2">
+                    <div className="flex items-start justify-between">
+                      <div>
+                        <p className="font-semibold text-sm">{p.lider_nombre}</p>
+                        <p className="text-xs text-muted-foreground">Red: {p.red || "—"} · {p.casa_de_paz || "—"}</p>
+                      </div>
+                      <DeleteConfirmDialog
+                        onConfirm={async () => { try { await deletePlan.mutateAsync(p.id); toast.success("Eliminada"); } catch { toast.error("Error"); } }}
+                        trigger={<Button size="icon" variant="ghost" className="h-7 w-7 text-destructive"><Trash2 className="h-3.5 w-3.5" /></Button>}
+                      />
+                    </div>
+                    <p className="text-[10px] text-muted-foreground">{new Date(p.created_at).toLocaleDateString()}</p>
+                    <div className="text-xs space-y-0.5">
+                      <p>Invitados: {p.personas_invitadas}</p>
+                      <p>Ayuno: {p.fecha_ayuno || "—"}</p>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <div className="text-center py-12 text-muted-foreground">
+                <FileText className="h-10 w-10 mx-auto mb-2 opacity-50" />
+                <p>No hay planificaciones registradas.</p>
+              </div>
+            )}
+          </div>
+        </TabsContent>
       </Tabs>
 
       <ReporteGrupoFormDialog open={showReportForm} onOpenChange={setShowReportForm} />
+      <PlanificacionGrupoFormDialog open={showPlanForm} onOpenChange={setShowPlanForm} />
     </div>
   );
 }
