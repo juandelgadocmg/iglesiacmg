@@ -94,9 +94,10 @@ export default function VideosPage() {
                 <Button size="icon" variant="ghost" onClick={() => updateStatus.mutate({ id: v.id, estado: v.estado === "Activo" ? "Inactivo" : "Activo" })}>
                   {v.estado === "Activo" ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
                 </Button>
-                <Button size="icon" variant="ghost" className="text-destructive" onClick={() => setDeleteId(v.id)}>
-                  <Trash2 className="h-4 w-4" />
-                </Button>
+                <DeleteConfirmDialog
+                  onConfirm={async () => { try { await deleteVideo.mutateAsync(v.id); toast.success("Video eliminado"); } catch { toast.error("Error"); } }}
+                  trigger={<Button size="icon" variant="ghost" className="text-destructive"><Trash2 className="h-4 w-4" /></Button>}
+                />
               </div>
             </CardContent>
           </Card>
