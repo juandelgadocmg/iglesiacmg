@@ -1,61 +1,50 @@
 
 
-## Plan: Dashboard Tema Semana, WhatsApp en Personas, Ajustes Eventos y Finanzas
+## Plan: Cancelar Actividad con Motivo + Asistencia Manual/QR en Eventos
 
 ---
 
-### 1. Dashboard — Tema de la Semana siempre visible
+### Problema 1: Cancelación de eventos
+El botón "Cancelar" en la pestaña General (línea 150) solo ejecuta `onBack()` (vuelve atrás), no cancela el evento. Se necesita un botón dedicado "Cancelar Actividad" que abra un diálogo con campo de motivo, como en la imagen de referencia.
 
-**Problema**: `DashboardTemaSemana` retorna `null` si no hay título ni descripción configurados.
-
-**Solución**: Eliminar la condición que oculta el componente. Mostrar siempre la tarjeta con un mensaje por defecto ("Sin tema configurado") y el botón "Editar" para ir a Configuración.
-
-**Archivo**: `src/components/dashboard/DashboardTemaSemana.tsx`
+### Problema 2: Asistencia del evento
+La pestaña "Asistencias" solo muestra inscripciones en una tabla de solo lectura. No permite registrar asistencia manual ni por QR. Se necesita un flujo similar al de servicios.
 
 ---
 
-### 2. Personas — Link de WhatsApp en el teléfono
+### Cambios
 
-**Cambio**: En `PersonasPage.tsx`, convertir la línea del teléfono en un enlace clickeable que abra WhatsApp (`https://wa.me/<número>`). Se limpiará el número (quitar espacios, guiones) y se agregará un ícono de WhatsApp junto al ícono de teléfono.
+**1. Database: agregar columna `motivo_cancelacion` a `eventos`**
+- Migración SQL: `ALTER TABLE public.eventos ADD COLUMN IF NOT EXISTS motivo_cancelacion text DEFAULT NULL;`
 
-**Archivo**: `src/pages/PersonasPage.tsx` (línea ~191)
+**2. `EventoDetailView.tsx` — Cancelar Actividad**
+- Agregar un botón rojo "Cancelar Actividad" en la pestaña General (separado del botón "Cancelar" que es solo "volver").
+- Al hacer clic, abre un `Dialog` con:
+  - Encabezado rojo con ícono de prohibido: "Cancelar Actividad"
+  - Texto: "Por medio de este formulario podrás cancelar la actividad [nombre]"
+  - Textarea: "Ingresa los motivos por los cuales se cancelará la actividad"
+  - Botones: "Cancelar Actividad" (acción) y "Salir" (cerrar)
+- Al confirmar: actualiza el evento con `estado: "Cancelado"` y `motivo_cancelacion: motivo`.
 
----
+**3. `EventoDetailView.tsx` — Asistencia manual + QR**
+- Reemplazar el contenido actual de la pestaña "Asistencias" con:
+  - Estadísticas (Total Inscritos, Presentes, Pendientes)
+  - Botón "Lector QR" que reutiliza `QrAttendanceScanner` adaptado para eventos (busca persona por QR y marca `confirmado = true` en su inscripción)
+  - Barra de búsqueda "Buscar asistente por código, nombre o cédula..."
+  - Resultados de búsqueda con botón para marcar asistencia (toggle `confirmado`)
+  - Lista de inscripciones con checkbox/badge para marcar presente/ausente con un clic
+- Se usará `useUpdateInscripcion` existente para alternar el campo `confirmado` como indicador de asistencia.
 
-### 3. Eventos — Selección de tipo de evento y cancelación
-
-Según el documento:
-- **Tipo de evento**: El formulario actual tiene tipos como "Conferencia", "Retiro", etc. pero el documento pide tipos como "Evento Gratuito", "Evento Cerrado", "Evento Abierto". Se agregarán estos tipos al `Select` del `EventoFormDialog`.
-- **Cancelar/Eliminar evento**: Agregar estado "Cancelado" al formulario de edición y un botón "Cancelar Evento" en `EventoDetailView` con un diálogo de confirmación que pida motivo de cancelación.
-- **Link de inscripción**: Generar un enlace compartible basado en el ID del evento para que las personas puedan inscribirse externamente.
-
-**Archivos**:
-- `src/components/forms/EventoFormDialog.tsx` — agregar tipos de evento (Gratuito/Cerrado/Abierto) y estado "Cancelado"
-- `src/components/events/EventoDetailView.tsx` — botón cancelar evento con motivo, y mostrar link de inscripción copiable
-
----
-
-### 4. Finanzas — Persona asociada (proveedor/cliente) y PUC
-
-Según el documento, se necesita:
-- **Asociar persona**: Campo para vincular una persona existente al registro financiero (como "proveedor" para gastos o "diezmador" para ingresos). Esto permite generar certificados de donaciones por persona.
-- **Código PUC**: Campo de texto para el código contable en el formulario financiero.
-- **Informe por persona**: En la pestaña de Donaciones o Reportes, poder filtrar por persona y descargar un certificado/informe detallado de sus diezmos y ofrendas.
-
-**Database**: Migración para agregar columnas `persona_id` (FK a personas) y `codigo_puc` (text) a la tabla `finanzas`.
-
-**Archivos**:
-- `src/components/forms/FinanzaFormDialog.tsx` — agregar selector de persona y campo PUC
-- `src/pages/FinanzasPage.tsx` — mostrar persona asociada en la tabla, agregar filtro por persona en reportes con opción de descargar certificado PDF de donaciones
+**4. Adaptar `QrAttendanceScanner` para eventos**
+- Crear una variante o prop adicional (`mode: "servicio" | "evento"`) o un componente nuevo `QrEventoScanner` que al escanear el QR de una persona, busque su inscripción en el evento y la marque como `confirmado = true`.
 
 ---
 
-### Detalle técnico
+### Archivos afectados
 
-| Área | Archivos | Cambio |
-|------|----------|--------|
-| Dashboard | `DashboardTemaSemana.tsx` | Siempre visible, estado vacío amigable |
-| Personas | `PersonasPage.tsx` | Link WhatsApp en teléfono |
-| Eventos | `EventoFormDialog.tsx`, `EventoDetailView.tsx` | Tipos Gratuito/Cerrado/Abierto, cancelar evento, link inscripción |
-| Finanzas | Migración SQL, `FinanzaFormDialog.tsx`, `FinanzasPage.tsx` | persona_id, codigo_puc, certificado donaciones |
+| Archivo | Cambio |
+|---------|--------|
+| Migración SQL | `motivo_cancelacion` en `eventos` |
+| `EventoDetailView.tsx` | Diálogo de cancelación + pestaña asistencia con búsqueda manual y QR |
+| `QrAttendanceScanner.tsx` o nuevo componente | Soporte para marcar asistencia en eventos por QR |
 
