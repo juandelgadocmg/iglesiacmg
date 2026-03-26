@@ -45,14 +45,6 @@ export default function BannersPage() {
     }
   };
 
-  const handleDelete = async () => {
-    if (!deleteId) return;
-    try {
-      await deleteBanner.mutateAsync(deleteId);
-      toast.success("Banner eliminado");
-    } catch { toast.error("Error al eliminar"); }
-    setDeleteId(null);
-  };
 
   if (isLoading) return <div className="space-y-4 animate-fade-in"><Skeleton className="h-10 w-48" /><Skeleton className="h-64 w-full" /></div>;
 
