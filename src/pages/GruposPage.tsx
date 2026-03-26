@@ -85,7 +85,10 @@ export default function GruposPage() {
   const deleteGrupo = useDeleteGrupo();
   const [editing, setEditing] = useState<any>(null);
   const [showReportForm, setShowReportForm] = useState(false);
+  const [showPlanForm, setShowPlanForm] = useState(false);
   const [selectedGrupoId, setSelectedGrupoId] = useState<string | null>(null);
+  const { data: planificaciones } = usePlanificaciones();
+  const deletePlan = useDeletePlanificacion();
 
   if (isLoading) {
     return (
