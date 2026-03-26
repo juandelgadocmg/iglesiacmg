@@ -142,6 +142,9 @@ export default function GruposPage() {
           <TabsTrigger value="reportes">Listado Reportes</TabsTrigger>
           <TabsTrigger value="mapa">Mapa</TabsTrigger>
           <TabsTrigger value="organigrama">Organigrama</TabsTrigger>
+          <TabsTrigger value="planificacion" className="gap-1.5">
+            <FileText className="h-3.5 w-3.5" /> Planificación
+          </TabsTrigger>
         </TabsList>
 
         <TabsContent value="lista">
