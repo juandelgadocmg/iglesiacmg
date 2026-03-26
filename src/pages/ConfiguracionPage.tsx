@@ -8,9 +8,14 @@ import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Separator } from "@/components/ui/separator";
-import { Church, Globe, Clock, Palette, Save, BookOpen } from "lucide-react";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Church, Globe, Clock, Save, BookOpen, ImageIcon, Video, Radio } from "lucide-react";
 import { toast } from "sonner";
+
+// Lazy-load sub-pages as tab content
+import BannersPage from "@/pages/BannersPage";
+import VideosPage from "@/pages/VideosPage";
+import SenalEnVivoPage from "@/pages/SenalEnVivoPage";
 
 const MONEDAS = [
   { value: "USD", label: "USD - Dólar estadounidense" },
@@ -79,153 +84,156 @@ export default function ConfiguracionPage() {
 
   return (
     <div className="animate-fade-in">
-      <PageHeader title="Configuración" description="Datos generales y ajustes del sistema">
-        <Button onClick={handleSave} disabled={updateConfig.isPending}>
-          <Save className="h-4 w-4 mr-2" />
-          {updateConfig.isPending ? "Guardando..." : "Guardar cambios"}
-        </Button>
-      </PageHeader>
+      <PageHeader title="Configuración" description="Datos generales, contenido multimedia y ajustes del sistema" />
 
-      <div className="grid gap-6">
-        {/* Church Info */}
-        <Card>
-          <CardHeader>
-            <CardTitle className="text-base flex items-center gap-2">
-              <Church className="h-4 w-4" /> Datos de la Iglesia
-            </CardTitle>
-            <CardDescription>Información general de la congregación</CardDescription>
-          </CardHeader>
-          <CardContent className="grid gap-4 sm:grid-cols-2">
-            <div className="space-y-2 sm:col-span-2">
-              <Label>Nombre de la Iglesia</Label>
-              <Input value={form.nombre_iglesia || ""} onChange={e => set("nombre_iglesia", e.target.value)} placeholder="Nombre de la iglesia" />
-            </div>
-            <div className="space-y-2">
-              <Label>Pastor Principal</Label>
-              <Input value={form.pastor_principal || ""} onChange={e => set("pastor_principal", e.target.value)} placeholder="Nombre del pastor" />
-            </div>
-            <div className="space-y-2">
-              <Label>Teléfono</Label>
-              <Input value={form.telefono || ""} onChange={e => set("telefono", e.target.value)} placeholder="+57 300 000 0000" />
-            </div>
-            <div className="space-y-2">
-              <Label>Correo electrónico</Label>
-              <Input type="email" value={form.email || ""} onChange={e => set("email", e.target.value)} placeholder="contacto@iglesia.com" />
-            </div>
-            <div className="space-y-2">
-              <Label>Sitio web</Label>
-              <Input value={form.sitio_web || ""} onChange={e => set("sitio_web", e.target.value)} placeholder="https://www.iglesia.com" />
-            </div>
-            <div className="space-y-2 sm:col-span-2">
-              <Label>Dirección</Label>
-              <Input value={form.direccion || ""} onChange={e => set("direccion", e.target.value)} placeholder="Dirección completa" />
-            </div>
-            <div className="space-y-2">
-              <Label>Ciudad</Label>
-              <Input value={form.ciudad || ""} onChange={e => set("ciudad", e.target.value)} placeholder="Ciudad" />
-            </div>
-            <div className="space-y-2">
-              <Label>País</Label>
-              <Input value={form.pais || ""} onChange={e => set("pais", e.target.value)} placeholder="País" />
-            </div>
-            <div className="space-y-2 sm:col-span-2">
-              <Label>Descripción</Label>
-              <Textarea value={form.descripcion || ""} onChange={e => set("descripcion", e.target.value)} placeholder="Breve descripción de la iglesia" rows={3} />
-            </div>
-          </CardContent>
-        </Card>
+      <Tabs defaultValue="general" className="space-y-4">
+        <TabsList className="flex-wrap h-auto gap-1">
+          <TabsTrigger value="general" className="gap-1.5"><Church className="h-3.5 w-3.5" /> General</TabsTrigger>
+          <TabsTrigger value="banners" className="gap-1.5"><ImageIcon className="h-3.5 w-3.5" /> Banners</TabsTrigger>
+          <TabsTrigger value="videos" className="gap-1.5"><Video className="h-3.5 w-3.5" /> Videos</TabsTrigger>
+          <TabsTrigger value="senal" className="gap-1.5"><Radio className="h-3.5 w-3.5" /> Señal en Vivo</TabsTrigger>
+        </TabsList>
 
-        {/* Schedule */}
-        <Card>
-          <CardHeader>
-            <CardTitle className="text-base flex items-center gap-2">
-              <Clock className="h-4 w-4" /> Horarios
-            </CardTitle>
-            <CardDescription>Horarios de servicios y actividades</CardDescription>
-          </CardHeader>
-          <CardContent>
-            <div className="space-y-2">
-              <Label>Horario de Servicios</Label>
-              <Textarea
-                value={form.horario_servicios || ""}
-                onChange={e => set("horario_servicios", e.target.value)}
-                placeholder={"Domingos: 9:00 AM y 11:00 AM\nMiércoles: 7:00 PM\nViernes: 7:00 PM"}
-                rows={4}
-              />
-            </div>
-          </CardContent>
-        </Card>
+        <TabsContent value="general">
+          <div className="flex justify-end mb-4">
+            <Button onClick={handleSave} disabled={updateConfig.isPending}>
+              <Save className="h-4 w-4 mr-2" />
+              {updateConfig.isPending ? "Guardando..." : "Guardar cambios"}
+            </Button>
+          </div>
 
-        {/* System Settings */}
-        <Card>
-          <CardHeader>
-            <CardTitle className="text-base flex items-center gap-2">
-              <Globe className="h-4 w-4" /> Ajustes del Sistema
-            </CardTitle>
-            <CardDescription>Preferencias regionales y de visualización</CardDescription>
-          </CardHeader>
-          <CardContent className="grid gap-4 sm:grid-cols-2">
-            <div className="space-y-2">
-              <Label>Moneda</Label>
-              <Select value={form.moneda || "USD"} onValueChange={v => set("moneda", v)}>
-                <SelectTrigger><SelectValue /></SelectTrigger>
-                <SelectContent>
-                  {MONEDAS.map(m => (
-                    <SelectItem key={m.value} value={m.value}>{m.label}</SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-            <div className="space-y-2">
-              <Label>Zona horaria</Label>
-              <Select value={form.zona_horaria || "America/Bogota"} onValueChange={v => set("zona_horaria", v)}>
-                <SelectTrigger><SelectValue /></SelectTrigger>
-                <SelectContent>
-                  {ZONAS.map(z => (
-                    <SelectItem key={z} value={z}>{z.replace("_", " ")}</SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-            <div className="space-y-2">
-              <Label>Color primario</Label>
-              <div className="flex items-center gap-3">
-                <input
-                  type="color"
-                  value={form.color_primario || "#6366f1"}
-                  onChange={e => set("color_primario", e.target.value)}
-                  className="h-10 w-14 rounded-md border border-input cursor-pointer"
-                />
-                <Input value={form.color_primario || ""} onChange={e => set("color_primario", e.target.value)} className="flex-1" placeholder="#6366f1" />
-              </div>
-            </div>
-          </CardContent>
-        </Card>
+          <div className="grid gap-6">
+            {/* Church Info */}
+            <Card>
+              <CardHeader>
+                <CardTitle className="text-base flex items-center gap-2"><Church className="h-4 w-4" /> Datos de la Iglesia</CardTitle>
+                <CardDescription>Información general de la congregación</CardDescription>
+              </CardHeader>
+              <CardContent className="grid gap-4 sm:grid-cols-2">
+                <div className="space-y-2 sm:col-span-2">
+                  <Label>Nombre de la Iglesia</Label>
+                  <Input value={form.nombre_iglesia || ""} onChange={e => set("nombre_iglesia", e.target.value)} placeholder="Nombre de la iglesia" />
+                </div>
+                <div className="space-y-2">
+                  <Label>Pastor Principal</Label>
+                  <Input value={form.pastor_principal || ""} onChange={e => set("pastor_principal", e.target.value)} placeholder="Nombre del pastor" />
+                </div>
+                <div className="space-y-2">
+                  <Label>Teléfono</Label>
+                  <Input value={form.telefono || ""} onChange={e => set("telefono", e.target.value)} placeholder="+57 300 000 0000" />
+                </div>
+                <div className="space-y-2">
+                  <Label>Correo electrónico</Label>
+                  <Input type="email" value={form.email || ""} onChange={e => set("email", e.target.value)} placeholder="contacto@iglesia.com" />
+                </div>
+                <div className="space-y-2">
+                  <Label>Sitio web</Label>
+                  <Input value={form.sitio_web || ""} onChange={e => set("sitio_web", e.target.value)} placeholder="https://www.iglesia.com" />
+                </div>
+                <div className="space-y-2 sm:col-span-2">
+                  <Label>Dirección</Label>
+                  <Input value={form.direccion || ""} onChange={e => set("direccion", e.target.value)} placeholder="Dirección completa" />
+                </div>
+                <div className="space-y-2">
+                  <Label>Ciudad</Label>
+                  <Input value={form.ciudad || ""} onChange={e => set("ciudad", e.target.value)} placeholder="Ciudad" />
+                </div>
+                <div className="space-y-2">
+                  <Label>País</Label>
+                  <Input value={form.pais || ""} onChange={e => set("pais", e.target.value)} placeholder="País" />
+                </div>
+                <div className="space-y-2 sm:col-span-2">
+                  <Label>Descripción</Label>
+                  <Textarea value={form.descripcion || ""} onChange={e => set("descripcion", e.target.value)} placeholder="Breve descripción de la iglesia" rows={3} />
+                </div>
+              </CardContent>
+            </Card>
 
-        {/* Tema de la Semana */}
-        <Card>
-          <CardHeader>
-            <CardTitle className="text-base flex items-center gap-2">
-              <BookOpen className="h-4 w-4" /> Tema de la Semana
-            </CardTitle>
-            <CardDescription>Configura el tema semanal que se muestra en el dashboard</CardDescription>
-          </CardHeader>
-          <CardContent className="grid gap-4 sm:grid-cols-2">
-            <div className="space-y-2 sm:col-span-2">
-              <Label>Título del Tema</Label>
-              <Input value={form.tema_semana_titulo || ""} onChange={e => set("tema_semana_titulo", e.target.value)} placeholder="Ej: Tema de la semana" />
-            </div>
-            <div className="space-y-2 sm:col-span-2">
-              <Label>Descripción</Label>
-              <Input value={form.tema_semana_descripcion || ""} onChange={e => set("tema_semana_descripcion", e.target.value)} placeholder="Ej: LA COMUNIÓN CON EL ESPÍRITU SANTO" />
-            </div>
-            <div className="space-y-2 sm:col-span-2">
-              <Label>URL del enlace (opcional)</Label>
-              <Input value={form.tema_semana_url || ""} onChange={e => set("tema_semana_url", e.target.value)} placeholder="https://..." />
-            </div>
-          </CardContent>
-        </Card>
-      </div>
+            {/* Schedule */}
+            <Card>
+              <CardHeader>
+                <CardTitle className="text-base flex items-center gap-2"><Clock className="h-4 w-4" /> Horarios</CardTitle>
+                <CardDescription>Horarios de servicios y actividades</CardDescription>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-2">
+                  <Label>Horario de Servicios</Label>
+                  <Textarea value={form.horario_servicios || ""} onChange={e => set("horario_servicios", e.target.value)} placeholder={"Domingos: 9:00 AM y 11:00 AM\nMiércoles: 7:00 PM"} rows={4} />
+                </div>
+              </CardContent>
+            </Card>
+
+            {/* System Settings */}
+            <Card>
+              <CardHeader>
+                <CardTitle className="text-base flex items-center gap-2"><Globe className="h-4 w-4" /> Ajustes del Sistema</CardTitle>
+                <CardDescription>Preferencias regionales y de visualización</CardDescription>
+              </CardHeader>
+              <CardContent className="grid gap-4 sm:grid-cols-2">
+                <div className="space-y-2">
+                  <Label>Moneda</Label>
+                  <Select value={form.moneda || "USD"} onValueChange={v => set("moneda", v)}>
+                    <SelectTrigger><SelectValue /></SelectTrigger>
+                    <SelectContent>
+                      {MONEDAS.map(m => (<SelectItem key={m.value} value={m.value}>{m.label}</SelectItem>))}
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div className="space-y-2">
+                  <Label>Zona horaria</Label>
+                  <Select value={form.zona_horaria || "America/Bogota"} onValueChange={v => set("zona_horaria", v)}>
+                    <SelectTrigger><SelectValue /></SelectTrigger>
+                    <SelectContent>
+                      {ZONAS.map(z => (<SelectItem key={z} value={z}>{z.replace("_", " ")}</SelectItem>))}
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div className="space-y-2">
+                  <Label>Color primario</Label>
+                  <div className="flex items-center gap-3">
+                    <input type="color" value={form.color_primario || "#6366f1"} onChange={e => set("color_primario", e.target.value)} className="h-10 w-14 rounded-md border border-input cursor-pointer" />
+                    <Input value={form.color_primario || ""} onChange={e => set("color_primario", e.target.value)} className="flex-1" placeholder="#6366f1" />
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+
+            {/* Tema de la Semana */}
+            <Card>
+              <CardHeader>
+                <CardTitle className="text-base flex items-center gap-2"><BookOpen className="h-4 w-4" /> Tema de la Semana</CardTitle>
+                <CardDescription>Configura el tema semanal que se muestra en el dashboard</CardDescription>
+              </CardHeader>
+              <CardContent className="grid gap-4 sm:grid-cols-2">
+                <div className="space-y-2 sm:col-span-2">
+                  <Label>Título del Tema</Label>
+                  <Input value={form.tema_semana_titulo || ""} onChange={e => set("tema_semana_titulo", e.target.value)} placeholder="Ej: Tema de la semana" />
+                </div>
+                <div className="space-y-2 sm:col-span-2">
+                  <Label>Descripción</Label>
+                  <Input value={form.tema_semana_descripcion || ""} onChange={e => set("tema_semana_descripcion", e.target.value)} placeholder="Ej: LA COMUNIÓN CON EL ESPÍRITU SANTO" />
+                </div>
+                <div className="space-y-2 sm:col-span-2">
+                  <Label>URL del enlace (opcional)</Label>
+                  <Input value={form.tema_semana_url || ""} onChange={e => set("tema_semana_url", e.target.value)} placeholder="https://..." />
+                </div>
+              </CardContent>
+            </Card>
+          </div>
+        </TabsContent>
+
+        <TabsContent value="banners">
+          <BannersPage />
+        </TabsContent>
+
+        <TabsContent value="videos">
+          <VideosPage />
+        </TabsContent>
+
+        <TabsContent value="senal">
+          <SenalEnVivoPage />
+        </TabsContent>
+      </Tabs>
     </div>
   );
 }

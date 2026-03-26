@@ -1,4 +1,5 @@
 import { useState, useMemo } from "react";
+import { ChevronLeft, ChevronRight } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import PageHeader from "@/components/shared/PageHeader";
 import StatusBadge from "@/components/shared/StatusBadge";
@@ -56,6 +57,8 @@ export default function PersonasPage() {
   const [search, setSearch] = useState("");
   const [tipoFilter, setTipoFilter] = useState("Todos");
   const [estadoFilter, setEstadoFilter] = useState("all");
+  const [page, setPage] = useState(1);
+  const pageSize = 9;
 
   const filtered = useMemo(() => {
     if (!personas) return [];
@@ -71,6 +74,10 @@ export default function PersonasPage() {
       return true;
     });
   }, [personas, search, tipoFilter, estadoFilter]);
+
+  // Reset page on filter change
+  const filterKey = `${search}-${tipoFilter}-${estadoFilter}`;
+  useMemo(() => setPage(1), [filterKey]);
 
   const counts = useMemo(() => {
     if (!personas) return {} as Record<string, number>;
@@ -119,22 +126,13 @@ export default function PersonasPage() {
       {editing && <PersonaFormDialog initialData={editing} onClose={() => setEditing(null)} />}
 
       {/* Metrics */}
-      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-4">
+      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-4">
         <MetricCard title="Total" value={counts.total || 0} icon={Users} />
         <MetricCard title="Miembros" value={counts["Miembro"] || 0} icon={Church} variant="default" />
         <MetricCard title="Visitantes" value={counts["Visitante"] || 0} icon={UserPlus} variant="info" />
-        <MetricCard title="Líderes" value={counts["Líder"] || 0} icon={Users} variant="accent" />
-        <MetricCard title="Servidores" value={counts["Servidor"] || 0} icon={Users} variant="success" />
-        <MetricCard title="CDP" value={counts["CDP"] || 0} icon={Users} variant="default" />
-        <MetricCard title="Discípulos" value={counts["Discípulo"] || 0} icon={Users} variant="info" />
-        <MetricCard title="Mentores" value={counts["Mentor"] || 0} icon={Users} variant="accent" />
+        <MetricCard title="Discípulos" value={counts["Discípulo"] || 0} icon={Users} variant="accent" />
         <MetricCard title="Líderes CDP" value={counts["Líder Casa de Paz"] || 0} icon={Users} variant="success" />
         <MetricCard title="Líderes Red" value={counts["Líder de Red"] || 0} icon={Users} variant="accent" />
-        <MetricCard title="Iglesia Virtual" value={counts["Iglesia Virtual"] || 0} icon={Users} variant="default" />
-        <MetricCard title="Est. Seminario" value={counts["Estudiante Seminario"] || 0} icon={Users} variant="info" />
-        <MetricCard title="Mtro. Seminario" value={counts["Maestro Seminario"] || 0} icon={Users} variant="accent" />
-        <MetricCard title="No Activos" value={counts["Miembro No Activo"] || 0} icon={Users} variant="default" />
-        <MetricCard title="Pastor Principal" value={counts["Pastor Principal"] || 0} icon={Users} variant="accent" />
       </div>
 
       {/* Filters */}
@@ -168,72 +166,68 @@ export default function PersonasPage() {
       {filtered.length === 0 ? (
         <div className="text-center py-12 text-muted-foreground">No se encontraron personas.</div>
       ) : (
-        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
-          {filtered.map((p: any) => (
-            <Card key={p.id} className="overflow-hidden hover:shadow-md transition-shadow group cursor-pointer" onClick={() => navigate(`/personas/${p.id}`)}>
-              <CardContent className="p-0">
-                {/* Header stripe */}
-                <div className={`h-2 ${tipoColor[p.tipo_persona]?.includes("primary") ? "bg-primary" : tipoColor[p.tipo_persona]?.includes("info") ? "bg-info" : tipoColor[p.tipo_persona]?.includes("accent") ? "bg-accent" : "bg-success"}`} />
-                <div className="p-4 space-y-3">
-                  {/* Avatar + Name */}
-                  <div className="flex items-start gap-3">
-                    <Avatar className="h-12 w-12">
-                      <AvatarFallback className={`text-sm font-bold ${tipoColor[p.tipo_persona] || "bg-muted text-muted-foreground"}`}>
-                        {p.nombres?.[0]}{p.apellidos?.[0]}
-                      </AvatarFallback>
-                    </Avatar>
-                    <div className="flex-1 min-w-0">
-                      <p className="font-semibold text-foreground truncate">{p.nombres} {p.apellidos}</p>
-                      <div className="flex items-center gap-2 mt-1">
-                        <Badge variant="secondary" className={`text-[10px] ${tipoColor[p.tipo_persona] || ""}`}>{p.tipo_persona}</Badge>
-                        <StatusBadge status={p.estado_iglesia} />
+        <>
+          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+            {filtered.slice((page - 1) * pageSize, page * pageSize).map((p: any) => (
+              <Card key={p.id} className="overflow-hidden hover:shadow-md transition-shadow group cursor-pointer" onClick={() => navigate(`/personas/${p.id}`)}>
+                <CardContent className="p-0">
+                  <div className={`h-2 ${tipoColor[p.tipo_persona]?.includes("primary") ? "bg-primary" : tipoColor[p.tipo_persona]?.includes("info") ? "bg-info" : tipoColor[p.tipo_persona]?.includes("accent") ? "bg-accent" : "bg-success"}`} />
+                  <div className="p-4 space-y-3">
+                    <div className="flex items-start gap-3">
+                      <Avatar className="h-12 w-12">
+                        <AvatarFallback className={`text-sm font-bold ${tipoColor[p.tipo_persona] || "bg-muted text-muted-foreground"}`}>
+                          {p.nombres?.[0]}{p.apellidos?.[0]}
+                        </AvatarFallback>
+                      </Avatar>
+                      <div className="flex-1 min-w-0">
+                        <p className="font-semibold text-foreground truncate">{p.nombres} {p.apellidos}</p>
+                        <div className="flex items-center gap-2 mt-1">
+                          <Badge variant="secondary" className={`text-[10px] ${tipoColor[p.tipo_persona] || ""}`}>{p.tipo_persona}</Badge>
+                          <StatusBadge status={p.estado_iglesia} />
+                        </div>
+                      </div>
+                    </div>
+                    <div className="space-y-1.5 text-xs text-muted-foreground">
+                      {p.telefono && <div className="flex items-center gap-2"><Phone className="h-3 w-3" /> {p.telefono}</div>}
+                      {p.email && <div className="flex items-center gap-2 truncate"><Mail className="h-3 w-3 shrink-0" /> <span className="truncate">{p.email}</span></div>}
+                      {(p as any).grupos?.nombre && <div className="flex items-center gap-2"><Users className="h-3 w-3" /> {(p as any).grupos.nombre}</div>}
+                      {p.direccion && <div className="flex items-center gap-2 truncate"><MapPin className="h-3 w-3 shrink-0" /> <span className="truncate">{p.direccion}</span></div>}
+                      {p.fecha_nacimiento && <div className="flex items-center gap-2"><Calendar className="h-3 w-3" /> {format(parseISO(p.fecha_nacimiento), "dd MMM yyyy", { locale: es })}</div>}
+                    </div>
+                    <div className="flex items-center gap-1 pt-1 border-t opacity-0 group-hover:opacity-100 transition-opacity">
+                      <Button variant="ghost" size="sm" className="h-7 text-xs gap-1" onClick={(e) => { e.stopPropagation(); setEditing({ ...p }); }}>
+                        <Pencil className="h-3 w-3" /> Editar
+                      </Button>
+                      <div className="ml-auto" onClick={e => e.stopPropagation()}>
+                        <DeleteConfirmDialog onConfirm={() => handleDelete(p.id)} title="¿Eliminar persona?" description={`Se eliminará a ${p.nombres} ${p.apellidos} permanentemente.`} />
                       </div>
                     </div>
                   </div>
+                </CardContent>
+              </Card>
+            ))}
+          </div>
 
-                  {/* Details */}
-                  <div className="space-y-1.5 text-xs text-muted-foreground">
-                    {p.telefono && (
-                      <div className="flex items-center gap-2">
-                        <Phone className="h-3 w-3" /> {p.telefono}
-                      </div>
-                    )}
-                    {p.email && (
-                      <div className="flex items-center gap-2 truncate">
-                        <Mail className="h-3 w-3 shrink-0" /> <span className="truncate">{p.email}</span>
-                      </div>
-                    )}
-                    {(p as any).grupos?.nombre && (
-                      <div className="flex items-center gap-2">
-                        <Users className="h-3 w-3" /> {(p as any).grupos.nombre}
-                      </div>
-                    )}
-                    {p.direccion && (
-                      <div className="flex items-center gap-2 truncate">
-                        <MapPin className="h-3 w-3 shrink-0" /> <span className="truncate">{p.direccion}</span>
-                      </div>
-                    )}
-                    {p.fecha_nacimiento && (
-                      <div className="flex items-center gap-2">
-                        <Calendar className="h-3 w-3" /> {format(parseISO(p.fecha_nacimiento), "dd MMM yyyy", { locale: es })}
-                      </div>
-                    )}
-                  </div>
-
-                  {/* Actions */}
-                  <div className="flex items-center gap-1 pt-1 border-t opacity-0 group-hover:opacity-100 transition-opacity">
-                    <Button variant="ghost" size="sm" className="h-7 text-xs gap-1" onClick={() => setEditing({ ...p })}>
-                      <Pencil className="h-3 w-3" /> Editar
-                    </Button>
-                    <div className="ml-auto">
-                      <DeleteConfirmDialog onConfirm={() => handleDelete(p.id)} title="¿Eliminar persona?" description={`Se eliminará a ${p.nombres} ${p.apellidos} permanentemente.`} />
-                    </div>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-          ))}
-        </div>
+          {/* Pagination */}
+          {filtered.length > pageSize && (
+            <div className="flex items-center justify-between pt-4">
+              <p className="text-sm text-muted-foreground">
+                {(page - 1) * pageSize + 1} - {Math.min(page * pageSize, filtered.length)} de {filtered.length} registros
+              </p>
+              <div className="flex items-center gap-2">
+                <Button variant="outline" size="sm" disabled={page === 1} onClick={() => setPage(p => p - 1)}>
+                  <ChevronLeft className="h-4 w-4" /> Anterior
+                </Button>
+                <span className="text-sm font-medium">
+                  Página {page} de {Math.ceil(filtered.length / pageSize)}
+                </span>
+                <Button variant="outline" size="sm" disabled={page >= Math.ceil(filtered.length / pageSize)} onClick={() => setPage(p => p + 1)}>
+                  Siguiente <ChevronRight className="h-4 w-4" />
+                </Button>
+              </div>
+            </div>
+          )}
+        </>
       )}
     </div>
   );

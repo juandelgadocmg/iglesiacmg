@@ -1,5 +1,6 @@
-import { BookOpen, ExternalLink, Pencil } from "lucide-react";
+import { BookOpen, ExternalLink, Pencil, Download } from "lucide-react";
 import { useNavigate } from "react-router-dom";
+import jsPDF from "jspdf";
 
 interface Props {
   titulo?: string | null;
@@ -12,13 +13,55 @@ export default function DashboardTemaSemana({ titulo, descripcion, url }: Props)
 
   if (!titulo && !descripcion) return null;
 
+  const handleDownloadPDF = () => {
+    const doc = new jsPDF();
+    doc.setFillColor(13, 148, 136); // teal-600
+    doc.rect(0, 0, 210, 60, "F");
+
+    doc.setTextColor(255, 255, 255);
+    doc.setFontSize(24);
+    doc.text("Tema de la Semana", 105, 30, { align: "center" });
+
+    doc.setFontSize(12);
+    doc.text("Centro Mundial de Gloria", 105, 45, { align: "center" });
+
+    doc.setTextColor(30, 30, 30);
+    doc.setFontSize(18);
+    doc.text(titulo || "Sin título", 105, 80, { align: "center" });
+
+    if (descripcion) {
+      doc.setFontSize(14);
+      doc.setTextColor(80, 80, 80);
+      const lines = doc.splitTextToSize(descripcion, 170);
+      doc.text(lines, 105, 95, { align: "center" });
+    }
+
+    if (url) {
+      doc.setFontSize(10);
+      doc.setTextColor(13, 148, 136);
+      doc.textWithLink("Ver recurso en línea", 105, 130, { align: "center", url });
+    }
+
+    doc.save("tema-de-la-semana.pdf");
+  };
+
   return (
-    <div className="rounded-xl overflow-hidden border shadow-sm">
-      <div className="bg-warning text-warning-foreground px-6 py-5 text-center">
-        <BookOpen className="h-8 w-8 mx-auto mb-2" />
+    <div className="rounded-xl overflow-hidden border shadow-sm bg-teal-600 text-white">
+      <div className="px-6 py-6 text-center">
+        <div className="mx-auto mb-3 w-14 h-14 rounded-full bg-white/20 flex items-center justify-center">
+          <BookOpen className="h-7 w-7" />
+        </div>
         <h3 className="font-bold text-lg">Tema de la semana</h3>
-        <p className="text-sm mt-1 uppercase tracking-wide font-medium opacity-90">{descripcion || titulo}</p>
-        <div className="flex items-center justify-center gap-2 mt-3">
+        <p className="text-sm mt-2 uppercase tracking-wide font-semibold opacity-95">
+          {descripcion || titulo}
+        </p>
+        <div className="flex items-center justify-center gap-2 mt-4 flex-wrap">
+          <button
+            onClick={handleDownloadPDF}
+            className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold rounded-lg bg-white/20 hover:bg-white/30 transition-colors"
+          >
+            <Download className="h-3.5 w-3.5" /> Descargar PDF
+          </button>
           {url && (
             <a
               href={url}
