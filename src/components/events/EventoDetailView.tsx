@@ -31,6 +31,8 @@ const CLASIFICACIONES = ["Ujier", "Predicador", "Músico", "Bienvenida", "Logís
 
 export default function EventoDetailView({ evento, onBack }: Props) {
   const updateEvento = useUpdateEvento();
+  const updateInscripcion = useUpdateInscripcion();
+  const queryClient = useQueryClient();
   const { data: categorias, isLoading: loadingCats } = useEventoCategorias(evento.id);
   const createCat = useCreateEventoCategoria();
   const deleteCat = useDeleteEventoCategoria();
