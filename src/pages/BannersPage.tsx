@@ -22,7 +22,7 @@ export default function BannersPage() {
   const [titulo, setTitulo] = useState("");
   const [file, setFile] = useState<File | null>(null);
   const [uploading, setUploading] = useState(false);
-  const [deleteId, setDeleteId] = useState<string | null>(null);
+  
 
   const handleCreate = async () => {
     if (!titulo || !file) { toast.error("Completa todos los campos"); return; }
