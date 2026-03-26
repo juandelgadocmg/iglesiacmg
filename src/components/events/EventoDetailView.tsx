@@ -722,6 +722,37 @@ export default function EventoDetailView({ evento, onBack }: Props) {
           </div>
         </TabsContent>
       </Tabs>
+
+      {/* CANCEL DIALOG */}
+      <Dialog open={cancelDialogOpen} onOpenChange={setCancelDialogOpen}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2 text-destructive">
+              <Ban className="h-5 w-5" /> Cancelar Actividad
+            </DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4">
+            <p className="text-sm text-muted-foreground">
+              Por medio de este formulario podrás cancelar la actividad <strong>"{evento.nombre}"</strong>. Esta acción no se puede deshacer.
+            </p>
+            <div className="space-y-2">
+              <Label>Ingresa los motivos por los cuales se cancelará la actividad *</Label>
+              <Textarea
+                rows={4}
+                value={motivoCancelacion}
+                onChange={e => setMotivoCancelacion(e.target.value)}
+                placeholder="Describe el motivo de la cancelación..."
+              />
+            </div>
+          </div>
+          <DialogFooter className="gap-2">
+            <Button variant="outline" onClick={() => setCancelDialogOpen(false)}>Salir</Button>
+            <Button variant="destructive" onClick={handleCancelarActividad} disabled={cancelando} className="gap-2">
+              <Ban className="h-4 w-4" /> Cancelar Actividad
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
