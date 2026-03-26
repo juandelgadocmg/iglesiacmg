@@ -697,6 +697,7 @@ export type Database = {
           fecha_inicio: string
           id: string
           lugar: string | null
+          motivo_cancelacion: string | null
           nombre: string
           tipo: string | null
           updated_at: string
@@ -712,6 +713,7 @@ export type Database = {
           fecha_inicio: string
           id?: string
           lugar?: string | null
+          motivo_cancelacion?: string | null
           nombre: string
           tipo?: string | null
           updated_at?: string
@@ -727,6 +729,7 @@ export type Database = {
           fecha_inicio?: string
           id?: string
           lugar?: string | null
+          motivo_cancelacion?: string | null
           nombre?: string
           tipo?: string | null
           updated_at?: string

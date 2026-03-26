@@ -1,0 +1,1 @@
+ALTER TABLE public.eventos ADD COLUMN IF NOT EXISTS motivo_cancelacion text DEFAULT NULL;
