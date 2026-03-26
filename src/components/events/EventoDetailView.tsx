@@ -5,19 +5,22 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { ArrowLeft, Save, X, Plus, Trash2, Search, Users, UserPlus, FileText } from "lucide-react";
-import { useUpdateEvento } from "@/hooks/useDatabase";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
+import { ArrowLeft, Save, X, Plus, Trash2, Search, Users, UserPlus, FileText, Ban, CheckCircle2 } from "lucide-react";
+import { useUpdateEvento, useUpdateInscripcion } from "@/hooks/useDatabase";
 import {
   useEventoCategorias, useCreateEventoCategoria, useDeleteEventoCategoria,
   useEventoEncargados, useCreateEventoEncargado, useDeleteEventoEncargado,
   useEventoServidores, useCreateEventoServidor, useDeleteEventoServidor,
 } from "@/hooks/useEventosExtras";
 import { usePersonas, useInscripciones } from "@/hooks/useDatabase";
+import { useQueryClient } from "@tanstack/react-query";
 import { Skeleton } from "@/components/ui/skeleton";
 import { toast } from "sonner";
 import { Badge } from "@/components/ui/badge";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import DeleteConfirmDialog from "@/components/shared/DeleteConfirmDialog";
+import QrEventoScanner from "@/components/attendance/QrEventoScanner";
 
 interface Props {
   evento: any;
