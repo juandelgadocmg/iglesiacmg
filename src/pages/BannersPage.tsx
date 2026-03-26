@@ -92,9 +92,10 @@ export default function BannersPage() {
                 <Button size="icon" variant="ghost" onClick={() => updateStatus.mutate({ id: b.id, estado: b.estado === "Activo" ? "Inactivo" : "Activo" })}>
                   {b.estado === "Activo" ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
                 </Button>
-                <Button size="icon" variant="ghost" className="text-destructive" onClick={() => setDeleteId(b.id)}>
-                  <Trash2 className="h-4 w-4" />
-                </Button>
+                <DeleteConfirmDialog
+                  onConfirm={async () => { try { await deleteBanner.mutateAsync(b.id); toast.success("Banner eliminado"); } catch { toast.error("Error"); } }}
+                  trigger={<Button size="icon" variant="ghost" className="text-destructive"><Trash2 className="h-4 w-4" /></Button>}
+                />
               </div>
             </CardContent>
           </Card>
