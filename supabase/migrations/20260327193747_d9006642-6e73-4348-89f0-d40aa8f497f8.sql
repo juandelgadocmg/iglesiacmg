@@ -1,0 +1,1 @@
+ALTER TABLE public.equipos_ministeriales ADD COLUMN lider2_id uuid REFERENCES public.personas(id) ON DELETE SET NULL DEFAULT NULL;

@@ -21,12 +21,13 @@ interface EquipoFormData {
   tipo: string;
   red: string;
   lider_id: string;
+  lider2_id: string;
   parent_id: string;
   descripcion: string;
 }
 
 const emptyForm = (): EquipoFormData => ({
-  nombre: "", tipo: "equipo", red: "", lider_id: "", parent_id: "", descripcion: "",
+  nombre: "", tipo: "equipo", red: "", lider_id: "", lider2_id: "", parent_id: "", descripcion: "",
 });
 
 interface Props {
@@ -97,6 +98,7 @@ export default function GrupoHierarchyView({ onSelectGrupo }: Props) {
       tipo: equipo.tipo,
       red: equipo.red || "",
       lider_id: equipo.lider_id || "",
+      lider2_id: equipo.lider2_id || "",
       parent_id: equipo.parent_id || "",
       descripcion: equipo.descripcion || "",
     });
@@ -109,6 +111,7 @@ export default function GrupoHierarchyView({ onSelectGrupo }: Props) {
       const payload: any = {
         nombre: form.nombre, tipo: form.tipo,
         red: form.red || null, lider_id: form.lider_id || null,
+        lider2_id: (form.lider2_id && form.lider2_id !== "none") ? form.lider2_id : null,
         parent_id: form.parent_id || null, descripcion: form.descripcion || null,
       };
       if (editingId) {
@@ -251,8 +254,9 @@ export default function GrupoHierarchyView({ onSelectGrupo }: Props) {
                     <div className="flex-1 text-left">
                       <p className="text-sm font-semibold">Red {red.nombre}</p>
                       <p className="text-xs text-muted-foreground">
-                        {red.liderRed?.lider ? `${red.liderRed.lider.nombres} ${red.liderRed.lider.apellidos} · ` : "Sin líder · "}
-                        {red.grupos.length} casas de paz · {red.totalMiembros} asistentes
+                        {red.liderRed?.lider ? `${red.liderRed.lider.nombres} ${red.liderRed.lider.apellidos}` : "Sin líder"}
+                        {red.liderRed?.lider2 ? ` y ${red.liderRed.lider2.nombres} ${red.liderRed.lider2.apellidos}` : ""}
+                        {` · ${red.grupos.length} casas de paz · ${red.totalMiembros} asistentes`}
                       </p>
                     </div>
                     <Badge variant="outline" className="text-xs">{red.grupos.length}</Badge>
@@ -388,7 +392,7 @@ export default function GrupoHierarchyView({ onSelectGrupo }: Props) {
               </div>
             )}
             <div className="space-y-1.5">
-              <label className="text-sm font-medium">Líder</label>
+              <label className="text-sm font-medium">Líder 1</label>
               <Select value={form.lider_id} onValueChange={(v) => setForm({ ...form, lider_id: v })}>
                 <SelectTrigger><SelectValue placeholder="Seleccionar líder" /></SelectTrigger>
                 <SelectContent>
@@ -398,6 +402,20 @@ export default function GrupoHierarchyView({ onSelectGrupo }: Props) {
                 </SelectContent>
               </Select>
             </div>
+            {form.tipo === "lider_red" && (
+              <div className="space-y-1.5">
+                <label className="text-sm font-medium">Líder 2</label>
+                <Select value={form.lider2_id} onValueChange={(v) => setForm({ ...form, lider2_id: v })}>
+                  <SelectTrigger><SelectValue placeholder="Seleccionar segundo líder (opcional)" /></SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="none">— Sin segundo líder —</SelectItem>
+                    {(personas || []).filter(p => p.id !== form.lider_id).map(p => (
+                      <SelectItem key={p.id} value={p.id}>{p.nombres} {p.apellidos}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            )}
             <div className="space-y-1.5">
               <label className="text-sm font-medium">Descripción</label>
               <Textarea value={form.descripcion} onChange={(e) => setForm({ ...form, descripcion: e.target.value })} rows={2} />

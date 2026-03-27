@@ -1484,7 +1484,7 @@ function PeriodoDetailView({ escuela, periodo, onBackToPeriodos }: any) {
                     </div>
 
                     <div className="flex gap-1.5 pt-1">
-                      {(m as any).estado !== "Finalizada" && (
+                      {(m as any).estado !== "Finalizada" ? (
                         <Button size="sm" variant="outline" className="h-7 text-[10px] flex-1 gap-1"
                           onClick={async () => {
                             if (!confirm(`¿Finalizar la materia "${m.nombre}"?`)) return;
@@ -1494,6 +1494,17 @@ function PeriodoDetailView({ escuela, periodo, onBackToPeriodos }: any) {
                             } catch { toast.error("Error"); }
                           }}>
                           <Lock className="h-3 w-3" /> Finalizar
+                        </Button>
+                      ) : (
+                        <Button size="sm" variant="outline" className="h-7 text-[10px] flex-1 gap-1 text-success border-success/30 hover:bg-success/10"
+                          onClick={async () => {
+                            if (!confirm(`¿Reabrir la materia "${m.nombre}" para corregir calificaciones?`)) return;
+                            try {
+                              await updateMateria.mutateAsync({ id: m.id, estado: "En Curso" });
+                              toast.success("Materia reabierta");
+                            } catch { toast.error("Error"); }
+                          }}>
+                          <Unlock className="h-3 w-3" /> Reabrir
                         </Button>
                       )}
                       <DeleteConfirmDialog title="Eliminar materia" description={`¿Eliminar "${m.nombre}"?`} onConfirm={() => deleteMateria.mutateAsync(m.id)} />

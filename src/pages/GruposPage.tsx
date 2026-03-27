@@ -9,7 +9,8 @@ import GrupoPerfilView from "@/components/groups/GrupoPerfilView";
 import GrupoHierarchyView from "@/components/groups/GrupoHierarchyView";
 import PlanificacionGrupoFormDialog from "@/components/forms/PlanificacionGrupoFormDialog";
 import { usePlanificaciones, useDeletePlanificacion } from "@/hooks/usePlanificaciones";
-import { Users, Pencil, Plus, ClipboardList, Network, DollarSign, TrendingUp, BarChart3, FileText, Trash2 } from "lucide-react";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Users, Pencil, Plus, ClipboardList, Network, DollarSign, TrendingUp, BarChart3, FileText, Trash2, Eye } from "lucide-react";
 import { useGrupos, useDeleteGrupo } from "@/hooks/useDatabase";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -89,6 +90,7 @@ export default function GruposPage() {
   const [selectedGrupoId, setSelectedGrupoId] = useState<string | null>(null);
   const { data: planificaciones } = usePlanificaciones();
   const deletePlan = useDeletePlanificacion();
+  const [viewingPlan, setViewingPlan] = useState<any>(null);
 
   if (isLoading) {
     return (
@@ -250,16 +252,21 @@ export default function GruposPage() {
             {planificaciones && planificaciones.length > 0 ? (
               <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
                 {planificaciones.map((p: any) => (
-                  <div key={p.id} className="rounded-xl border bg-card p-4 space-y-2">
+                  <div key={p.id} className="rounded-xl border bg-card p-4 space-y-2 cursor-pointer hover:border-primary/40 transition-colors" onClick={() => setViewingPlan(p)}>
                     <div className="flex items-start justify-between">
                       <div>
                         <p className="font-semibold text-sm">{p.lider_nombre}</p>
                         <p className="text-xs text-muted-foreground">Red: {p.red || "—"} · {p.casa_de_paz || "—"}</p>
                       </div>
-                      <DeleteConfirmDialog
-                        onConfirm={async () => { try { await deletePlan.mutateAsync(p.id); toast.success("Eliminada"); } catch { toast.error("Error"); } }}
-                        trigger={<Button size="icon" variant="ghost" className="h-7 w-7 text-destructive"><Trash2 className="h-3.5 w-3.5" /></Button>}
-                      />
+                      <div className="flex items-center gap-1" onClick={e => e.stopPropagation()}>
+                        <Button size="icon" variant="ghost" className="h-7 w-7" onClick={() => setViewingPlan(p)}>
+                          <Eye className="h-3.5 w-3.5" />
+                        </Button>
+                        <DeleteConfirmDialog
+                          onConfirm={async () => { try { await deletePlan.mutateAsync(p.id); toast.success("Eliminada"); } catch { toast.error("Error"); } }}
+                          trigger={<Button size="icon" variant="ghost" className="h-7 w-7 text-destructive"><Trash2 className="h-3.5 w-3.5" /></Button>}
+                        />
+                      </div>
                     </div>
                     <p className="text-[10px] text-muted-foreground">{new Date(p.created_at).toLocaleDateString()}</p>
                     <div className="text-xs space-y-0.5">
@@ -281,6 +288,83 @@ export default function GruposPage() {
 
       <ReporteGrupoFormDialog open={showReportForm} onOpenChange={setShowReportForm} />
       <PlanificacionGrupoFormDialog open={showPlanForm} onOpenChange={setShowPlanForm} />
+
+      {/* Detail view dialog for planificación */}
+      <Dialog open={!!viewingPlan} onOpenChange={(v) => { if (!v) setViewingPlan(null); }}>
+        <DialogContent className="max-w-lg max-h-[80vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>Detalle de Planificación</DialogTitle>
+          </DialogHeader>
+          {viewingPlan && (
+            <div className="space-y-4 text-sm">
+              <div className="grid grid-cols-2 gap-3">
+                <div><span className="text-muted-foreground text-xs">Líder</span><p className="font-medium">{viewingPlan.lider_nombre}</p></div>
+                <div><span className="text-muted-foreground text-xs">Red</span><p className="font-medium">{viewingPlan.red || "—"}</p></div>
+                <div><span className="text-muted-foreground text-xs">Casa de Paz</span><p className="font-medium">{viewingPlan.casa_de_paz || "—"}</p></div>
+                <div><span className="text-muted-foreground text-xs">Personas invitadas</span><p className="font-medium">{viewingPlan.personas_invitadas || 0}</p></div>
+                <div><span className="text-muted-foreground text-xs">Fecha ayuno</span><p className="font-medium">{viewingPlan.fecha_ayuno || "—"}</p></div>
+                <div><span className="text-muted-foreground text-xs">Fecha evangelización</span><p className="font-medium">{viewingPlan.fecha_evangelizacion || "—"}</p></div>
+              </div>
+
+              <div className="border-t pt-3">
+                <h4 className="font-semibold text-xs mb-2 text-muted-foreground uppercase tracking-wider">Evaluación Equipo</h4>
+                {viewingPlan.evaluacion_equipo && Object.keys(viewingPlan.evaluacion_equipo).length > 0 ? (
+                  <div className="space-y-1">
+                    {Object.entries(viewingPlan.evaluacion_equipo as Record<string, boolean>).map(([key, val]) => (
+                      <div key={key} className="flex items-center justify-between text-xs py-1 border-b border-muted last:border-0">
+                        <span>{key}</span>
+                        <span className={val ? "text-success font-semibold" : "text-muted-foreground"}>
+                          {val ? "✓ Sí" : "No"}
+                        </span>
+                      </div>
+                    ))}
+                  </div>
+                ) : <p className="text-xs text-muted-foreground">Sin evaluación registrada</p>}
+              </div>
+
+              <div className="border-t pt-3">
+                <h4 className="font-semibold text-xs mb-2 text-muted-foreground uppercase tracking-wider">Responsables</h4>
+                <div className="grid grid-cols-2 gap-2 text-xs">
+                  {[
+                    ["Invitación", viewingPlan.responsable_invitacion],
+                    ["Recordar", viewingPlan.responsable_recordar],
+                    ["Oración", viewingPlan.responsable_oracion],
+                    ["Adoración", viewingPlan.responsable_adoracion],
+                    ["Dinámicas", viewingPlan.responsable_dinamicas],
+                    ["Predicación", viewingPlan.responsable_predicacion],
+                    ["Testimonios", viewingPlan.responsable_testimonios],
+                    ["Ayudas", viewingPlan.responsable_ayudas],
+                    ["Datos", viewingPlan.responsable_datos],
+                    ["Consolidación", viewingPlan.responsable_consolidacion],
+                    ["Seguimiento", viewingPlan.responsable_seguimiento],
+                  ].map(([label, value]) => (
+                    <div key={label as string}>
+                      <span className="text-muted-foreground">{label}</span>
+                      <p className="font-medium">{(value as string) || "—"}</p>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              {(viewingPlan.medios_invitacion?.length > 0 || viewingPlan.medios_recordar?.length > 0) && (
+                <div className="border-t pt-3">
+                  <h4 className="font-semibold text-xs mb-2 text-muted-foreground uppercase tracking-wider">Medios</h4>
+                  <div className="grid grid-cols-2 gap-2 text-xs">
+                    <div>
+                      <span className="text-muted-foreground">Invitación</span>
+                      <p className="font-medium">{viewingPlan.medios_invitacion?.join(", ") || "—"}</p>
+                    </div>
+                    <div>
+                      <span className="text-muted-foreground">Recordar</span>
+                      <p className="font-medium">{viewingPlan.medios_recordar?.join(", ") || "—"}</p>
+                    </div>
+                  </div>
+                </div>
+              )}
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
