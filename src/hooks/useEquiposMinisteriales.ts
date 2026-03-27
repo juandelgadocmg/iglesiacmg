@@ -7,12 +7,14 @@ export interface EquipoMinisterial {
   tipo: string;
   red: string | null;
   lider_id: string | null;
+  lider2_id: string | null;
   parent_id: string | null;
   descripcion: string | null;
   estado: string;
   created_at: string;
   updated_at: string;
   lider?: { nombres: string; apellidos: string; foto_url: string | null } | null;
+  lider2?: { nombres: string; apellidos: string; foto_url: string | null } | null;
   children?: EquipoMinisterial[];
 }
 
@@ -22,12 +24,13 @@ export function useEquiposMinisteriales() {
     queryFn: async () => {
       const { data, error } = await supabase
         .from("equipos_ministeriales" as any)
-        .select("*, personas:lider_id(nombres, apellidos, foto_url)")
+        .select("*, personas:lider_id(nombres, apellidos, foto_url), lider2:lider2_id(nombres, apellidos, foto_url)")
         .order("created_at", { ascending: true }) as any;
       if (error) throw error;
       return (data || []).map((d: any) => ({
         ...d,
         lider: d.personas || null,
+        lider2: d.lider2 || null,
       })) as EquipoMinisterial[];
     },
   });

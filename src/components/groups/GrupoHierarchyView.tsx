@@ -254,8 +254,9 @@ export default function GrupoHierarchyView({ onSelectGrupo }: Props) {
                     <div className="flex-1 text-left">
                       <p className="text-sm font-semibold">Red {red.nombre}</p>
                       <p className="text-xs text-muted-foreground">
-                        {red.liderRed?.lider ? `${red.liderRed.lider.nombres} ${red.liderRed.lider.apellidos} · ` : "Sin líder · "}
-                        {red.grupos.length} casas de paz · {red.totalMiembros} asistentes
+                        {red.liderRed?.lider ? `${red.liderRed.lider.nombres} ${red.liderRed.lider.apellidos}` : "Sin líder"}
+                        {red.liderRed?.lider2 ? ` y ${red.liderRed.lider2.nombres} ${red.liderRed.lider2.apellidos}` : ""}
+                        {` · ${red.grupos.length} casas de paz · ${red.totalMiembros} asistentes`}
                       </p>
                     </div>
                     <Badge variant="outline" className="text-xs">{red.grupos.length}</Badge>
