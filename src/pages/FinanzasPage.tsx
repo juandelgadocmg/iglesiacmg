@@ -118,18 +118,18 @@ export default function FinanzasPage() {
       {editing && <FinanzaFormDialog initialData={editing} onClose={() => setEditing(null)} />}
 
       {/* Summary Cards */}
-      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-6">
-        <div className="bg-card rounded-xl border p-5">
-          <p className="text-xs font-medium text-muted-foreground mb-1">Total Ingresos</p>
-          <p className="text-2xl font-bold text-emerald-600">{fmt(ingresos)}</p>
+      <div className="grid grid-cols-3 gap-2 sm:gap-4 mb-6">
+        <div className="bg-card rounded-xl border p-3 sm:p-5">
+          <p className="text-[10px] sm:text-xs font-medium text-muted-foreground mb-1">Ingresos</p>
+          <p className="text-base sm:text-2xl font-bold text-emerald-600">{fmt(ingresos)}</p>
         </div>
-        <div className="bg-card rounded-xl border p-5">
-          <p className="text-xs font-medium text-muted-foreground mb-1">Total de egresos</p>
-          <p className="text-2xl font-bold text-rose-600">{fmt(gastos)}</p>
+        <div className="bg-card rounded-xl border p-3 sm:p-5">
+          <p className="text-[10px] sm:text-xs font-medium text-muted-foreground mb-1">Egresos</p>
+          <p className="text-base sm:text-2xl font-bold text-rose-600">{fmt(gastos)}</p>
         </div>
-        <div className="bg-card rounded-xl border p-5">
-          <p className="text-xs font-medium text-muted-foreground mb-1">Saldo disponible</p>
-          <p className="text-2xl font-bold text-foreground">{fmt(saldo)}</p>
+        <div className="bg-card rounded-xl border p-3 sm:p-5">
+          <p className="text-[10px] sm:text-xs font-medium text-muted-foreground mb-1">Saldo</p>
+          <p className="text-base sm:text-2xl font-bold text-foreground">{fmt(saldo)}</p>
         </div>
       </div>
 
