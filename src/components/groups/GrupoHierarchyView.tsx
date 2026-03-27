@@ -98,6 +98,7 @@ export default function GrupoHierarchyView({ onSelectGrupo }: Props) {
       tipo: equipo.tipo,
       red: equipo.red || "",
       lider_id: equipo.lider_id || "",
+      lider2_id: equipo.lider2_id || "",
       parent_id: equipo.parent_id || "",
       descripcion: equipo.descripcion || "",
     });
