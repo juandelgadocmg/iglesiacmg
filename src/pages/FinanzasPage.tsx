@@ -348,28 +348,28 @@ export default function FinanzasPage() {
         {/* TAB CATEGORIAS */}
         <TabsContent value="categorias">
           <div className="space-y-4">
-            <div className="flex flex-wrap items-end gap-3">
-              <div className="space-y-1">
+            <div className="flex flex-col sm:flex-row flex-wrap items-start sm:items-end gap-3">
+              <div className="space-y-1 w-full sm:w-auto">
                 <Label className="text-xs">Nombre</Label>
-                <Input value={newCatName} onChange={e => setNewCatName(e.target.value)} placeholder="Nombre de la categoría" className="w-56" />
+                <Input value={newCatName} onChange={e => setNewCatName(e.target.value)} placeholder="Nombre de la categoría" className="w-full sm:w-56" />
               </div>
-              <div className="space-y-1">
+              <div className="space-y-1 w-full sm:w-auto">
                 <Label className="text-xs">Tipo</Label>
                 <Select value={newCatTipo} onValueChange={v => setNewCatTipo(v as any)}>
-                  <SelectTrigger className="w-40"><SelectValue /></SelectTrigger>
+                  <SelectTrigger className="w-full sm:w-40"><SelectValue /></SelectTrigger>
                   <SelectContent>
                     <SelectItem value="Ingreso">Ingreso</SelectItem>
                     <SelectItem value="Gasto">Gasto</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
-              <Button onClick={handleAddCat} disabled={createCat.isPending} className="gap-2">
+              <Button onClick={handleAddCat} disabled={createCat.isPending} className="gap-2 w-full sm:w-auto">
                 <Plus className="h-4 w-4" /> Agregar
               </Button>
               <div className="flex-1" />
-              <div className="relative">
+              <div className="relative w-full sm:w-auto">
                 <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                <Input placeholder="Buscar..." value={searchCat} onChange={e => setSearchCat(e.target.value)} className="pl-9 w-48" />
+                <Input placeholder="Buscar..." value={searchCat} onChange={e => setSearchCat(e.target.value)} className="pl-9 w-full sm:w-48" />
               </div>
             </div>
 
