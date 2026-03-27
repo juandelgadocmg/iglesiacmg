@@ -90,6 +90,7 @@ export default function GruposPage() {
   const [selectedGrupoId, setSelectedGrupoId] = useState<string | null>(null);
   const { data: planificaciones } = usePlanificaciones();
   const deletePlan = useDeletePlanificacion();
+  const [viewingPlan, setViewingPlan] = useState<any>(null);
 
   if (isLoading) {
     return (
