@@ -133,19 +133,19 @@ export default function GruposPage() {
 
       <Tabs defaultValue="lista" className="space-y-4">
         <TabsList className="flex-wrap h-auto gap-1">
-          <TabsTrigger value="lista">Grupos</TabsTrigger>
-          <TabsTrigger value="jerarquia">Jerarquía</TabsTrigger>
-          <TabsTrigger value="dashboard" className="gap-1.5">
-            <BarChart3 className="h-3.5 w-3.5" /> Dashboard Redes
+          <TabsTrigger value="lista" className="text-xs sm:text-sm">Grupos</TabsTrigger>
+          <TabsTrigger value="jerarquia" className="text-xs sm:text-sm">Jerarquía</TabsTrigger>
+          <TabsTrigger value="dashboard" className="gap-1 text-xs sm:text-sm">
+            <BarChart3 className="h-3.5 w-3.5" /> <span className="hidden sm:inline">Dashboard</span> Redes
           </TabsTrigger>
-          <TabsTrigger value="reporte" className="gap-1.5">
-            <ClipboardList className="h-3.5 w-3.5" /> Crear Reporte
+          <TabsTrigger value="reporte" className="gap-1 text-xs sm:text-sm">
+            <ClipboardList className="h-3.5 w-3.5" /> Reporte
           </TabsTrigger>
-          <TabsTrigger value="reportes">Listado Reportes</TabsTrigger>
-          <TabsTrigger value="mapa">Mapa</TabsTrigger>
-          <TabsTrigger value="organigrama">Organigrama</TabsTrigger>
-          <TabsTrigger value="planificacion" className="gap-1.5">
-            <FileText className="h-3.5 w-3.5" /> Planificación
+          <TabsTrigger value="reportes" className="text-xs sm:text-sm">Reportes</TabsTrigger>
+          <TabsTrigger value="mapa" className="text-xs sm:text-sm">Mapa</TabsTrigger>
+          <TabsTrigger value="organigrama" className="text-xs sm:text-sm">Organigrama</TabsTrigger>
+          <TabsTrigger value="planificacion" className="gap-1 text-xs sm:text-sm">
+            <FileText className="h-3.5 w-3.5" /> <span className="hidden sm:inline">Planificación</span><span className="sm:hidden">Plan</span>
           </TabsTrigger>
         </TabsList>
 
