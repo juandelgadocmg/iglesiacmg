@@ -252,16 +252,21 @@ export default function GruposPage() {
             {planificaciones && planificaciones.length > 0 ? (
               <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
                 {planificaciones.map((p: any) => (
-                  <div key={p.id} className="rounded-xl border bg-card p-4 space-y-2">
+                  <div key={p.id} className="rounded-xl border bg-card p-4 space-y-2 cursor-pointer hover:border-primary/40 transition-colors" onClick={() => setViewingPlan(p)}>
                     <div className="flex items-start justify-between">
                       <div>
                         <p className="font-semibold text-sm">{p.lider_nombre}</p>
                         <p className="text-xs text-muted-foreground">Red: {p.red || "—"} · {p.casa_de_paz || "—"}</p>
                       </div>
-                      <DeleteConfirmDialog
-                        onConfirm={async () => { try { await deletePlan.mutateAsync(p.id); toast.success("Eliminada"); } catch { toast.error("Error"); } }}
-                        trigger={<Button size="icon" variant="ghost" className="h-7 w-7 text-destructive"><Trash2 className="h-3.5 w-3.5" /></Button>}
-                      />
+                      <div className="flex items-center gap-1" onClick={e => e.stopPropagation()}>
+                        <Button size="icon" variant="ghost" className="h-7 w-7" onClick={() => setViewingPlan(p)}>
+                          <Eye className="h-3.5 w-3.5" />
+                        </Button>
+                        <DeleteConfirmDialog
+                          onConfirm={async () => { try { await deletePlan.mutateAsync(p.id); toast.success("Eliminada"); } catch { toast.error("Error"); } }}
+                          trigger={<Button size="icon" variant="ghost" className="h-7 w-7 text-destructive"><Trash2 className="h-3.5 w-3.5" /></Button>}
+                        />
+                      </div>
                     </div>
                     <p className="text-[10px] text-muted-foreground">{new Date(p.created_at).toLocaleDateString()}</p>
                     <div className="text-xs space-y-0.5">
