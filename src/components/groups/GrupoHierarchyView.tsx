@@ -21,12 +21,13 @@ interface EquipoFormData {
   tipo: string;
   red: string;
   lider_id: string;
+  lider2_id: string;
   parent_id: string;
   descripcion: string;
 }
 
 const emptyForm = (): EquipoFormData => ({
-  nombre: "", tipo: "equipo", red: "", lider_id: "", parent_id: "", descripcion: "",
+  nombre: "", tipo: "equipo", red: "", lider_id: "", lider2_id: "", parent_id: "", descripcion: "",
 });
 
 interface Props {
