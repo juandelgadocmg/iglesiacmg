@@ -118,38 +118,38 @@ export default function FinanzasPage() {
       {editing && <FinanzaFormDialog initialData={editing} onClose={() => setEditing(null)} />}
 
       {/* Summary Cards */}
-      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-6">
-        <div className="bg-card rounded-xl border p-5">
-          <p className="text-xs font-medium text-muted-foreground mb-1">Total Ingresos</p>
-          <p className="text-2xl font-bold text-emerald-600">{fmt(ingresos)}</p>
+      <div className="grid grid-cols-3 gap-2 sm:gap-4 mb-6">
+        <div className="bg-card rounded-xl border p-3 sm:p-5">
+          <p className="text-[10px] sm:text-xs font-medium text-muted-foreground mb-1">Ingresos</p>
+          <p className="text-base sm:text-2xl font-bold text-emerald-600">{fmt(ingresos)}</p>
         </div>
-        <div className="bg-card rounded-xl border p-5">
-          <p className="text-xs font-medium text-muted-foreground mb-1">Total de egresos</p>
-          <p className="text-2xl font-bold text-rose-600">{fmt(gastos)}</p>
+        <div className="bg-card rounded-xl border p-3 sm:p-5">
+          <p className="text-[10px] sm:text-xs font-medium text-muted-foreground mb-1">Egresos</p>
+          <p className="text-base sm:text-2xl font-bold text-rose-600">{fmt(gastos)}</p>
         </div>
-        <div className="bg-card rounded-xl border p-5">
-          <p className="text-xs font-medium text-muted-foreground mb-1">Saldo disponible</p>
-          <p className="text-2xl font-bold text-foreground">{fmt(saldo)}</p>
+        <div className="bg-card rounded-xl border p-3 sm:p-5">
+          <p className="text-[10px] sm:text-xs font-medium text-muted-foreground mb-1">Saldo</p>
+          <p className="text-base sm:text-2xl font-bold text-foreground">{fmt(saldo)}</p>
         </div>
       </div>
 
       <Tabs defaultValue="movimientos" className="space-y-4">
-        <TabsList className="flex flex-wrap gap-1">
-          <TabsTrigger value="movimientos">📋 Movimientos</TabsTrigger>
-          <TabsTrigger value="donaciones">💝 Donaciones</TabsTrigger>
-          <TabsTrigger value="reportes">📊 Reportes</TabsTrigger>
-          <TabsTrigger value="categorias">⚙️ Administrar categorías</TabsTrigger>
+        <TabsList className="flex flex-wrap gap-1 h-auto">
+          <TabsTrigger value="movimientos" className="text-xs sm:text-sm">📋 Movimientos</TabsTrigger>
+          <TabsTrigger value="donaciones" className="text-xs sm:text-sm">💝 Donaciones</TabsTrigger>
+          <TabsTrigger value="reportes" className="text-xs sm:text-sm">📊 Reportes</TabsTrigger>
+          <TabsTrigger value="categorias" className="text-xs sm:text-sm">⚙️ Categorías</TabsTrigger>
         </TabsList>
 
         {/* TAB MOVIMIENTOS */}
         <TabsContent value="movimientos">
           <div className="space-y-4">
-            <div className="flex flex-wrap items-center gap-3">
-              <div className="flex items-center gap-2 bg-muted/50 rounded-lg px-3 py-1.5 text-sm">
-                <span className="text-muted-foreground">📅 Periodo:</span>
-                <Input type="date" value={periodoDesde} onChange={e => setPeriodoDesde(e.target.value)} className="h-7 w-36 text-xs" />
-                <span className="text-muted-foreground">a</span>
-                <Input type="date" value={periodoHasta} onChange={e => setPeriodoHasta(e.target.value)} className="h-7 w-36 text-xs" />
+            <div className="flex flex-col sm:flex-row flex-wrap items-start sm:items-center gap-3">
+              <div className="flex flex-wrap items-center gap-2 bg-muted/50 rounded-lg px-3 py-1.5 text-sm w-full sm:w-auto">
+                <span className="text-muted-foreground text-xs">📅 Periodo:</span>
+                <Input type="date" value={periodoDesde} onChange={e => setPeriodoDesde(e.target.value)} className="h-7 w-full sm:w-36 text-xs" />
+                <span className="text-muted-foreground hidden sm:inline">a</span>
+                <Input type="date" value={periodoHasta} onChange={e => setPeriodoHasta(e.target.value)} className="h-7 w-full sm:w-36 text-xs" />
               </div>
               <div className="flex-1" />
               <FinanzaFormDialog />
@@ -258,18 +258,18 @@ export default function FinanzasPage() {
         {/* TAB REPORTES */}
         <TabsContent value="reportes">
           <div className="space-y-4">
-            <div className="flex flex-wrap items-center gap-3">
-              <div className="flex items-center gap-2 bg-muted/50 rounded-lg px-3 py-1.5 text-sm">
-                <span className="text-muted-foreground">📅 Periodo:</span>
-                <Input type="date" value={periodoDesde} onChange={e => setPeriodoDesde(e.target.value)} className="h-7 w-36 text-xs" />
-                <span className="text-muted-foreground">al</span>
-                <Input type="date" value={periodoHasta} onChange={e => setPeriodoHasta(e.target.value)} className="h-7 w-36 text-xs" />
+            <div className="flex flex-col sm:flex-row flex-wrap items-start sm:items-center gap-3">
+              <div className="flex flex-wrap items-center gap-2 bg-muted/50 rounded-lg px-3 py-1.5 text-sm w-full sm:w-auto">
+                <span className="text-muted-foreground text-xs">📅 Periodo:</span>
+                <Input type="date" value={periodoDesde} onChange={e => setPeriodoDesde(e.target.value)} className="h-7 w-full sm:w-36 text-xs" />
+                <span className="text-muted-foreground hidden sm:inline">al</span>
+                <Input type="date" value={periodoHasta} onChange={e => setPeriodoHasta(e.target.value)} className="h-7 w-full sm:w-36 text-xs" />
               </div>
               <div className="flex-1" />
               <Button variant="outline" size="sm">📄 Exportar a PDF</Button>
             </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 sm:gap-6">
               {/* Ingresos */}
               <div>
                 <h3 className="font-bold text-lg text-foreground mb-3">Ingresos</h3>
@@ -348,28 +348,28 @@ export default function FinanzasPage() {
         {/* TAB CATEGORIAS */}
         <TabsContent value="categorias">
           <div className="space-y-4">
-            <div className="flex flex-wrap items-end gap-3">
-              <div className="space-y-1">
+            <div className="flex flex-col sm:flex-row flex-wrap items-start sm:items-end gap-3">
+              <div className="space-y-1 w-full sm:w-auto">
                 <Label className="text-xs">Nombre</Label>
-                <Input value={newCatName} onChange={e => setNewCatName(e.target.value)} placeholder="Nombre de la categoría" className="w-56" />
+                <Input value={newCatName} onChange={e => setNewCatName(e.target.value)} placeholder="Nombre de la categoría" className="w-full sm:w-56" />
               </div>
-              <div className="space-y-1">
+              <div className="space-y-1 w-full sm:w-auto">
                 <Label className="text-xs">Tipo</Label>
                 <Select value={newCatTipo} onValueChange={v => setNewCatTipo(v as any)}>
-                  <SelectTrigger className="w-40"><SelectValue /></SelectTrigger>
+                  <SelectTrigger className="w-full sm:w-40"><SelectValue /></SelectTrigger>
                   <SelectContent>
                     <SelectItem value="Ingreso">Ingreso</SelectItem>
                     <SelectItem value="Gasto">Gasto</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
-              <Button onClick={handleAddCat} disabled={createCat.isPending} className="gap-2">
+              <Button onClick={handleAddCat} disabled={createCat.isPending} className="gap-2 w-full sm:w-auto">
                 <Plus className="h-4 w-4" /> Agregar
               </Button>
               <div className="flex-1" />
-              <div className="relative">
+              <div className="relative w-full sm:w-auto">
                 <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                <Input placeholder="Buscar..." value={searchCat} onChange={e => setSearchCat(e.target.value)} className="pl-9 w-48" />
+                <Input placeholder="Buscar..." value={searchCat} onChange={e => setSearchCat(e.target.value)} className="pl-9 w-full sm:w-48" />
               </div>
             </div>
 
