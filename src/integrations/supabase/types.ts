@@ -525,6 +525,7 @@ export type Database = {
           estado: string
           id: string
           lider_id: string | null
+          lider2_id: string | null
           nombre: string
           parent_id: string | null
           red: string | null
@@ -537,6 +538,7 @@ export type Database = {
           estado?: string
           id?: string
           lider_id?: string | null
+          lider2_id?: string | null
           nombre: string
           parent_id?: string | null
           red?: string | null
@@ -549,6 +551,7 @@ export type Database = {
           estado?: string
           id?: string
           lider_id?: string | null
+          lider2_id?: string | null
           nombre?: string
           parent_id?: string | null
           red?: string | null
@@ -559,6 +562,13 @@ export type Database = {
           {
             foreignKeyName: "equipos_ministeriales_lider_id_fkey"
             columns: ["lider_id"]
+            isOneToOne: false
+            referencedRelation: "personas"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "equipos_ministeriales_lider2_id_fkey"
+            columns: ["lider2_id"]
             isOneToOne: false
             referencedRelation: "personas"
             referencedColumns: ["id"]
