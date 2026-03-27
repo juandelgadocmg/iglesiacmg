@@ -288,6 +288,83 @@ export default function GruposPage() {
 
       <ReporteGrupoFormDialog open={showReportForm} onOpenChange={setShowReportForm} />
       <PlanificacionGrupoFormDialog open={showPlanForm} onOpenChange={setShowPlanForm} />
+
+      {/* Detail view dialog for planificación */}
+      <Dialog open={!!viewingPlan} onOpenChange={(v) => { if (!v) setViewingPlan(null); }}>
+        <DialogContent className="max-w-lg max-h-[80vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>Detalle de Planificación</DialogTitle>
+          </DialogHeader>
+          {viewingPlan && (
+            <div className="space-y-4 text-sm">
+              <div className="grid grid-cols-2 gap-3">
+                <div><span className="text-muted-foreground text-xs">Líder</span><p className="font-medium">{viewingPlan.lider_nombre}</p></div>
+                <div><span className="text-muted-foreground text-xs">Red</span><p className="font-medium">{viewingPlan.red || "—"}</p></div>
+                <div><span className="text-muted-foreground text-xs">Casa de Paz</span><p className="font-medium">{viewingPlan.casa_de_paz || "—"}</p></div>
+                <div><span className="text-muted-foreground text-xs">Personas invitadas</span><p className="font-medium">{viewingPlan.personas_invitadas || 0}</p></div>
+                <div><span className="text-muted-foreground text-xs">Fecha ayuno</span><p className="font-medium">{viewingPlan.fecha_ayuno || "—"}</p></div>
+                <div><span className="text-muted-foreground text-xs">Fecha evangelización</span><p className="font-medium">{viewingPlan.fecha_evangelizacion || "—"}</p></div>
+              </div>
+
+              <div className="border-t pt-3">
+                <h4 className="font-semibold text-xs mb-2 text-muted-foreground uppercase tracking-wider">Evaluación Equipo</h4>
+                {viewingPlan.evaluacion_equipo && Object.keys(viewingPlan.evaluacion_equipo).length > 0 ? (
+                  <div className="space-y-1">
+                    {Object.entries(viewingPlan.evaluacion_equipo as Record<string, boolean>).map(([key, val]) => (
+                      <div key={key} className="flex items-center justify-between text-xs py-1 border-b border-muted last:border-0">
+                        <span>{key}</span>
+                        <span className={val ? "text-success font-semibold" : "text-muted-foreground"}>
+                          {val ? "✓ Sí" : "No"}
+                        </span>
+                      </div>
+                    ))}
+                  </div>
+                ) : <p className="text-xs text-muted-foreground">Sin evaluación registrada</p>}
+              </div>
+
+              <div className="border-t pt-3">
+                <h4 className="font-semibold text-xs mb-2 text-muted-foreground uppercase tracking-wider">Responsables</h4>
+                <div className="grid grid-cols-2 gap-2 text-xs">
+                  {[
+                    ["Invitación", viewingPlan.responsable_invitacion],
+                    ["Recordar", viewingPlan.responsable_recordar],
+                    ["Oración", viewingPlan.responsable_oracion],
+                    ["Adoración", viewingPlan.responsable_adoracion],
+                    ["Dinámicas", viewingPlan.responsable_dinamicas],
+                    ["Predicación", viewingPlan.responsable_predicacion],
+                    ["Testimonios", viewingPlan.responsable_testimonios],
+                    ["Ayudas", viewingPlan.responsable_ayudas],
+                    ["Datos", viewingPlan.responsable_datos],
+                    ["Consolidación", viewingPlan.responsable_consolidacion],
+                    ["Seguimiento", viewingPlan.responsable_seguimiento],
+                  ].map(([label, value]) => (
+                    <div key={label as string}>
+                      <span className="text-muted-foreground">{label}</span>
+                      <p className="font-medium">{(value as string) || "—"}</p>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              {(viewingPlan.medios_invitacion?.length > 0 || viewingPlan.medios_recordar?.length > 0) && (
+                <div className="border-t pt-3">
+                  <h4 className="font-semibold text-xs mb-2 text-muted-foreground uppercase tracking-wider">Medios</h4>
+                  <div className="grid grid-cols-2 gap-2 text-xs">
+                    <div>
+                      <span className="text-muted-foreground">Invitación</span>
+                      <p className="font-medium">{viewingPlan.medios_invitacion?.join(", ") || "—"}</p>
+                    </div>
+                    <div>
+                      <span className="text-muted-foreground">Recordar</span>
+                      <p className="font-medium">{viewingPlan.medios_recordar?.join(", ") || "—"}</p>
+                    </div>
+                  </div>
+                </div>
+              )}
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
