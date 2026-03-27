@@ -4,7 +4,14 @@ import { cn } from "@/lib/utils";
 import { useAuth } from "@/hooks/useAuth";
 import { useUserRoles } from "@/hooks/useUserRoles";
 import { canAccess } from "@/lib/permissions";
+import { useIsMobile } from "@/hooks/use-mobile";
 import logo from "@/assets/logo.jpeg";
+import {
+  Sheet,
+  SheetContent,
+  SheetHeader,
+  SheetTitle,
+} from "@/components/ui/sheet";
 import {
   LayoutDashboard, Users, UsersRound, Church,
   DollarSign, CalendarDays, GraduationCap,
@@ -27,12 +34,18 @@ const menuItems = [
   { label: "Configuración", icon: Settings, path: "/configuracion" },
 ];
 
-export default function AppSidebar() {
+interface AppSidebarProps {
+  mobileOpen?: boolean;
+  onMobileClose?: () => void;
+}
+
+function SidebarContent({ onNavigate }: { onNavigate?: () => void }) {
   const [collapsed, setCollapsed] = useState(false);
   const location = useLocation();
   const navigate = useNavigate();
   const { signOut } = useAuth();
   const { roles } = useUserRoles();
+  const isMobile = useIsMobile();
 
   const visibleItems = menuItems.filter((item) => canAccess(roles, item.path));
 
@@ -41,16 +54,19 @@ export default function AppSidebar() {
     navigate("/login");
   };
 
+  const showCollapsed = !isMobile && collapsed;
+
   return (
-    <aside
+    <div
       className={cn(
-        "sidebar-gradient h-screen flex flex-col transition-all duration-300 sticky top-0 z-30",
-        collapsed ? "w-[68px]" : "w-[250px]"
+        "h-full flex flex-col",
+        !isMobile && "sidebar-gradient transition-all duration-300",
+        !isMobile && (showCollapsed ? "w-[68px]" : "w-[250px]")
       )}
     >
       <div className="flex items-center gap-3 px-4 py-5 border-b border-sidebar-border">
         <img src={logo} alt="CMG" className="w-9 h-9 rounded-lg object-cover" />
-        {!collapsed && (
+        {!showCollapsed && (
           <div className="flex flex-col">
             <span className="text-sm font-bold text-sidebar-primary-foreground leading-tight">CMG Admin</span>
             <span className="text-[10px] text-sidebar-foreground opacity-60">Centro Mundial de Gloria</span>
@@ -65,6 +81,7 @@ export default function AppSidebar() {
             <NavLink
               key={item.path}
               to={item.path}
+              onClick={onNavigate}
               className={cn(
                 "flex items-center gap-3 px-3 py-2.5 rounded-md text-[13px] font-medium transition-all duration-150",
                 isActive
@@ -73,28 +90,53 @@ export default function AppSidebar() {
               )}
             >
               <item.icon className={cn("h-[18px] w-[18px] shrink-0", isActive && "text-sidebar-primary")} />
-              {!collapsed && <span>{item.label}</span>}
+              {!showCollapsed && <span>{item.label}</span>}
             </NavLink>
           );
         })}
       </nav>
 
       <div className="border-t border-sidebar-border p-2">
-        <button
-          onClick={() => setCollapsed(!collapsed)}
-          className="flex items-center gap-3 px-3 py-2.5 rounded-md text-[13px] text-sidebar-foreground hover:bg-sidebar-accent w-full transition-colors"
-        >
-          {collapsed ? <ChevronRight className="h-4 w-4" /> : <ChevronLeft className="h-4 w-4" />}
-          {!collapsed && <span>Colapsar</span>}
-        </button>
+        {!isMobile && (
+          <button
+            onClick={() => setCollapsed(!collapsed)}
+            className="flex items-center gap-3 px-3 py-2.5 rounded-md text-[13px] text-sidebar-foreground hover:bg-sidebar-accent w-full transition-colors"
+          >
+            {showCollapsed ? <ChevronRight className="h-4 w-4" /> : <ChevronLeft className="h-4 w-4" />}
+            {!showCollapsed && <span>Colapsar</span>}
+          </button>
+        )}
         <button
           onClick={handleLogout}
           className="flex items-center gap-3 px-3 py-2.5 rounded-md text-[13px] text-sidebar-foreground hover:bg-sidebar-accent w-full transition-colors"
         >
           <LogOut className="h-4 w-4" />
-          {!collapsed && <span>Cerrar sesión</span>}
+          {!showCollapsed && <span>Cerrar sesión</span>}
         </button>
       </div>
+    </div>
+  );
+}
+
+export default function AppSidebar({ mobileOpen, onMobileClose }: AppSidebarProps) {
+  const isMobile = useIsMobile();
+
+  if (isMobile) {
+    return (
+      <Sheet open={mobileOpen} onOpenChange={(open) => !open && onMobileClose?.()}>
+        <SheetContent side="left" className="p-0 w-[280px] sidebar-gradient">
+          <SheetHeader className="sr-only">
+            <SheetTitle>Menú</SheetTitle>
+          </SheetHeader>
+          <SidebarContent onNavigate={onMobileClose} />
+        </SheetContent>
+      </Sheet>
+    );
+  }
+
+  return (
+    <aside className="h-screen sticky top-0 z-30">
+      <SidebarContent />
     </aside>
   );
 }

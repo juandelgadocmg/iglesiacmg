@@ -225,19 +225,19 @@ export default function PersonasPage() {
 
           {/* Pagination */}
           {filtered.length > pageSize && (
-            <div className="flex items-center justify-between pt-4">
-              <p className="text-sm text-muted-foreground">
-                {(page - 1) * pageSize + 1} - {Math.min(page * pageSize, filtered.length)} de {filtered.length} registros
+            <div className="flex items-center justify-between pt-4 flex-wrap gap-2">
+              <p className="text-xs md:text-sm text-muted-foreground">
+                {(page - 1) * pageSize + 1} - {Math.min(page * pageSize, filtered.length)} de {filtered.length}
               </p>
-              <div className="flex items-center gap-2">
-                <Button variant="outline" size="sm" disabled={page === 1} onClick={() => setPage(p => p - 1)}>
-                  <ChevronLeft className="h-4 w-4" /> Anterior
+              <div className="flex items-center gap-1 md:gap-2">
+                <Button variant="outline" size="sm" disabled={page === 1} onClick={() => setPage(p => p - 1)} className="h-8 px-2 md:px-3">
+                  <ChevronLeft className="h-4 w-4" /> <span className="hidden md:inline">Anterior</span>
                 </Button>
-                <span className="text-sm font-medium">
-                  Página {page} de {Math.ceil(filtered.length / pageSize)}
+                <span className="text-xs md:text-sm font-medium">
+                  {page}/{Math.ceil(filtered.length / pageSize)}
                 </span>
-                <Button variant="outline" size="sm" disabled={page >= Math.ceil(filtered.length / pageSize)} onClick={() => setPage(p => p + 1)}>
-                  Siguiente <ChevronRight className="h-4 w-4" />
+                <Button variant="outline" size="sm" disabled={page >= Math.ceil(filtered.length / pageSize)} onClick={() => setPage(p => p + 1)} className="h-8 px-2 md:px-3">
+                  <span className="hidden md:inline">Siguiente</span> <ChevronRight className="h-4 w-4" />
                 </Button>
               </div>
             </div>
