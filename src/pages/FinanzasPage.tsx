@@ -269,7 +269,7 @@ export default function FinanzasPage() {
               <Button variant="outline" size="sm">📄 Exportar a PDF</Button>
             </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 sm:gap-6">
               {/* Ingresos */}
               <div>
                 <h3 className="font-bold text-lg text-foreground mb-3">Ingresos</h3>

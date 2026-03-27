@@ -53,8 +53,8 @@ export default function EventosPage() {
       </PageHeader>
 
       {/* Event Type Legend */}
-      <div className="flex flex-wrap items-center gap-3 mb-4 bg-card rounded-lg border p-4">
-        <span className="text-sm font-medium text-muted-foreground">Tipos de evento:</span>
+      <div className="flex flex-wrap items-center gap-2 sm:gap-3 mb-4 bg-card rounded-lg border p-3 sm:p-4">
+        <span className="text-xs sm:text-sm font-medium text-muted-foreground w-full sm:w-auto">Tipos:</span>
         {[
           { label: "Evento Gratuito", color: "#22c55e" },
           { label: "Evento Cerrado", color: "#ef4444" },

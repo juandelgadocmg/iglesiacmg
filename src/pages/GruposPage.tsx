@@ -239,12 +239,12 @@ export default function GruposPage() {
 
         <TabsContent value="planificacion">
           <div className="space-y-4">
-            <div className="flex items-center justify-between">
+            <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2">
               <div>
-                <h3 className="text-lg font-semibold">Hojas de Planeación</h3>
-                <p className="text-sm text-muted-foreground">Planificación semanal de Casas de Paz</p>
+                <h3 className="text-base sm:text-lg font-semibold">Hojas de Planeación</h3>
+                <p className="text-xs sm:text-sm text-muted-foreground">Planificación semanal de Casas de Paz</p>
               </div>
-              <Button onClick={() => setShowPlanForm(true)} className="gap-2">
+              <Button onClick={() => setShowPlanForm(true)} className="gap-2 w-full sm:w-auto">
                 <Plus className="h-4 w-4" /> Nueva Planificación
               </Button>
             </div>

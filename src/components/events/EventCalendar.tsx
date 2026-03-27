@@ -127,7 +127,7 @@ export default function EventCalendar({ events, onEventClick, onNewEvent }: Prop
               <div
                 key={i}
                 className={cn(
-                  "min-h-[90px] bg-card p-1.5 transition-colors hover:bg-muted/50 cursor-pointer",
+                  "min-h-[60px] sm:min-h-[90px] bg-card p-1 sm:p-1.5 transition-colors hover:bg-muted/50 cursor-pointer",
                   !day.isCurrentMonth && "bg-muted/30"
                 )}
                 onClick={() => {

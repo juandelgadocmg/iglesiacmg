@@ -103,13 +103,13 @@ export default function DataTable<T extends Record<string, any>>({
 
       {/* Pagination */}
       {totalPages > 1 && (
-        <div className="p-4 border-t flex items-center justify-between text-sm">
+        <div className="p-3 sm:p-4 border-t flex items-center justify-between text-xs sm:text-sm">
           <span className="text-muted-foreground">
-            Mostrando {page * perPage + 1}-{Math.min((page + 1) * perPage, filtered.length)} de {filtered.length}
+            {page * perPage + 1}-{Math.min((page + 1) * perPage, filtered.length)} de {filtered.length}
           </span>
           <div className="flex gap-1">
-            <button onClick={() => setPage(p => Math.max(0, p - 1))} disabled={page === 0} className="px-3 py-1 rounded border hover:bg-muted disabled:opacity-40">Anterior</button>
-            <button onClick={() => setPage(p => Math.min(totalPages - 1, p + 1))} disabled={page >= totalPages - 1} className="px-3 py-1 rounded border hover:bg-muted disabled:opacity-40">Siguiente</button>
+            <button onClick={() => setPage(p => Math.max(0, p - 1))} disabled={page === 0} className="px-2 sm:px-3 py-1 rounded border hover:bg-muted disabled:opacity-40">← <span className="hidden sm:inline">Anterior</span></button>
+            <button onClick={() => setPage(p => Math.min(totalPages - 1, p + 1))} disabled={page >= totalPages - 1} className="px-2 sm:px-3 py-1 rounded border hover:bg-muted disabled:opacity-40"><span className="hidden sm:inline">Siguiente</span> →</button>
           </div>
         </div>
       )}
