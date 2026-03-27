@@ -111,7 +111,7 @@ export default function GrupoHierarchyView({ onSelectGrupo }: Props) {
       const payload: any = {
         nombre: form.nombre, tipo: form.tipo,
         red: form.red || null, lider_id: form.lider_id || null,
-        lider2_id: form.lider2_id || null,
+        lider2_id: (form.lider2_id && form.lider2_id !== "none") ? form.lider2_id : null,
         parent_id: form.parent_id || null, descripcion: form.descripcion || null,
       };
       if (editingId) {
