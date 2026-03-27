@@ -391,7 +391,7 @@ export default function GrupoHierarchyView({ onSelectGrupo }: Props) {
               </div>
             )}
             <div className="space-y-1.5">
-              <label className="text-sm font-medium">Líder</label>
+              <label className="text-sm font-medium">Líder 1</label>
               <Select value={form.lider_id} onValueChange={(v) => setForm({ ...form, lider_id: v })}>
                 <SelectTrigger><SelectValue placeholder="Seleccionar líder" /></SelectTrigger>
                 <SelectContent>
@@ -401,6 +401,20 @@ export default function GrupoHierarchyView({ onSelectGrupo }: Props) {
                 </SelectContent>
               </Select>
             </div>
+            {form.tipo === "lider_red" && (
+              <div className="space-y-1.5">
+                <label className="text-sm font-medium">Líder 2</label>
+                <Select value={form.lider2_id} onValueChange={(v) => setForm({ ...form, lider2_id: v })}>
+                  <SelectTrigger><SelectValue placeholder="Seleccionar segundo líder (opcional)" /></SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="none">— Sin segundo líder —</SelectItem>
+                    {(personas || []).filter(p => p.id !== form.lider_id).map(p => (
+                      <SelectItem key={p.id} value={p.id}>{p.nombres} {p.apellidos}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            )}
             <div className="space-y-1.5">
               <label className="text-sm font-medium">Descripción</label>
               <Textarea value={form.descripcion} onChange={(e) => setForm({ ...form, descripcion: e.target.value })} rows={2} />
