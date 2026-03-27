@@ -74,7 +74,7 @@ export default function EventCalendar({ events, onEventClick, onNewEvent }: Prop
   return (
     <div className="bg-card rounded-xl border shadow-sm">
       {/* Header */}
-      <div className="flex items-center justify-between p-4 border-b">
+      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2 p-3 sm:p-4 border-b">
         <div className="flex items-center gap-2">
           <Button variant="outline" size="icon" className="h-8 w-8" onClick={prev}>
             <ChevronLeft className="h-4 w-4" />
@@ -83,9 +83,12 @@ export default function EventCalendar({ events, onEventClick, onNewEvent }: Prop
             <ChevronRight className="h-4 w-4" />
           </Button>
           <Button variant="ghost" size="sm" onClick={goToday}>hoy</Button>
+          <h2 className="text-base sm:text-lg font-bold text-foreground sm:hidden ml-1">
+            {MONTHS[month].slice(0, 3)} {year}
+          </h2>
         </div>
 
-        <h2 className="text-lg font-bold text-foreground">
+        <h2 className="hidden sm:block text-lg font-bold text-foreground">
           {MONTHS[month]} {year}
         </h2>
 
@@ -95,7 +98,7 @@ export default function EventCalendar({ events, onEventClick, onNewEvent }: Prop
               key={v}
               onClick={() => setView(v)}
               className={cn(
-                "px-3 py-1 text-xs font-medium rounded-md transition-colors",
+                "px-2.5 sm:px-3 py-1 text-xs font-medium rounded-md transition-colors",
                 view === v ? "bg-background text-foreground shadow-sm" : "text-muted-foreground hover:text-foreground"
               )}
             >
