@@ -209,10 +209,20 @@ export default function ImportPersonasDialog() {
       let success = 0;
       let duplicates = 0;
 
+      // Phase 1: Validate all rows and prepare persona records
+      interface ValidRow {
+        rowNum: number;
+        persona: Record<string, any>;
+        raw: any;
+        nombres: string;
+        apellidos: string;
+        documento: string | null;
+      }
+      const validRows: ValidRow[] = [];
+
       for (let i = 0; i < rows.length; i++) {
         const r = rows[i];
         const rowNum = i + 2;
-        setProgress(Math.round(((i + 1) / rows.length) * 100));
 
         const nombres = str(getVal(r, "nombres"));
         const apellidos = str(getVal(r, "apellidos"));
@@ -221,13 +231,14 @@ export default function ImportPersonasDialog() {
           continue;
         }
 
-        // Duplicate check by documento
         const documento = str(getVal(r, "documento"));
         if (documento && existingDocs.has(documento)) {
           errors.push({ row: rowNum, message: `Documento duplicado: ${documento} ya existe en el sistema` });
           duplicates++;
           continue;
         }
+        // Track within file duplicates
+        if (documento) existingDocs.add(documento);
 
         const tipoPers = str(getVal(r, "tipo_persona")) || "Miembro";
         if (!VALID_TIPOS_PERSONA.includes(tipoPers)) {
@@ -241,7 +252,6 @@ export default function ImportPersonasDialog() {
           continue;
         }
 
-        // Resolve grupo by name - don't skip person if grupo not found
         const grupoNombre = str(getVal(r, "grupo"));
         let grupoId = str(getVal(r, "grupo_id")) || null;
         if (!grupoId && grupoNombre) {
@@ -252,12 +262,11 @@ export default function ImportPersonasDialog() {
         }
 
         const redVal = str(getVal(r, "red"));
-        const tipoDoc = str(getVal(r, "tipo_documento"));
 
         const persona: Record<string, any> = {
           nombres,
           apellidos,
-          tipo_documento: tipoDoc,
+          tipo_documento: str(getVal(r, "tipo_documento")),
           documento,
           sexo: str(getVal(r, "sexo")),
           fecha_nacimiento: parseExcelDate(getVal(r, "fecha_nacimiento")),
@@ -282,68 +291,95 @@ export default function ImportPersonasDialog() {
           observaciones: str(getVal(r, "observaciones")),
         };
 
-        // Remove null values
         Object.keys(persona).forEach(k => { if (persona[k] === null) delete persona[k]; });
+        validRows.push({ rowNum, persona, raw: r, nombres, apellidos, documento });
+      }
 
-        const { data: created, error: pErr } = await supabase
+      setProgress(10);
+
+      // Phase 2: Insert personas in chunks of 500
+      const CHUNK_SIZE = 500;
+      const createdPersonas: { id: string; index: number }[] = [];
+
+      for (let i = 0; i < validRows.length; i += CHUNK_SIZE) {
+        const chunk = validRows.slice(i, i + CHUNK_SIZE);
+        const personasToInsert = chunk.map(v => v.persona);
+
+        const { data: created, error: chunkErr } = await supabase
           .from("personas")
-          .insert(persona as any)
-          .select("id")
-          .single();
+          .insert(personasToInsert as any)
+          .select("id");
 
-        if (pErr || !created) {
-          errors.push({ row: rowNum, message: pErr?.message || "Error al crear persona" });
-          continue;
+        if (chunkErr || !created) {
+          chunk.forEach(v => {
+            errors.push({ row: v.rowNum, message: chunkErr?.message || "Error al crear persona en lote" });
+          });
+        } else {
+          created.forEach((c, idx) => {
+            createdPersonas.push({ id: c.id, index: i + idx });
+          });
+          success += created.length;
         }
 
-        // Add to existing docs set to catch duplicates within same file
-        if (documento) existingDocs.add(documento);
+        setProgress(10 + Math.round(((i + CHUNK_SIZE) / validRows.length) * 60));
+      }
 
-        // Create petición de oración if provided (only descripcion required)
+      // Phase 3: Insert peticiones and procesos for created personas
+      const allPeticiones: any[] = [];
+      const allProcesos: any[] = [];
+
+      for (const cp of createdPersonas) {
+        const v = validRows[cp.index];
+        const r = v.raw;
+
         const tipoPeticion = str(getVal(r, "tipo_peticion"));
         const descPeticion = str(getVal(r, "descripcion_peticion"));
         if (descPeticion) {
           const tipoFinal = tipoPeticion && VALID_TIPOS_PETICION.includes(tipoPeticion) ? tipoPeticion : "Otros";
-          const peticionData: Record<string, any> = {
-            persona_id: created.id,
-            titulo: `${tipoFinal} - ${nombres} ${apellidos}`,
+          allPeticiones.push({
+            persona_id: cp.id,
+            titulo: `${tipoFinal} - ${v.nombres} ${v.apellidos}`,
             descripcion: descPeticion,
             tipo: tipoFinal,
             estado: "Pendiente",
             prioridad: "Normal",
-          };
-          const { error: petErr } = await supabase.from("peticiones_oracion").insert(peticionData as any);
-          if (petErr) {
-            errors.push({ row: rowNum, message: `Persona creada pero error en petición: ${petErr.message}` });
-          }
+          });
         }
 
-        // Process growth steps
-        const procRecords: any[] = [];
         for (const pName of PROCESO_NAMES) {
           const estado = str(getVal(r, `${pName} (Estado)`));
-          if (!estado) continue;
-          if (!VALID_PROC_ESTADOS.includes(estado)) continue;
-          if (estado === "No realizado") continue;
-
-          procRecords.push({
-            persona_id: created.id,
+          if (!estado || !VALID_PROC_ESTADOS.includes(estado) || estado === "No realizado") continue;
+          allProcesos.push({
+            persona_id: cp.id,
             proceso_id: PROCESOS_MAP[pName],
             estado,
             fecha_completado: parseExcelDate(getVal(r, `${pName} (Fecha)`)),
             observacion: str(getVal(r, `${pName} (Observación)`)),
           });
         }
-
-        if (procRecords.length > 0) {
-          const { error: procErr } = await supabase.from("persona_procesos").insert(procRecords);
-          if (procErr) {
-            errors.push({ row: rowNum, message: `Persona creada pero error en procesos: ${procErr.message}` });
-          }
-        }
-
-        success++;
       }
+
+      // Insert peticiones in chunks
+      for (let i = 0; i < allPeticiones.length; i += CHUNK_SIZE) {
+        const chunk = allPeticiones.slice(i, i + CHUNK_SIZE);
+        const { error: petErr } = await supabase.from("peticiones_oracion").insert(chunk as any);
+        if (petErr) {
+          errors.push({ row: 0, message: `Error al crear peticiones (lote): ${petErr.message}` });
+        }
+      }
+
+      setProgress(85);
+
+      // Insert procesos in chunks
+      for (let i = 0; i < allProcesos.length; i += CHUNK_SIZE) {
+        const chunk = allProcesos.slice(i, i + CHUNK_SIZE);
+        const { error: procErr } = await supabase.from("persona_procesos").insert(chunk as any);
+        if (procErr) {
+          errors.push({ row: 0, message: `Error al crear procesos (lote): ${procErr.message}` });
+        }
+      }
+
+      setProgress(100);
 
       setResult({ total: rows.length, success, duplicates, errors });
       if (success > 0) {
