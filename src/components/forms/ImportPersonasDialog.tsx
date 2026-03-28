@@ -297,8 +297,8 @@ export default function ImportPersonasDialog() {
 
       setProgress(10);
 
-      // Phase 2: Insert personas in chunks of 500
-      const CHUNK_SIZE = 500;
+      // Phase 2: Insert personas in chunks of 200, with per-row fallback on failure
+      const CHUNK_SIZE = 200;
       const createdPersonas: { id: string; index: number }[] = [];
 
       for (let i = 0; i < validRows.length; i += CHUNK_SIZE) {
@@ -311,9 +311,22 @@ export default function ImportPersonasDialog() {
           .select("id");
 
         if (chunkErr || !created) {
-          chunk.forEach(v => {
-            errors.push({ row: v.rowNum, message: chunkErr?.message || "Error al crear persona en lote" });
-          });
+          // Fallback: insert one by one so we don't lose the entire chunk
+          for (let j = 0; j < chunk.length; j++) {
+            const v = chunk[j];
+            const { data: single, error: singleErr } = await supabase
+              .from("personas")
+              .insert(v.persona as any)
+              .select("id")
+              .single();
+
+            if (singleErr || !single) {
+              errors.push({ row: v.rowNum, message: singleErr?.message || "Error al crear persona" });
+            } else {
+              createdPersonas.push({ id: single.id, index: i + j });
+              success++;
+            }
+          }
         } else {
           created.forEach((c, idx) => {
             createdPersonas.push({ id: c.id, index: i + idx });
@@ -321,7 +334,7 @@ export default function ImportPersonasDialog() {
           success += created.length;
         }
 
-        setProgress(10 + Math.round(((i + CHUNK_SIZE) / validRows.length) * 60));
+        setProgress(10 + Math.round((Math.min(i + CHUNK_SIZE, validRows.length) / validRows.length) * 60));
       }
 
       // Phase 3: Insert peticiones and procesos for created personas
