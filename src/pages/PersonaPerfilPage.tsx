@@ -324,6 +324,8 @@ export default function PersonaPerfilPage() {
                 <InfoRow label="Grupo" value={(persona as any).grupos?.nombre || "Sin grupo"} />
                 <InfoRow label="Ministerio" value={persona.ministerio || "—"} />
                 <InfoRow label="Líder" value={persona.lider_responsable || "—"} />
+                <InfoRow label="Invitado por" value={persona.invitado_por || "—"} />
+                <InfoRow label="Encargado seguimiento" value={persona.seguimiento_por || "—"} />
                 <InfoRow label="Ingreso" value={persona.fecha_ingreso ? format(parseISO(persona.fecha_ingreso), "dd MMM yyyy", { locale: es }) : "—"} />
                 <InfoRow label="Conversión" value={persona.fecha_conversion ? format(parseISO(persona.fecha_conversion), "dd MMM yyyy", { locale: es }) : "—"} />
                 <InfoRow label="Bautismo" value={persona.fecha_bautismo ? format(parseISO(persona.fecha_bautismo), "dd MMM yyyy", { locale: es }) : "—"} />
