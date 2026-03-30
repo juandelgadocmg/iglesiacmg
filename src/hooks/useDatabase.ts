@@ -7,12 +7,29 @@ export function usePersonas() {
   return useQuery({
     queryKey: ["personas"],
     queryFn: async () => {
-      const { data, error } = await supabase
-        .from("personas")
-        .select("*, grupos!fk_personas_grupo(nombre)")
-        .order("created_at", { ascending: false });
-      if (error) throw error;
-      return data;
+      // Fetch ALL personas without the default 1000-row limit
+      const allData: any[] = [];
+      const PAGE_SIZE = 1000;
+      let from = 0;
+      let hasMore = true;
+
+      while (hasMore) {
+        const { data, error } = await supabase
+          .from("personas")
+          .select("*, grupos!fk_personas_grupo(nombre)")
+          .order("created_at", { ascending: false })
+          .range(from, from + PAGE_SIZE - 1);
+        if (error) throw error;
+        if (data && data.length > 0) {
+          allData.push(...data);
+          from += PAGE_SIZE;
+          hasMore = data.length === PAGE_SIZE;
+        } else {
+          hasMore = false;
+        }
+      }
+
+      return allData;
     },
   });
 }
