@@ -18,6 +18,7 @@ import HistorialCalificacionesSection from "@/components/academia/HistorialCalif
 import DeleteConfirmDialog from "@/components/shared/DeleteConfirmDialog";
 import MateriaAttendanceTrendChart from "@/components/charts/MateriaAttendanceTrendChart";
 import ExportDropdown from "@/components/shared/ExportDropdown";
+import ImportAcademiaDialog from "@/components/forms/ImportAcademiaDialog";
 import {
   useEscuelas, useAllMatriculas, useCertificados, usePeriodos,
   useMaterias, useMatriculas, useUpdateMatricula, useCreateCertificado,
