@@ -629,7 +629,7 @@ export default function ImportAcademiaDialog() {
 
           {result && (
             <div className="space-y-2 text-sm">
-              <div className="flex items-center gap-2 text-green-600">
+              <div className="flex items-center gap-2 <div className="flex items-center gap-2 text-primary">">
                 <CheckCircle2 className="h-4 w-4" /> {result.ok} registros importados
               </div>
               {result.errors.length > 0 && (
