@@ -2477,7 +2477,10 @@ export default function AcademiaPage() {
       <div className="flex gap-0 rounded-xl border bg-background overflow-hidden min-h-[500px]">
         <AcademiaSidebar activeSection={activeSection} onSectionChange={setActiveSection} />
         <div className="flex-1 p-5 overflow-auto">
-          <h2 className="text-lg font-bold text-foreground mb-4">{sectionTitle[activeSection] || "Academia"}</h2>
+          <div className="flex items-center justify-between mb-4">
+            <h2 className="text-lg font-bold text-foreground">{sectionTitle[activeSection] || "Academia"}</h2>
+            <ImportAcademiaDialog />
+          </div>
 
           {activeSection === "escuelas" && (
             <EscuelasSection escuelas={escuelas} allPeriodos={allPeriodos} allMatriculas={allMatriculas}
