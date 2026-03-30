@@ -99,22 +99,28 @@ export default function AsistenciaPage() {
     <div className="animate-fade-in space-y-6">
       <PageHeader title="Asistencia" description="Control de asistencia por servicio">
         {effectiveService && (
-          <ExportDropdown
-            title={`Asistencia - ${currentService?.nombre || ""}`}
-            filename={`asistencia-${currentService?.nombre || "servicio"}`}
-            columns={[
-              { header: "Nombres", key: "nombres" },
-              { header: "Apellidos", key: "apellidos" },
-              { header: "Tipo", key: "tipo_persona" },
-              { header: "Presente", key: "presente" },
-            ]}
-            data={filteredPersonas.map(p => ({
-              nombres: p.nombres,
-              apellidos: p.apellidos,
-              tipo_persona: p.tipo_persona,
-              presente: localAttendance[p.id] ? "Sí" : "No",
-            }))}
-          />
+          <>
+            <ImportAsistenciaDialog
+              servicioId={effectiveService}
+              servicioNombre={currentService?.nombre || ""}
+            />
+            <ExportDropdown
+              title={`Asistencia - ${currentService?.nombre || ""}`}
+              filename={`asistencia-${currentService?.nombre || "servicio"}`}
+              columns={[
+                { header: "Nombres", key: "nombres" },
+                { header: "Apellidos", key: "apellidos" },
+                { header: "Tipo", key: "tipo_persona" },
+                { header: "Presente", key: "presente" },
+              ]}
+              data={filteredPersonas.map(p => ({
+                nombres: p.nombres,
+                apellidos: p.apellidos,
+                tipo_persona: p.tipo_persona,
+                presente: localAttendance[p.id] ? "Sí" : "No",
+              }))}
+            />
+          </>
         )}
       </PageHeader>
 
