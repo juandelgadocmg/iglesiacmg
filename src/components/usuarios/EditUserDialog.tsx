@@ -167,10 +167,10 @@ export default function EditUserDialog({ profile, userRoles, open, onOpenChange,
   };
 
   const sections = [
-    { key: "info",  label: "Información", icon: User },
-    { key: "roles", label: "Roles",       icon: ShieldCheck },
-    { key: "grupo", label: "Grupo",       icon: Home, show: needsGrupo },
-  ] as const;
+    { key: "info" as const,  label: "Información", icon: User, show: true },
+    { key: "roles" as const, label: "Roles",       icon: ShieldCheck, show: true },
+    { key: "grupo" as const, label: "Grupo",       icon: Home, show: needsGrupo },
+  ];
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
