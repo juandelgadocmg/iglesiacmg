@@ -298,7 +298,7 @@ export default function ImportPersonasDialog() {
       setProgress(10);
 
       // Phase 2: Insert personas in chunks of 200, with per-row fallback on failure
-      const CHUNK_SIZE = 200;
+      const CHUNK_SIZE = 500;
       const createdPersonas: { id: string; index: number }[] = [];
 
       for (let i = 0; i < validRows.length; i += CHUNK_SIZE) {
@@ -362,9 +362,10 @@ export default function ImportPersonasDialog() {
         for (const pName of PROCESO_NAMES) {
           let estado = str(getVal(r, `${pName} (Estado)`));
           if (!estado || !VALID_PROC_ESTADOS.includes(estado)) continue;
-          // Normalize display names to DB values
-          if (estado === "Finalizado") estado = "Realizado";
-          if (estado === "No Finalizado" || estado === "No finalizado" || estado === "No realizado" || estado === "No Realizado") continue;
+          // Normalize to standard DB values
+          if (estado === "Realizado") estado = "Finalizado";
+          if (estado === "No realizado" || estado === "No Realizado") estado = "No Finalizado";
+          if (estado === "No finalizado") estado = "No Finalizado";
           allProcesos.push({
             persona_id: cp.id,
             proceso_id: PROCESOS_MAP[pName],
