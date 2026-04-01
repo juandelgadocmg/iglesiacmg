@@ -114,23 +114,13 @@ export default function EditUserDialog({ profile, userRoles, open, onOpenChange,
         .eq("user_id", profile.user_id);
       if (nameErr) throw nameErr;
 
-      // 2. Try to update grupo_id separately — column may not exist yet if migration pending
+      // 2. Update grupo_id
       if (needsGrupo) {
         const { error: grupoErr } = await supabase
           .from("profiles")
           .update({ grupo_id: grupoId || null } as any)
           .eq("user_id", profile.user_id);
-
-        if (grupoErr) {
-          if (grupoErr.message?.includes("grupo_id") || grupoErr.message?.includes("schema cache")) {
-            toast.warning(
-              "El nombre y roles se guardaron, pero la asignación de grupo requiere una migración pendiente en Supabase. Ve a SQL Editor y ejecuta: ALTER TABLE public.profiles ADD COLUMN IF NOT EXISTS grupo_id UUID REFERENCES public.grupos(id) ON DELETE SET NULL;",
-              { duration: 8000 }
-            );
-          } else {
-            throw grupoErr;
-          }
-        }
+        if (grupoErr) throw grupoErr;
       }
 
       // 2. Sync roles — remove old, add new
