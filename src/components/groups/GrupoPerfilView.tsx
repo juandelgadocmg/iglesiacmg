@@ -187,7 +187,33 @@ export default function GrupoPerfilView({ grupoId, onBack, readOnly = false }: P
             </div>
           </div>
           <div className="flex items-center gap-2 flex-wrap">
-            <Button variant="outline" size="sm" className="gap-1.5" onClick={() => {\n              if (!grupo) return;\n              const mList = (miembros || []).map(m => ({\n                nombre: `${m.persona?.nombres || ""} ${m.persona?.apellidos || ""}`,\n                rol: ROLES_GRUPO.find(r => r.value === m.rol)?.label || "Asistente",\n                telefono: m.persona?.telefono || "",\n                email: m.persona?.email || "",\n                estado: m.persona?.estado_iglesia || "",\n              }));\n              const rList = (reportes || []).map(r => ({\n                fecha: format(parseISO(r.fecha), "dd/MM/yyyy"),\n                presentes: r.presentes,\n                ausentes: r.ausentes,\n                nuevos: r.nuevos,\n                ofrenda: r.ofrenda_casa_paz || 0,\n                estado: r.estado,\n              }));\n              exportGroupProfilePDF(grupo as any, metrics, mList, rList);\n              toast.success("PDF generado");\n            }}>\n              <Download className="h-3.5 w-3.5" /> Exportar PDF\n            </Button>\n            {!readOnly && (\n              <Button variant="outline" size="sm" className="gap-1.5" onClick={() => setEditing(true)}>\n                <Pencil className="h-3.5 w-3.5" /> Editar\n              </Button>\n            )}
+            <Button variant="outline" size="sm" className="gap-1.5" onClick={() => {
+              if (!grupo) return;
+              const mList = (miembros || []).map(m => ({
+                nombre: `${m.persona?.nombres || ""} ${m.persona?.apellidos || ""}`,
+                rol: ROLES_GRUPO.find(r => r.value === m.rol)?.label || "Asistente",
+                telefono: m.persona?.telefono || "",
+                email: m.persona?.email || "",
+                estado: m.persona?.estado_iglesia || "",
+              }));
+              const rList = (reportes || []).map(r => ({
+                fecha: format(parseISO(r.fecha), "dd/MM/yyyy"),
+                presentes: r.presentes,
+                ausentes: r.ausentes,
+                nuevos: r.nuevos,
+                ofrenda: r.ofrenda_casa_paz || 0,
+                estado: r.estado,
+              }));
+              exportGroupProfilePDF(grupo as any, metrics, mList, rList);
+              toast.success("PDF generado");
+            }}>
+              <Download className="h-3.5 w-3.5" /> Exportar PDF
+            </Button>
+            {!readOnly && (
+              <Button variant="outline" size="sm" className="gap-1.5" onClick={() => setEditing(true)}>
+                <Pencil className="h-3.5 w-3.5" /> Editar
+              </Button>
+            )}
             <Button size="sm" className="gap-1.5" onClick={() => setShowReportForm(true)}>
               <ClipboardList className="h-3.5 w-3.5" /> Crear Reporte
             </Button>
