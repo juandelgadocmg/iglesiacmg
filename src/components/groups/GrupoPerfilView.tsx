@@ -454,63 +454,11 @@ export default function GrupoPerfilView({ grupoId, onBack, readOnly = false }: P
           </div>
 
           {/* Person detail dialog */}
-          <Dialog open={!!selectedPersona} onOpenChange={(o) => !o && setSelectedPersona(null)}>
-            <DialogContent className="max-w-md">
-              <DialogHeader>
-                <DialogTitle>Información del Integrante</DialogTitle>
-              </DialogHeader>
-              {selectedPersona && (
-                <div className="space-y-4">
-                  <div className="flex items-center gap-4">
-                    <Avatar className="h-16 w-16">
-                      <AvatarImage src={selectedPersona.foto_url || undefined} />
-                      <AvatarFallback className="text-lg">{selectedPersona.nombres?.[0]}{selectedPersona.apellidos?.[0]}</AvatarFallback>
-                    </Avatar>
-                    <div>
-                      <p className="text-lg font-semibold">{selectedPersona.nombres} {selectedPersona.apellidos}</p>
-                      <div className="flex gap-2 mt-1">
-                        <Badge variant="outline" className="text-xs">{selectedPersona.tipo_persona}</Badge>
-                        <Badge variant="secondary" className="text-xs">{selectedPersona.estado_iglesia}</Badge>
-                      </div>
-                    </div>
-                  </div>
-                  <Separator />
-                  <div className="grid grid-cols-1 gap-3 text-sm">
-                    {selectedPersona.telefono && (
-                      <div className="flex items-center gap-2"><Phone className="h-4 w-4 text-muted-foreground" /><span>{selectedPersona.telefono}</span></div>
-                    )}
-                    {selectedPersona.email && (
-                      <div className="flex items-center gap-2"><Mail className="h-4 w-4 text-muted-foreground" /><span>{selectedPersona.email}</span></div>
-                    )}
-                    {selectedPersona.direccion && (
-                      <div className="flex items-center gap-2"><MapPin className="h-4 w-4 text-muted-foreground" /><span>{selectedPersona.direccion}</span></div>
-                    )}
-                    {selectedPersona.sexo && (
-                      <div><span className="text-muted-foreground">Sexo:</span> {selectedPersona.sexo}</div>
-                    )}
-                    {selectedPersona.estado_civil && (
-                      <div><span className="text-muted-foreground">Estado civil:</span> {selectedPersona.estado_civil}</div>
-                    )}
-                    {selectedPersona.fecha_nacimiento && (
-                      <div><span className="text-muted-foreground">Fecha de nacimiento:</span> {format(parseISO(selectedPersona.fecha_nacimiento), "d 'de' MMMM 'de' yyyy", { locale: es })}</div>
-                    )}
-                    {selectedPersona.ocupacion && (
-                      <div><span className="text-muted-foreground">Ocupación:</span> {selectedPersona.ocupacion}</div>
-                    )}
-                    {selectedPersona.whatsapp && (
-                      <div><span className="text-muted-foreground">WhatsApp:</span> {selectedPersona.whatsapp}</div>
-                    )}
-                    {selectedPersona.ministerio && (
-                      <div><span className="text-muted-foreground">Ministerio:</span> {selectedPersona.ministerio}</div>
-                    )}
-                    {selectedPersona.observaciones && (
-                      <div><span className="text-muted-foreground">Observaciones:</span> {selectedPersona.observaciones}</div>
-                    )}
-                  </div>
-                </div>
-              )}
-            </DialogContent>
-          </Dialog>
+          <PersonaDetailDialog
+            persona={selectedPersona}
+            open={!!selectedPersona}
+            onOpenChange={(o) => !o && setSelectedPersona(null)}
+          />
         </TabsContent>
 
         {/* ====== ESTADÍSTICAS TAB ====== */}
