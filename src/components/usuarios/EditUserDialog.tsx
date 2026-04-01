@@ -251,16 +251,17 @@ export default function EditUserDialog({ profile, userRoles, open, onOpenChange,
           {section === "grupo" && (
             <div className="space-y-4 pt-2">
               <div className="rounded-lg border border-primary/30 bg-primary/5 p-3 text-xs text-muted-foreground">
-                Este usuario tiene un rol que requiere un grupo asignado. Al iniciar sesión verá directamente su grupo.
+                Asigna un grupo (Casa de Paz, Red, etc.) a este usuario para que pueda ver y gestionar su grupo al iniciar sesión.
               </div>
               <div className="space-y-2">
-                <Label>{selectedRoles.includes("lider_casa_paz") ? "Casa de Paz asignada" : "Grupo asignado"}</Label>
+                <Label>Grupo asignado</Label>
                 <Select value={grupoId} onValueChange={setGrupoId}>
                   <SelectTrigger>
                     <SelectValue placeholder="Seleccionar grupo..." />
                   </SelectTrigger>
                   <SelectContent>
-                    {gruposFiltrados.map(g => (
+                    <SelectItem value="none">Sin grupo</SelectItem>
+                    {grupos.map(g => (
                       <SelectItem key={g.id} value={g.id}>
                         <span>{g.nombre}</span>
                         {g.red && <span className="text-xs text-muted-foreground ml-2">· Red {g.red}</span>}
@@ -268,9 +269,9 @@ export default function EditUserDialog({ profile, userRoles, open, onOpenChange,
                     ))}
                   </SelectContent>
                 </Select>
-                {grupoId && (
+                {grupoId && grupoId !== "none" && (
                   <p className="text-xs text-success font-medium">
-                    ✓ Grupo seleccionado: {gruposFiltrados.find(g => g.id === grupoId)?.nombre}
+                    ✓ Grupo seleccionado: {grupos.find(g => g.id === grupoId)?.nombre}
                   </p>
                 )}
               </div>
