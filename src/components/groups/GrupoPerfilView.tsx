@@ -70,6 +70,8 @@ export default function GrupoPerfilView({ grupoId, onBack, readOnly = false }: P
   const [addingRol, setAddingRol] = useState("asistente");
   const [searchQuery, setSearchQuery] = useState("");
   const [showMap, setShowMap] = useState(false);
+  const [membersPage, setMembersPage] = useState(1);
+  const MEMBERS_PER_PAGE = 20;
 
   const addMiembro = useAddGrupoMiembro();
   const updateRol = useUpdateMiembroRol();
@@ -360,7 +362,7 @@ export default function GrupoPerfilView({ grupoId, onBack, readOnly = false }: P
             <div className="flex gap-2 flex-wrap">
               <div className="relative flex-1 min-w-[200px]">
                 <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                <Input placeholder="Filtrar integrantes..." value={memberSearch} onChange={e => setMemberSearch(e.target.value)} className="pl-10" />
+                <Input placeholder="Filtrar integrantes..." value={memberSearch} onChange={e => { setMemberSearch(e.target.value); setMembersPage(1); }} className="pl-10" />
               </div>
               <Select value={memberFilterRol} onValueChange={setMemberFilterRol}>
                 <SelectTrigger className="w-36"><SelectValue placeholder="Rol" /></SelectTrigger>
@@ -399,11 +401,45 @@ export default function GrupoPerfilView({ grupoId, onBack, readOnly = false }: P
                 {asistenteMembers.length > 0 && (
                   <div className="space-y-2">
                     <h4 className="text-sm font-semibold flex items-center gap-2"><Users className="h-4 w-4 text-muted-foreground" />Asistentes ({asistenteMembers.length})</h4>
-                    <ScrollArea className="max-h-[500px]">
-                      <div className="space-y-1.5">
-                        {asistenteMembers.map(m => <MemberCard key={m.id} miembro={m} onRolChange={handleRolChange} onRemove={handleRemove} readOnly={readOnly} />)}
+                    <div className="space-y-1.5">
+                      {asistenteMembers.slice((membersPage - 1) * MEMBERS_PER_PAGE, membersPage * MEMBERS_PER_PAGE).map(m => (
+                        <MemberCard key={m.id} miembro={m} onRolChange={handleRolChange} onRemove={handleRemove} readOnly={readOnly} />
+                      ))}
+                    </div>
+                    {asistenteMembers.length > MEMBERS_PER_PAGE && (
+                      <div className="flex items-center justify-between pt-3 border-t">
+                        <p className="text-xs text-muted-foreground">
+                          Mostrando {(membersPage - 1) * MEMBERS_PER_PAGE + 1}–{Math.min(membersPage * MEMBERS_PER_PAGE, asistenteMembers.length)} de {asistenteMembers.length}
+                        </p>
+                        <div className="flex items-center gap-1">
+                          <Button
+                            variant="outline" size="sm" className="h-7 text-xs"
+                            disabled={membersPage <= 1}
+                            onClick={() => setMembersPage(p => p - 1)}
+                          >
+                            ← Anterior
+                          </Button>
+                          {Array.from({ length: Math.ceil(asistenteMembers.length / MEMBERS_PER_PAGE) }, (_, i) => (
+                            <Button
+                              key={i + 1}
+                              variant={membersPage === i + 1 ? "default" : "outline"}
+                              size="sm"
+                              className="h-7 w-7 text-xs p-0"
+                              onClick={() => setMembersPage(i + 1)}
+                            >
+                              {i + 1}
+                            </Button>
+                          ))}
+                          <Button
+                            variant="outline" size="sm" className="h-7 text-xs"
+                            disabled={membersPage >= Math.ceil(asistenteMembers.length / MEMBERS_PER_PAGE)}
+                            onClick={() => setMembersPage(p => p + 1)}
+                          >
+                            Siguiente →
+                          </Button>
+                        </div>
                       </div>
-                    </ScrollArea>
+                    )}
                   </div>
                 )}
               </>
