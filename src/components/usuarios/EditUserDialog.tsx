@@ -114,23 +114,13 @@ export default function EditUserDialog({ profile, userRoles, open, onOpenChange,
         .eq("user_id", profile.user_id);
       if (nameErr) throw nameErr;
 
-      // 2. Try to update grupo_id separately — column may not exist yet if migration pending
+      // 2. Update grupo_id
       if (needsGrupo) {
         const { error: grupoErr } = await supabase
           .from("profiles")
           .update({ grupo_id: grupoId || null } as any)
           .eq("user_id", profile.user_id);
-
-        if (grupoErr) {
-          if (grupoErr.message?.includes("grupo_id") || grupoErr.message?.includes("schema cache")) {
-            toast.warning(
-              "El nombre y roles se guardaron, pero la asignación de grupo requiere una migración pendiente en Supabase. Ve a SQL Editor y ejecuta: ALTER TABLE public.profiles ADD COLUMN IF NOT EXISTS grupo_id UUID REFERENCES public.grupos(id) ON DELETE SET NULL;",
-              { duration: 8000 }
-            );
-          } else {
-            throw grupoErr;
-          }
-        }
+        if (grupoErr) throw grupoErr;
       }
 
       // 2. Sync roles — remove old, add new
@@ -167,10 +157,10 @@ export default function EditUserDialog({ profile, userRoles, open, onOpenChange,
   };
 
   const sections = [
-    { key: "info",  label: "Información", icon: User },
-    { key: "roles", label: "Roles",       icon: ShieldCheck },
-    { key: "grupo", label: "Grupo",       icon: Home, show: needsGrupo },
-  ] as const;
+    { key: "info" as const,  label: "Información", icon: User, show: true },
+    { key: "roles" as const, label: "Roles",       icon: ShieldCheck, show: true },
+    { key: "grupo" as const, label: "Grupo",       icon: Home, show: needsGrupo },
+  ];
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -264,13 +254,6 @@ export default function EditUserDialog({ profile, userRoles, open, onOpenChange,
             <div className="space-y-4 pt-2">
               <div className="rounded-lg border border-primary/30 bg-primary/5 p-3 text-xs text-muted-foreground">
                 Este usuario tiene un rol que requiere un grupo asignado. Al iniciar sesión verá directamente su grupo.
-              </div>
-              <div className="rounded-lg border border-amber-300 bg-amber-50 dark:bg-amber-950/30 p-3 text-xs text-amber-800 dark:text-amber-400 space-y-1">
-                <p className="font-semibold">⚠️ Migración requerida en Supabase</p>
-                <p>Si ves un error al guardar, ejecuta esto en <strong>Supabase → SQL Editor</strong>:</p>
-                <code className="block bg-amber-100 dark:bg-amber-900/40 rounded p-2 mt-1 font-mono text-[10px] break-all select-all">
-                  ALTER TABLE public.profiles ADD COLUMN IF NOT EXISTS grupo_id UUID REFERENCES public.grupos(id) ON DELETE SET NULL;
-                </code>
               </div>
               <div className="space-y-2">
                 <Label>{selectedRoles.includes("lider_casa_paz") ? "Casa de Paz asignada" : "Grupo asignado"}</Label>

@@ -1625,6 +1625,7 @@ export type Database = {
           avatar_url: string | null
           created_at: string
           display_name: string
+          grupo_id: string | null
           id: string
           updated_at: string
           user_id: string
@@ -1633,6 +1634,7 @@ export type Database = {
           avatar_url?: string | null
           created_at?: string
           display_name?: string
+          grupo_id?: string | null
           id?: string
           updated_at?: string
           user_id: string
@@ -1641,11 +1643,20 @@ export type Database = {
           avatar_url?: string | null
           created_at?: string
           display_name?: string
+          grupo_id?: string | null
           id?: string
           updated_at?: string
           user_id?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "profiles_grupo_id_fkey"
+            columns: ["grupo_id"]
+            isOneToOne: false
+            referencedRelation: "grupos"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       recursos_academicos: {
         Row: {
