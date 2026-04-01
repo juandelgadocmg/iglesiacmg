@@ -298,7 +298,7 @@ export default function ImportPersonasDialog() {
       setProgress(10);
 
       // Phase 2: Insert personas in chunks of 200, with per-row fallback on failure
-      const CHUNK_SIZE = 200;
+      const CHUNK_SIZE = 500;
       const createdPersonas: { id: string; index: number }[] = [];
 
       for (let i = 0; i < validRows.length; i += CHUNK_SIZE) {
