@@ -255,13 +255,6 @@ export default function EditUserDialog({ profile, userRoles, open, onOpenChange,
               <div className="rounded-lg border border-primary/30 bg-primary/5 p-3 text-xs text-muted-foreground">
                 Este usuario tiene un rol que requiere un grupo asignado. Al iniciar sesión verá directamente su grupo.
               </div>
-              <div className="rounded-lg border border-amber-300 bg-amber-50 dark:bg-amber-950/30 p-3 text-xs text-amber-800 dark:text-amber-400 space-y-1">
-                <p className="font-semibold">⚠️ Migración requerida en Supabase</p>
-                <p>Si ves un error al guardar, ejecuta esto en <strong>Supabase → SQL Editor</strong>:</p>
-                <code className="block bg-amber-100 dark:bg-amber-900/40 rounded p-2 mt-1 font-mono text-[10px] break-all select-all">
-                  ALTER TABLE public.profiles ADD COLUMN IF NOT EXISTS grupo_id UUID REFERENCES public.grupos(id) ON DELETE SET NULL;
-                </code>
-              </div>
               <div className="space-y-2">
                 <Label>{selectedRoles.includes("lider_casa_paz") ? "Casa de Paz asignada" : "Grupo asignado"}</Label>
                 <Select value={grupoId} onValueChange={setGrupoId}>
