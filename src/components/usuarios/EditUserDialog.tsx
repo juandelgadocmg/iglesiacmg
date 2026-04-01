@@ -46,7 +46,7 @@ const ROLE_DESCRIPTIONS: Record<AppRole, string> = {
   consulta: "Solo lectura del dashboard",
 };
 
-const ROLES_CON_GRUPO: AppRole[] = ["lider_casa_paz", "lider_red"];
+const ROLES_CON_GRUPO: AppRole[] = ["lider_casa_paz", "lider_red", "lider", "consolidador_lider", "consolidador"];
 
 interface UserRole { id: string; role: AppRole; user_id: string; }
 
@@ -87,11 +87,11 @@ export default function EditUserDialog({ profile, userRoles, open, onOpenChange,
   }, [open, profile, userRoles]);
 
   useEffect(() => {
-    if (open && needsGrupo) {
+    if (open) {
       supabase.from("grupos").select("id, nombre, red, tipo").eq("estado", "Activo").order("nombre")
         .then(({ data }) => setGrupos(data || []));
     }
-  }, [open, needsGrupo]);
+  }, [open]);
 
   const toggleRole = (role: AppRole) => {
     setSelectedRoles(prev =>
@@ -115,13 +115,12 @@ export default function EditUserDialog({ profile, userRoles, open, onOpenChange,
       if (nameErr) throw nameErr;
 
       // 2. Update grupo_id
-      if (needsGrupo) {
-        const { error: grupoErr } = await supabase
-          .from("profiles")
-          .update({ grupo_id: grupoId || null } as any)
-          .eq("user_id", profile.user_id);
-        if (grupoErr) throw grupoErr;
-      }
+      const finalGrupoId = (grupoId && grupoId !== "none") ? grupoId : null;
+      const { error: grupoErr } = await supabase
+        .from("profiles")
+        .update({ grupo_id: finalGrupoId } as any)
+        .eq("user_id", profile.user_id);
+      if (grupoErr) throw grupoErr;
 
       // 2. Sync roles — remove old, add new
       const currentRoleIds = userRoles.map(r => r.id);
@@ -159,7 +158,7 @@ export default function EditUserDialog({ profile, userRoles, open, onOpenChange,
   const sections = [
     { key: "info" as const,  label: "Información", icon: User, show: true },
     { key: "roles" as const, label: "Roles",       icon: ShieldCheck, show: true },
-    { key: "grupo" as const, label: "Grupo",       icon: Home, show: needsGrupo },
+    { key: "grupo" as const, label: "Grupo",       icon: Home, show: true },
   ];
 
   return (
@@ -250,19 +249,20 @@ export default function EditUserDialog({ profile, userRoles, open, onOpenChange,
           )}
 
           {/* ── GRUPO ── */}
-          {section === "grupo" && needsGrupo && (
+          {section === "grupo" && (
             <div className="space-y-4 pt-2">
               <div className="rounded-lg border border-primary/30 bg-primary/5 p-3 text-xs text-muted-foreground">
-                Este usuario tiene un rol que requiere un grupo asignado. Al iniciar sesión verá directamente su grupo.
+                Asigna un grupo (Casa de Paz, Red, etc.) a este usuario para que pueda ver y gestionar su grupo al iniciar sesión.
               </div>
               <div className="space-y-2">
-                <Label>{selectedRoles.includes("lider_casa_paz") ? "Casa de Paz asignada" : "Grupo asignado"}</Label>
+                <Label>Grupo asignado</Label>
                 <Select value={grupoId} onValueChange={setGrupoId}>
                   <SelectTrigger>
                     <SelectValue placeholder="Seleccionar grupo..." />
                   </SelectTrigger>
                   <SelectContent>
-                    {gruposFiltrados.map(g => (
+                    <SelectItem value="none">Sin grupo</SelectItem>
+                    {grupos.map(g => (
                       <SelectItem key={g.id} value={g.id}>
                         <span>{g.nombre}</span>
                         {g.red && <span className="text-xs text-muted-foreground ml-2">· Red {g.red}</span>}
@@ -270,9 +270,9 @@ export default function EditUserDialog({ profile, userRoles, open, onOpenChange,
                     ))}
                   </SelectContent>
                 </Select>
-                {grupoId && (
+                {grupoId && grupoId !== "none" && (
                   <p className="text-xs text-success font-medium">
-                    ✓ Grupo seleccionado: {gruposFiltrados.find(g => g.id === grupoId)?.nombre}
+                    ✓ Grupo seleccionado: {grupos.find(g => g.id === grupoId)?.nombre}
                   </p>
                 )}
               </div>

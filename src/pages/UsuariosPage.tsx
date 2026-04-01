@@ -11,7 +11,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Shield, ShieldCheck, UserCog, Plus, X, Users, Pencil } from "lucide-react";
+import { Shield, ShieldCheck, UserCog, Plus, X, Users, Pencil, Home } from "lucide-react";
 import { toast } from "sonner";
 import { Constants } from "@/integrations/supabase/types";
 import type { Database } from "@/integrations/supabase/types";
@@ -214,6 +214,13 @@ export default function UsuariosPage() {
                         {isCurrentUser && <span className="text-xs text-muted-foreground ml-2">(Tú)</span>}
                       </p>
                       <p className="text-xs text-muted-foreground truncate">{profile.user_id.slice(0, 12)}...</p>
+                      {(profile as any).grupo && (
+                        <p className="text-xs text-muted-foreground flex items-center gap-1 mt-0.5">
+                          <Home className="h-3 w-3" />
+                          {(profile as any).grupo.nombre}
+                          {(profile as any).grupo.red && <span>· Red {(profile as any).grupo.red}</span>}
+                        </p>
+                      )}
                     </div>
                   </div>
 
