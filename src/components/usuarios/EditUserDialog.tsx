@@ -115,9 +115,10 @@ export default function EditUserDialog({ profile, userRoles, open, onOpenChange,
       if (nameErr) throw nameErr;
 
       // 2. Update grupo_id
+      const finalGrupoId = (grupoId && grupoId !== "none") ? grupoId : null;
       const { error: grupoErr } = await supabase
         .from("profiles")
-        .update({ grupo_id: grupoId || null } as any)
+        .update({ grupo_id: finalGrupoId } as any)
         .eq("user_id", profile.user_id);
       if (grupoErr) throw grupoErr;
 
