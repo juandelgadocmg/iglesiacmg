@@ -44,7 +44,7 @@ const VALID_TIPOS_PERSONA = [
   "Líder Casa de Paz", "Líder de Red", "Mentor", "Pastor Principal",
 ];
 const VALID_ESTADOS = ["Activo", "Inactivo", "En proceso"];
-const VALID_PROC_ESTADOS = ["No Realizado", "No realizado", "En Curso", "Realizado"];
+const VALID_PROC_ESTADOS = ["No Finalizado", "No finalizado", "No Realizado", "No realizado", "En Curso", "Finalizado", "Realizado"];
 const VALID_TIPOS_PETICION = ["Financiera", "Familiar", "Sanidad", "Emocional", "Otros"];
 
 function parseExcelDate(val: any): string | null {
