@@ -1,9 +1,10 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Checkbox } from "@/components/ui/checkbox";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { UserPlus } from "lucide-react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
@@ -44,6 +45,9 @@ const ROLE_DESCRIPTIONS: Record<AppRole, string> = {
   consulta: "Solo lectura del dashboard",
 };
 
+// Roles que requieren seleccionar un grupo asignado
+const ROLES_CON_GRUPO: AppRole[] = ["lider_casa_paz", "lider_red"];
+
 interface InviteUserDialogProps {
   onSuccess: () => void;
 }
@@ -55,11 +59,27 @@ export default function InviteUserDialog({ onSuccess }: InviteUserDialogProps) {
   const [password, setPassword] = useState("");
   const [displayName, setDisplayName] = useState("");
   const [selectedRoles, setSelectedRoles] = useState<AppRole[]>([]);
+  const [grupoId, setGrupoId] = useState("");
+  const [grupos, setGrupos] = useState<{ id: string; nombre: string; red: string | null; tipo: string }[]>([]);
+
+  const needsGrupo = selectedRoles.some(r => ROLES_CON_GRUPO.includes(r));
+
+  useEffect(() => {
+    if (open && needsGrupo) {
+      supabase
+        .from("grupos")
+        .select("id, nombre, red, tipo")
+        .eq("estado", "Activo")
+        .order("nombre")
+        .then(({ data }) => setGrupos(data || []));
+    }
+  }, [open, needsGrupo]);
 
   const toggleRole = (role: AppRole) => {
-    setSelectedRoles((prev) =>
-      prev.includes(role) ? prev.filter((r) => r !== role) : [...prev, role]
+    setSelectedRoles(prev =>
+      prev.includes(role) ? prev.filter(r => r !== role) : [...prev, role]
     );
+    if (!ROLES_CON_GRUPO.includes(role)) setGrupoId("");
   };
 
   const handleSubmit = async () => {
@@ -75,6 +95,10 @@ export default function InviteUserDialog({ onSuccess }: InviteUserDialogProps) {
       toast.error("Selecciona al menos un rol");
       return;
     }
+    if (needsGrupo && !grupoId) {
+      toast.error("Debes asignar un grupo a este usuario");
+      return;
+    }
 
     setLoading(true);
     try {
@@ -84,18 +108,25 @@ export default function InviteUserDialog({ onSuccess }: InviteUserDialogProps) {
           password,
           display_name: displayName.trim() || email.trim(),
           roles: selectedRoles,
+          grupo_id: needsGrupo ? grupoId : null,
         },
       });
 
       if (error) throw error;
       if (data?.error) throw new Error(data.error);
 
-      toast.success("Usuario creado exitosamente");
+      // Si la función no asigna grupo_id al profile, lo hacemos aquí
+      if (needsGrupo && grupoId && data?.user_id) {
+        await supabase
+          .from("profiles")
+          .update({ grupo_id: grupoId })
+          .eq("user_id", data.user_id);
+      }
+
+      toast.success("Usuario creado y grupo asignado exitosamente");
       setOpen(false);
-      setEmail("");
-      setPassword("");
-      setDisplayName("");
-      setSelectedRoles([]);
+      setEmail(""); setPassword(""); setDisplayName("");
+      setSelectedRoles([]); setGrupoId("");
       onSuccess();
     } catch (err: any) {
       toast.error(err.message || "Error al crear usuario");
@@ -103,6 +134,12 @@ export default function InviteUserDialog({ onSuccess }: InviteUserDialogProps) {
       setLoading(false);
     }
   };
+
+  // Filtrar grupos según rol: lider_casa_paz → Casas de paz, lider_red → cualquiera
+  const gruposFiltrados = grupos.filter(g => {
+    if (selectedRoles.includes("lider_casa_paz")) return g.tipo === "Casas de paz";
+    return true;
+  });
 
   return (
     <Dialog open={open} onOpenChange={setOpen}>
@@ -123,7 +160,7 @@ export default function InviteUserDialog({ onSuccess }: InviteUserDialogProps) {
               id="displayName"
               placeholder="Nombre del usuario"
               value={displayName}
-              onChange={(e) => setDisplayName(e.target.value)}
+              onChange={e => setDisplayName(e.target.value)}
             />
           </div>
 
@@ -134,7 +171,7 @@ export default function InviteUserDialog({ onSuccess }: InviteUserDialogProps) {
               type="email"
               placeholder="correo@ejemplo.com"
               value={email}
-              onChange={(e) => setEmail(e.target.value)}
+              onChange={e => setEmail(e.target.value)}
             />
           </div>
 
@@ -145,14 +182,14 @@ export default function InviteUserDialog({ onSuccess }: InviteUserDialogProps) {
               type="password"
               placeholder="Mínimo 6 caracteres"
               value={password}
-              onChange={(e) => setPassword(e.target.value)}
+              onChange={e => setPassword(e.target.value)}
             />
           </div>
 
           <div className="space-y-2">
             <Label>Roles y permisos *</Label>
             <div className="grid grid-cols-1 gap-2 mt-1">
-              {Constants.public.Enums.app_role.map((role) => (
+              {Constants.public.Enums.app_role.map(role => (
                 <label
                   key={role}
                   className={`flex items-start gap-3 p-3 rounded-lg border cursor-pointer transition-colors ${
@@ -174,6 +211,33 @@ export default function InviteUserDialog({ onSuccess }: InviteUserDialogProps) {
               ))}
             </div>
           </div>
+
+          {/* Selector de grupo — solo aparece si el rol lo requiere */}
+          {needsGrupo && (
+            <div className="space-y-2 rounded-lg border border-primary/30 bg-primary/5 p-3">
+              <Label className="text-sm font-medium">
+                {selectedRoles.includes("lider_casa_paz") ? "Casa de Paz asignada *" : "Grupo asignado *"}
+              </Label>
+              <p className="text-xs text-muted-foreground mb-2">
+                El usuario verá directamente su grupo al iniciar sesión.
+              </p>
+              <Select value={grupoId} onValueChange={setGrupoId}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Seleccionar grupo..." />
+                </SelectTrigger>
+                <SelectContent>
+                  {gruposFiltrados.map(g => (
+                    <SelectItem key={g.id} value={g.id}>
+                      <div className="flex flex-col">
+                        <span>{g.nombre}</span>
+                        {g.red && <span className="text-xs text-muted-foreground">Red {g.red}</span>}
+                      </div>
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+          )}
 
           <Button onClick={handleSubmit} disabled={loading} className="w-full">
             {loading ? "Creando..." : "Crear Usuario"}

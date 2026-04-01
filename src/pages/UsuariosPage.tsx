@@ -2,6 +2,7 @@ import { useState } from "react";
 import PageHeader from "@/components/shared/PageHeader";
 import { useProfiles, useUserRoles, useAssignRole, useRemoveRole } from "@/hooks/useUsuarios";
 import InviteUserDialog from "@/components/usuarios/InviteUserDialog";
+import EditUserDialog from "@/components/usuarios/EditUserDialog";
 import { useQueryClient } from "@tanstack/react-query";
 import { useAuth } from "@/hooks/useAuth";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -10,7 +11,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Shield, ShieldCheck, UserCog, Plus, X, Users } from "lucide-react";
+import { Shield, ShieldCheck, UserCog, Plus, X, Users, Pencil } from "lucide-react";
 import { toast } from "sonner";
 import { Constants } from "@/integrations/supabase/types";
 import type { Database } from "@/integrations/supabase/types";
@@ -57,13 +58,14 @@ export default function UsuariosPage() {
   const { user } = useAuth();
   const queryClient = useQueryClient();
 
-  const handleInviteSuccess = () => {
+  const [selectedUser, setSelectedUser] = useState<string | null>(null);
+  const [selectedRole, setSelectedRole] = useState<AppRole | "">("");
+  const [editingProfile, setEditingProfile] = useState<any | null>(null);
+
+  const handleSuccess = () => {
     queryClient.invalidateQueries({ queryKey: ["profiles"] });
     queryClient.invalidateQueries({ queryKey: ["user_roles"] });
   };
-
-  const [selectedUser, setSelectedUser] = useState<string | null>(null);
-  const [selectedRole, setSelectedRole] = useState<AppRole | "">("");
 
   const isLoading = loadingProfiles || loadingRoles;
 
@@ -110,7 +112,7 @@ export default function UsuariosPage() {
   return (
     <div className="animate-fade-in">
       <PageHeader title="Usuarios y Roles" description="Gestión de usuarios y permisos del sistema">
-        <InviteUserDialog onSuccess={handleInviteSuccess} />
+        <InviteUserDialog onSuccess={handleSuccess} />
       </PageHeader>
 
       {/* Stats */}
@@ -144,11 +146,11 @@ export default function UsuariosPage() {
         </Card>
       </div>
 
-      {/* Assign Role */}
+      {/* Quick Assign Role */}
       <Card className="mb-6">
         <CardHeader>
           <CardTitle className="text-base flex items-center gap-2">
-            <UserCog className="h-4 w-4" /> Asignar Rol
+            <UserCog className="h-4 w-4" /> Asignación rápida de rol
           </CardTitle>
         </CardHeader>
         <CardContent>
@@ -195,21 +197,27 @@ export default function UsuariosPage() {
               const userRoles = getUserRoles(profile.user_id);
               const isCurrentUser = user?.id === profile.user_id;
               return (
-                <div key={profile.id} className="flex items-center justify-between px-6 py-4 hover:bg-muted/30 transition-colors">
-                  <div className="flex items-center gap-3">
-                    <Avatar className="h-10 w-10">
+                <div
+                  key={profile.id}
+                  className="flex items-center justify-between px-4 sm:px-6 py-4 hover:bg-muted/30 transition-colors gap-3"
+                >
+                  {/* Avatar + name */}
+                  <div className="flex items-center gap-3 min-w-0">
+                    <Avatar className="h-10 w-10 shrink-0">
                       <AvatarFallback className="bg-primary/10 text-primary text-sm font-semibold">
                         {(profile.display_name || "U")[0].toUpperCase()}
                       </AvatarFallback>
                     </Avatar>
-                    <div>
-                      <p className="font-medium text-sm">
+                    <div className="min-w-0">
+                      <p className="font-medium text-sm truncate">
                         {profile.display_name || "Sin nombre"}
                         {isCurrentUser && <span className="text-xs text-muted-foreground ml-2">(Tú)</span>}
                       </p>
-                      <p className="text-xs text-muted-foreground">{profile.user_id.slice(0, 8)}...</p>
+                      <p className="text-xs text-muted-foreground truncate">{profile.user_id.slice(0, 12)}...</p>
                     </div>
                   </div>
+
+                  {/* Roles + edit button */}
                   <div className="flex items-center gap-2 flex-wrap justify-end">
                     {userRoles.length === 0 && (
                       <span className="text-xs text-muted-foreground italic">Sin roles</span>
@@ -230,6 +238,16 @@ export default function UsuariosPage() {
                         </button>
                       </Badge>
                     ))}
+
+                    {/* Edit button */}
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      className="h-8 gap-1.5 text-xs ml-1"
+                      onClick={() => setEditingProfile(profile)}
+                    >
+                      <Pencil className="h-3.5 w-3.5" /> Editar
+                    </Button>
                   </div>
                 </div>
               );
@@ -242,6 +260,17 @@ export default function UsuariosPage() {
           </div>
         </CardContent>
       </Card>
+
+      {/* Edit User Dialog */}
+      {editingProfile && (
+        <EditUserDialog
+          profile={editingProfile}
+          userRoles={getUserRoles(editingProfile.user_id)}
+          open={!!editingProfile}
+          onOpenChange={(open) => { if (!open) setEditingProfile(null); }}
+          onSuccess={handleSuccess}
+        />
+      )}
     </div>
   );
 }

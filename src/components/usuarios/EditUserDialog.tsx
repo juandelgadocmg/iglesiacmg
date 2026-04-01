@@ -1,0 +1,289 @@
+import { useState, useEffect } from "react";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Checkbox } from "@/components/ui/checkbox";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Badge } from "@/components/ui/badge";
+import { Pencil, Save, KeyRound, User, ShieldCheck, Home } from "lucide-react";
+import { toast } from "sonner";
+import { supabase } from "@/integrations/supabase/client";
+import { Constants } from "@/integrations/supabase/types";
+import type { Database } from "@/integrations/supabase/types";
+
+type AppRole = Database["public"]["Enums"]["app_role"];
+
+const ROLE_LABELS: Record<AppRole, string> = {
+  admin: "Usuario Principal",
+  super_admin: "Super Administrador",
+  pastor: "Pastor",
+  lider: "Líder",
+  secretaria: "Secretaria",
+  tesoreria: "Tesorería",
+  maestro: "Maestro",
+  consolidador_lider: "Consolidador Líder",
+  consolidador: "Consolidador",
+  lider_intercesion: "Líder de Intercesión",
+  lider_red: "Líder de Red",
+  lider_casa_paz: "Líder Casa de Paz",
+  consulta: "Consulta",
+};
+
+const ROLE_DESCRIPTIONS: Record<AppRole, string> = {
+  admin: "Acceso total al sistema",
+  super_admin: "Acceso completo sin restricciones",
+  pastor: "Acceso casi total excepto configuración",
+  lider: "Personas, Grupos, Servicios, Eventos",
+  secretaria: "Personas, Servicios, Eventos, Peticiones",
+  tesoreria: "Finanzas, Donaciones, Reportes",
+  maestro: "Academia y Certificados",
+  consolidador_lider: "Crear/editar personas y peticiones, sin eliminar",
+  consolidador: "Editar información de crecimiento espiritual",
+  lider_intercesion: "Ver y responder peticiones de oración",
+  lider_red: "Ver personas y grupos de su red (solo lectura), crear reportes de su red",
+  lider_casa_paz: "Ver personas de casas de paz (solo lectura), crear reporte de su CDP",
+  consulta: "Solo lectura del dashboard",
+};
+
+const ROLES_CON_GRUPO: AppRole[] = ["lider_casa_paz", "lider_red"];
+
+interface UserRole { id: string; role: AppRole; user_id: string; }
+
+interface Profile {
+  id: string;
+  user_id: string;
+  display_name: string;
+  grupo_id?: string | null;
+}
+
+interface EditUserDialogProps {
+  profile: Profile;
+  userRoles: UserRole[];
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
+  onSuccess: () => void;
+}
+
+export default function EditUserDialog({ profile, userRoles, open, onOpenChange, onSuccess }: EditUserDialogProps) {
+  const [displayName, setDisplayName]   = useState(profile.display_name || "");
+  const [newPassword, setNewPassword]   = useState("");
+  const [selectedRoles, setSelectedRoles] = useState<AppRole[]>(userRoles.map(r => r.role));
+  const [grupoId, setGrupoId]           = useState(profile.grupo_id || "");
+  const [grupos, setGrupos]             = useState<{ id: string; nombre: string; red: string | null; tipo: string }[]>([]);
+  const [loading, setLoading]           = useState(false);
+  const [section, setSection]           = useState<"info" | "roles" | "grupo">("info");
+
+  const needsGrupo = selectedRoles.some(r => ROLES_CON_GRUPO.includes(r));
+
+  useEffect(() => {
+    if (open) {
+      setDisplayName(profile.display_name || "");
+      setNewPassword("");
+      setSelectedRoles(userRoles.map(r => r.role));
+      setGrupoId(profile.grupo_id || "");
+      setSection("info");
+    }
+  }, [open, profile, userRoles]);
+
+  useEffect(() => {
+    if (open && needsGrupo) {
+      supabase.from("grupos").select("id, nombre, red, tipo").eq("estado", "Activo").order("nombre")
+        .then(({ data }) => setGrupos(data || []));
+    }
+  }, [open, needsGrupo]);
+
+  const toggleRole = (role: AppRole) => {
+    setSelectedRoles(prev =>
+      prev.includes(role) ? prev.filter(r => r !== role) : [...prev, role]
+    );
+  };
+
+  const gruposFiltrados = grupos.filter(g => {
+    if (selectedRoles.includes("lider_casa_paz")) return g.tipo === "Casas de paz";
+    return true;
+  });
+
+  const handleSave = async () => {
+    setLoading(true);
+    try {
+      // 1. Update display_name + grupo_id in profile
+      const profileUpdates: any = { display_name: displayName.trim() || profile.display_name };
+      if (needsGrupo) profileUpdates.grupo_id = grupoId || null;
+      else profileUpdates.grupo_id = null;
+
+      const { error: profileErr } = await supabase
+        .from("profiles")
+        .update(profileUpdates)
+        .eq("user_id", profile.user_id);
+      if (profileErr) throw profileErr;
+
+      // 2. Sync roles — remove old, add new
+      const currentRoleIds = userRoles.map(r => r.id);
+      const currentRoleValues = userRoles.map(r => r.role);
+
+      const toRemove = userRoles.filter(r => !selectedRoles.includes(r.role));
+      const toAdd = selectedRoles.filter(r => !currentRoleValues.includes(r));
+
+      for (const r of toRemove) {
+        await supabase.from("user_roles").delete().eq("id", r.id);
+      }
+      for (const role of toAdd) {
+        await supabase.from("user_roles").insert({ user_id: profile.user_id, role });
+      }
+
+      // 3. Reset password if provided
+      if (newPassword.trim()) {
+        if (newPassword.length < 6) { toast.error("La contraseña debe tener al menos 6 caracteres"); setLoading(false); return; }
+        const { error: pwErr } = await supabase.functions.invoke("invite-user", {
+          body: { action: "reset_password", user_id: profile.user_id, password: newPassword.trim() },
+        });
+        if (pwErr) throw pwErr;
+      }
+
+      toast.success("Usuario actualizado correctamente");
+      onOpenChange(false);
+      onSuccess();
+    } catch (err: any) {
+      toast.error(err.message || "Error al actualizar usuario");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const sections = [
+    { key: "info",  label: "Información", icon: User },
+    { key: "roles", label: "Roles",       icon: ShieldCheck },
+    { key: "grupo", label: "Grupo",       icon: Home, show: needsGrupo },
+  ] as const;
+
+  return (
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      <DialogContent className="max-w-lg max-h-[88vh] overflow-hidden flex flex-col">
+        <DialogHeader>
+          <DialogTitle className="flex items-center gap-2">
+            <Pencil className="h-4 w-4 text-primary" />
+            Editar usuario — <span className="text-primary font-bold">{profile.display_name || "Sin nombre"}</span>
+          </DialogTitle>
+        </DialogHeader>
+
+        {/* Section tabs */}
+        <div className="flex gap-1 border-b pb-2">
+          {sections.filter(s => s.show !== false).map(s => (
+            <button
+              key={s.key}
+              onClick={() => setSection(s.key as any)}
+              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-medium transition-colors ${
+                section === s.key ? "bg-primary text-primary-foreground" : "text-muted-foreground hover:bg-muted"
+              }`}
+            >
+              <s.icon className="h-3.5 w-3.5" /> {s.label}
+            </button>
+          ))}
+        </div>
+
+        <div className="overflow-y-auto flex-1 pr-1">
+
+          {/* ── INFORMACIÓN ── */}
+          {section === "info" && (
+            <div className="space-y-4 pt-2">
+              <div className="space-y-2">
+                <Label>Nombre del usuario</Label>
+                <Input
+                  value={displayName}
+                  onChange={e => setDisplayName(e.target.value)}
+                  placeholder="Nombre completo"
+                />
+              </div>
+
+              <div className="space-y-2">
+                <Label className="flex items-center gap-1.5"><KeyRound className="h-3.5 w-3.5" /> Nueva contraseña</Label>
+                <Input
+                  type="password"
+                  value={newPassword}
+                  onChange={e => setNewPassword(e.target.value)}
+                  placeholder="Dejar vacío para no cambiar"
+                />
+                <p className="text-xs text-muted-foreground">Mínimo 6 caracteres. Solo escribe si deseas cambiarla.</p>
+              </div>
+
+              <div className="rounded-lg bg-muted/40 p-3 text-xs text-muted-foreground space-y-1">
+                <p><span className="font-medium">ID:</span> {profile.user_id.slice(0, 16)}...</p>
+                <p><span className="font-medium">Roles actuales:</span> {userRoles.length === 0 ? "Sin roles" : userRoles.map(r => ROLE_LABELS[r.role]).join(", ")}</p>
+                {profile.grupo_id && <p><span className="font-medium">Grupo asignado:</span> {grupos.find(g => g.id === profile.grupo_id)?.nombre || profile.grupo_id.slice(0,8)}</p>}
+              </div>
+            </div>
+          )}
+
+          {/* ── ROLES ── */}
+          {section === "roles" && (
+            <div className="space-y-2 pt-2">
+              <p className="text-xs text-muted-foreground mb-3">
+                Marca los roles que tendrá este usuario. Los cambios se aplican al guardar.
+              </p>
+              {Constants.public.Enums.app_role.map(role => (
+                <label
+                  key={role}
+                  className={`flex items-start gap-3 p-3 rounded-lg border cursor-pointer transition-colors ${
+                    selectedRoles.includes(role)
+                      ? "border-primary bg-primary/5"
+                      : "border-border hover:bg-muted/50"
+                  }`}
+                >
+                  <Checkbox
+                    checked={selectedRoles.includes(role)}
+                    onCheckedChange={() => toggleRole(role)}
+                    className="mt-0.5"
+                  />
+                  <div className="flex-1 min-w-0">
+                    <p className="text-sm font-medium">{ROLE_LABELS[role]}</p>
+                    <p className="text-xs text-muted-foreground">{ROLE_DESCRIPTIONS[role]}</p>
+                  </div>
+                </label>
+              ))}
+            </div>
+          )}
+
+          {/* ── GRUPO ── */}
+          {section === "grupo" && needsGrupo && (
+            <div className="space-y-4 pt-2">
+              <div className="rounded-lg border border-primary/30 bg-primary/5 p-3 text-xs text-muted-foreground">
+                Este usuario tiene un rol que requiere un grupo asignado. Al iniciar sesión verá directamente su grupo.
+              </div>
+              <div className="space-y-2">
+                <Label>{selectedRoles.includes("lider_casa_paz") ? "Casa de Paz asignada" : "Grupo asignado"}</Label>
+                <Select value={grupoId} onValueChange={setGrupoId}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Seleccionar grupo..." />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {gruposFiltrados.map(g => (
+                      <SelectItem key={g.id} value={g.id}>
+                        <span>{g.nombre}</span>
+                        {g.red && <span className="text-xs text-muted-foreground ml-2">· Red {g.red}</span>}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                {grupoId && (
+                  <p className="text-xs text-success font-medium">
+                    ✓ Grupo seleccionado: {gruposFiltrados.find(g => g.id === grupoId)?.nombre}
+                  </p>
+                )}
+              </div>
+            </div>
+          )}
+        </div>
+
+        {/* Footer */}
+        <div className="flex justify-end gap-2 pt-3 border-t mt-2">
+          <Button variant="outline" onClick={() => onOpenChange(false)}>Cancelar</Button>
+          <Button onClick={handleSave} disabled={loading} className="gap-1.5">
+            <Save className="h-3.5 w-3.5" />
+            {loading ? "Guardando..." : "Guardar cambios"}
+          </Button>
+        </div>
+      </DialogContent>
+    </Dialog>
+  );
+}
