@@ -117,10 +117,21 @@ export default function InviteUserDialog({ onSuccess }: InviteUserDialogProps) {
 
       // Si la función no asigna grupo_id al profile, lo hacemos aquí
       if (needsGrupo && grupoId && data?.user_id) {
-        await supabase
+        const { error: grupoErr } = await supabase
           .from("profiles")
-          .update({ grupo_id: grupoId })
+          .update({ grupo_id: grupoId } as any)
           .eq("user_id", data.user_id);
+
+        if (grupoErr) {
+          if (grupoErr.message?.includes("grupo_id") || grupoErr.message?.includes("schema cache")) {
+            toast.warning(
+              "Usuario creado, pero la asignación de grupo requiere una migración pendiente. Ve a Supabase → SQL Editor y ejecuta: ALTER TABLE public.profiles ADD COLUMN IF NOT EXISTS grupo_id UUID REFERENCES public.grupos(id) ON DELETE SET NULL;",
+              { duration: 8000 }
+            );
+          } else {
+            throw grupoErr;
+          }
+        }
       }
 
       toast.success("Usuario creado y grupo asignado exitosamente");
