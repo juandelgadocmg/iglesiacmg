@@ -214,6 +214,13 @@ export default function UsuariosPage() {
                         {isCurrentUser && <span className="text-xs text-muted-foreground ml-2">(Tú)</span>}
                       </p>
                       <p className="text-xs text-muted-foreground truncate">{profile.user_id.slice(0, 12)}...</p>
+                      {(profile as any).grupo && (
+                        <p className="text-xs text-muted-foreground flex items-center gap-1 mt-0.5">
+                          <Home className="h-3 w-3" />
+                          {(profile as any).grupo.nombre}
+                          {(profile as any).grupo.red && <span>· Red {(profile as any).grupo.red}</span>}
+                        </p>
+                      )}
                     </div>
                   </div>
 

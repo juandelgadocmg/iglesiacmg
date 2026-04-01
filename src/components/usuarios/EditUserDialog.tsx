@@ -46,7 +46,7 @@ const ROLE_DESCRIPTIONS: Record<AppRole, string> = {
   consulta: "Solo lectura del dashboard",
 };
 
-const ROLES_CON_GRUPO: AppRole[] = ["lider_casa_paz", "lider_red"];
+const ROLES_CON_GRUPO: AppRole[] = ["lider_casa_paz", "lider_red", "lider", "consolidador_lider", "consolidador"];
 
 interface UserRole { id: string; role: AppRole; user_id: string; }
 
