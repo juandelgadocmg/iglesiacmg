@@ -360,8 +360,11 @@ export default function ImportPersonasDialog() {
         }
 
         for (const pName of PROCESO_NAMES) {
-          const estado = str(getVal(r, `${pName} (Estado)`));
-          if (!estado || !VALID_PROC_ESTADOS.includes(estado) || estado === "No realizado") continue;
+          let estado = str(getVal(r, `${pName} (Estado)`));
+          if (!estado || !VALID_PROC_ESTADOS.includes(estado)) continue;
+          // Normalize display names to DB values
+          if (estado === "Finalizado") estado = "Realizado";
+          if (estado === "No Finalizado" || estado === "No finalizado" || estado === "No realizado" || estado === "No Realizado") continue;
           allProcesos.push({
             persona_id: cp.id,
             proceso_id: PROCESOS_MAP[pName],
