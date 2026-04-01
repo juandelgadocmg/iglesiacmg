@@ -122,16 +122,16 @@ export default function PersonaDetailDialog({ persona, open, onOpenChange }: Pro
                 {(procesos || []).map((proc) => {
                   const pp = procesoMap.get(proc.id);
                   const rawEstado = pp?.estado || "No Realizado";
-                  const estado = normalizeEstado(rawEstado);
+                  const estado = displayEstado(rawEstado);
                   const fecha = pp?.fecha_completado;
                   return (
                     <div key={proc.id} className="flex items-center justify-between py-2 px-2 rounded-md hover:bg-muted/50 text-sm border-b border-border/50 last:border-0">
-                      <span className={`flex-1 ${estado === "Realizado" ? "text-muted-foreground" : ""}`}>
+                      <span className={`flex-1 ${estado === "Finalizado" ? "text-muted-foreground" : ""}`}>
                         {proc.nombre}
                       </span>
                       <div className="flex items-center gap-2 shrink-0">
                         <Badge
-                          className={`text-[11px] px-3 py-0.5 rounded-full font-medium ${estadoBadgeClasses[estado] || estadoBadgeClasses["No Realizado"]}`}
+                          className={`text-[11px] px-3 py-0.5 rounded-full font-medium ${estadoBadgeClasses[estado] || estadoBadgeClasses["No Finalizado"]}`}
                         >
                           {estado}
                         </Badge>
