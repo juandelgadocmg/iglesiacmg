@@ -3,7 +3,7 @@ import { Badge } from "@/components/ui/badge";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Separator } from "@/components/ui/separator";
 import { Progress } from "@/components/ui/progress";
-import { Phone, Mail, MapPin, CheckCircle2, Circle, Loader2 } from "lucide-react";
+import { Phone, Mail, MapPin, Loader2, Globe } from "lucide-react";
 import { format, parseISO } from "date-fns";
 import { es } from "date-fns/locale";
 import { useProcesos, usePersonaProcesos } from "@/hooks/usePersonaPerfil";
@@ -14,10 +14,11 @@ interface Props {
   onOpenChange: (open: boolean) => void;
 }
 
-const estadoColors: Record<string, string> = {
-  "Realizado": "text-green-600 dark:text-green-400",
-  "En Curso": "text-blue-600 dark:text-blue-400",
-  "No realizado": "text-muted-foreground",
+const estadoBadgeClasses: Record<string, string> = {
+  "Realizado": "bg-green-600 text-white border-green-600",
+  "En Curso": "bg-slate-800 text-white border-slate-800 dark:bg-slate-600",
+  "No Realizado": "bg-red-600 text-white border-red-600",
+  "No realizado": "bg-red-600 text-white border-red-600",
 };
 
 export default function PersonaDetailDialog({ persona, open, onOpenChange }: Props) {
@@ -34,6 +35,11 @@ export default function PersonaDetailDialog({ persona, open, onOpenChange }: Pro
   const progressPct = totalProcesos > 0 ? Math.round((realizados / totalProcesos) * 100) : 0;
 
   if (!persona) return null;
+
+  const normalizeEstado = (estado: string) => {
+    if (estado === "No realizado") return "No Realizado";
+    return estado;
+  };
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -70,17 +76,20 @@ export default function PersonaDetailDialog({ persona, open, onOpenChange }: Pro
             {persona.direccion && (
               <div className="flex items-center gap-2"><MapPin className="h-4 w-4 text-muted-foreground" /><span>{persona.direccion}</span></div>
             )}
+            {persona.fecha_nacimiento && (
+              <div><span className="text-muted-foreground">Fecha de nacimiento:</span> {format(parseISO(persona.fecha_nacimiento), "d 'de' MMMM 'de' yyyy", { locale: es })}</div>
+            )}
             {persona.sexo && (
               <div><span className="text-muted-foreground">Sexo:</span> {persona.sexo}</div>
             )}
             {persona.estado_civil && (
               <div><span className="text-muted-foreground">Estado civil:</span> {persona.estado_civil}</div>
             )}
-            {persona.fecha_nacimiento && (
-              <div><span className="text-muted-foreground">Fecha de nacimiento:</span> {format(parseISO(persona.fecha_nacimiento), "d 'de' MMMM 'de' yyyy", { locale: es })}</div>
-            )}
             {persona.ocupacion && (
               <div><span className="text-muted-foreground">Ocupación:</span> {persona.ocupacion}</div>
+            )}
+            {persona.vinculacion && (
+              <div className="flex items-center gap-2"><Globe className="h-4 w-4 text-muted-foreground" /><span className="text-muted-foreground">Red:</span> <span>{persona.vinculacion}</span></div>
             )}
             {persona.whatsapp && (
               <div><span className="text-muted-foreground">WhatsApp:</span> {persona.whatsapp}</div>
@@ -97,8 +106,8 @@ export default function PersonaDetailDialog({ persona, open, onOpenChange }: Pro
           <Separator />
           <div className="space-y-3">
             <div className="flex items-center justify-between">
-              <h4 className="text-sm font-semibold">Crecimiento Espiritual</h4>
-              <span className="text-xs text-muted-foreground">{realizados}/{totalProcesos} completados</span>
+              <h4 className="text-sm font-semibold">Procesos de Crecimiento</h4>
+              <span className="text-xs text-muted-foreground">{realizados}/{totalProcesos} completados · {progressPct}%</span>
             </div>
             <Progress value={progressPct} className="h-2" />
 
@@ -109,32 +118,29 @@ export default function PersonaDetailDialog({ persona, open, onOpenChange }: Pro
             ) : (procesos || []).length === 0 ? (
               <p className="text-xs text-muted-foreground text-center py-2">No hay procesos de crecimiento configurados</p>
             ) : (
-              <div className="grid grid-cols-1 gap-1.5 max-h-[250px] overflow-y-auto pr-1">
+              <div className="grid grid-cols-1 gap-1 max-h-[300px] overflow-y-auto pr-1">
                 {(procesos || []).map((proc) => {
                   const pp = procesoMap.get(proc.id);
-                  const estado = pp?.estado || "No realizado";
+                  const rawEstado = pp?.estado || "No Realizado";
+                  const estado = normalizeEstado(rawEstado);
                   const fecha = pp?.fecha_completado;
                   return (
-                    <div key={proc.id} className="flex items-center gap-2.5 py-1.5 px-2 rounded-md hover:bg-muted/50 text-sm">
-                      {estado === "Realizado" ? (
-                        <CheckCircle2 className="h-4 w-4 text-green-600 dark:text-green-400 shrink-0" />
-                      ) : (
-                        <Circle className={`h-4 w-4 shrink-0 ${estado === "En Curso" ? "text-blue-600 dark:text-blue-400" : "text-muted-foreground/40"}`} />
-                      )}
-                      <span className={`flex-1 ${estado === "Realizado" ? "line-through text-muted-foreground" : ""}`}>
+                    <div key={proc.id} className="flex items-center justify-between py-2 px-2 rounded-md hover:bg-muted/50 text-sm border-b border-border/50 last:border-0">
+                      <span className={`flex-1 ${estado === "Realizado" ? "text-muted-foreground" : ""}`}>
                         {proc.nombre}
                       </span>
-                      <Badge
-                        variant="outline"
-                        className={`text-[10px] h-5 ${estadoColors[estado] || ""}`}
-                      >
-                        {estado}
-                      </Badge>
-                      {fecha && (
-                        <span className="text-[10px] text-muted-foreground">
-                          {format(parseISO(fecha), "dd/MM/yy")}
-                        </span>
-                      )}
+                      <div className="flex items-center gap-2 shrink-0">
+                        <Badge
+                          className={`text-[11px] px-3 py-0.5 rounded-full font-medium ${estadoBadgeClasses[estado] || estadoBadgeClasses["No Realizado"]}`}
+                        >
+                          {estado}
+                        </Badge>
+                        {fecha && (
+                          <span className="text-xs text-muted-foreground whitespace-nowrap">
+                            {format(parseISO(fecha), "dd/MM/yyyy")}
+                          </span>
+                        )}
+                      </div>
                     </div>
                   );
                 })}
