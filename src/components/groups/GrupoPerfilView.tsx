@@ -70,6 +70,8 @@ export default function GrupoPerfilView({ grupoId, onBack, readOnly = false }: P
   const [addingRol, setAddingRol] = useState("asistente");
   const [searchQuery, setSearchQuery] = useState("");
   const [showMap, setShowMap] = useState(false);
+  const [membersPage, setMembersPage] = useState(1);
+  const MEMBERS_PER_PAGE = 20;
 
   const addMiembro = useAddGrupoMiembro();
   const updateRol = useUpdateMiembroRol();
