@@ -15,10 +15,9 @@ interface Props {
 }
 
 const estadoBadgeClasses: Record<string, string> = {
-  "Realizado": "bg-green-600 text-white border-green-600",
+  "Finalizado": "bg-green-600 text-white border-green-600",
   "En Curso": "bg-slate-800 text-white border-slate-800 dark:bg-slate-600",
-  "No Realizado": "bg-red-600 text-white border-red-600",
-  "No realizado": "bg-red-600 text-white border-red-600",
+  "No Finalizado": "bg-red-600 text-white border-red-600",
 };
 
 export default function PersonaDetailDialog({ persona, open, onOpenChange }: Props) {
@@ -36,8 +35,9 @@ export default function PersonaDetailDialog({ persona, open, onOpenChange }: Pro
 
   if (!persona) return null;
 
-  const normalizeEstado = (estado: string) => {
-    if (estado === "No realizado") return "No Realizado";
+  const displayEstado = (estado: string) => {
+    if (estado === "Realizado") return "Finalizado";
+    if (estado === "No Realizado" || estado === "No realizado") return "No Finalizado";
     return estado;
   };
 
@@ -122,16 +122,16 @@ export default function PersonaDetailDialog({ persona, open, onOpenChange }: Pro
                 {(procesos || []).map((proc) => {
                   const pp = procesoMap.get(proc.id);
                   const rawEstado = pp?.estado || "No Realizado";
-                  const estado = normalizeEstado(rawEstado);
+                  const estado = displayEstado(rawEstado);
                   const fecha = pp?.fecha_completado;
                   return (
                     <div key={proc.id} className="flex items-center justify-between py-2 px-2 rounded-md hover:bg-muted/50 text-sm border-b border-border/50 last:border-0">
-                      <span className={`flex-1 ${estado === "Realizado" ? "text-muted-foreground" : ""}`}>
+                      <span className={`flex-1 ${estado === "Finalizado" ? "text-muted-foreground" : ""}`}>
                         {proc.nombre}
                       </span>
                       <div className="flex items-center gap-2 shrink-0">
                         <Badge
-                          className={`text-[11px] px-3 py-0.5 rounded-full font-medium ${estadoBadgeClasses[estado] || estadoBadgeClasses["No Realizado"]}`}
+                          className={`text-[11px] px-3 py-0.5 rounded-full font-medium ${estadoBadgeClasses[estado] || estadoBadgeClasses["No Finalizado"]}`}
                         >
                           {estado}
                         </Badge>

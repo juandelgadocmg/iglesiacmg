@@ -322,6 +322,7 @@ export default function PersonaPerfilPage() {
               </CardHeader>
               <CardContent className="space-y-2.5 text-sm">
                 <InfoRow label="Grupo" value={(persona as any).grupos?.nombre || "Sin grupo"} />
+                <InfoRow label="Red" value={persona.vinculacion || "—"} />
                 <InfoRow label="Ministerio" value={persona.ministerio || "—"} />
                 <InfoRow label="Líder" value={persona.lider_responsable || "—"} />
                 <InfoRow label="Invitado por" value={persona.invitado_por || "—"} />
@@ -575,6 +576,7 @@ export default function PersonaPerfilPage() {
                 {(procesos || []).map((p: any) => {
                   const pp = procesosMap.get(p.id);
                   const estado = pp?.estado || "No Realizado";
+                  const displayEstado = estado === "Realizado" ? "Finalizado" : estado === "No Realizado" ? "No Finalizado" : estado;
                   const badgeClass = estado === "Realizado"
                     ? "bg-success text-success-foreground"
                     : estado === "En Curso"
@@ -587,7 +589,7 @@ export default function PersonaPerfilPage() {
                         className={cn("cursor-pointer select-none min-w-[100px] justify-center", badgeClass)}
                         onClick={() => handleToggleEstado(p.id, estado)}
                       >
-                        {estado}
+                        {displayEstado}
                       </Badge>
                       <Button variant="outline" size="icon" className="h-8 w-8 shrink-0" onClick={() => openProcesoDialog(p.id, p.nombre)}>
                         <Plus className="h-4 w-4" />

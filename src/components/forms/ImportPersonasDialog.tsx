@@ -44,7 +44,7 @@ const VALID_TIPOS_PERSONA = [
   "Líder Casa de Paz", "Líder de Red", "Mentor", "Pastor Principal",
 ];
 const VALID_ESTADOS = ["Activo", "Inactivo", "En proceso"];
-const VALID_PROC_ESTADOS = ["No Realizado", "No realizado", "En Curso", "Realizado"];
+const VALID_PROC_ESTADOS = ["No Finalizado", "No finalizado", "No Realizado", "No realizado", "En Curso", "Finalizado", "Realizado"];
 const VALID_TIPOS_PETICION = ["Financiera", "Familiar", "Sanidad", "Emocional", "Otros"];
 
 function parseExcelDate(val: any): string | null {
@@ -112,7 +112,7 @@ const downloadTemplate = () => {
     "observaciones": "Persona comprometida",
     "tipo_peticion": "Sanidad",
     "descripcion_peticion": "Oración por salud de un familiar",
-    "Ingreso a la Iglesia (Estado)": "Realizado",
+    "Ingreso a la Iglesia (Estado)": "Finalizado",
     "Ingreso a la Iglesia (Fecha)": "2024-01-15",
     "Ingreso a la Iglesia (Observación)": "Llegó invitado por un familiar",
   };
@@ -360,8 +360,11 @@ export default function ImportPersonasDialog() {
         }
 
         for (const pName of PROCESO_NAMES) {
-          const estado = str(getVal(r, `${pName} (Estado)`));
-          if (!estado || !VALID_PROC_ESTADOS.includes(estado) || estado === "No realizado") continue;
+          let estado = str(getVal(r, `${pName} (Estado)`));
+          if (!estado || !VALID_PROC_ESTADOS.includes(estado)) continue;
+          // Normalize display names to DB values
+          if (estado === "Finalizado") estado = "Realizado";
+          if (estado === "No Finalizado" || estado === "No finalizado" || estado === "No realizado" || estado === "No Realizado") continue;
           allProcesos.push({
             persona_id: cp.id,
             proceso_id: PROCESOS_MAP[pName],
