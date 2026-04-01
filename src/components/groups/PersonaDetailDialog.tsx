@@ -35,8 +35,9 @@ export default function PersonaDetailDialog({ persona, open, onOpenChange }: Pro
 
   if (!persona) return null;
 
-  const normalizeEstado = (estado: string) => {
-    if (estado === "No realizado") return "No Realizado";
+  const displayEstado = (estado: string) => {
+    if (estado === "Realizado") return "Finalizado";
+    if (estado === "No Realizado" || estado === "No realizado") return "No Finalizado";
     return estado;
   };
 
