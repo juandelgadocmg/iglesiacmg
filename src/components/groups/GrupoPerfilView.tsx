@@ -32,7 +32,8 @@ import { exportGroupProfilePDF } from "@/lib/exportUtils";
 
 interface Props {
   grupoId: string;
-  onBack: () => void;
+  onBack: (() => void) | null;
+  readOnly?: boolean;
 }
 
 const rolIcon = (rol: string) => {
@@ -55,7 +56,7 @@ const rolBadgeClass = (rol: string) => {
   }
 };
 
-export default function GrupoPerfilView({ grupoId, onBack }: Props) {
+export default function GrupoPerfilView({ grupoId, onBack, readOnly = false }: Props) {
   const { data: grupo, isLoading: loadingGrupo } = useGrupoDetalle(grupoId);
   const { data: miembros, isLoading: loadingMiembros } = useGrupoMiembrosDetalle(grupoId);
   const { data: reportes } = useGrupoReportes(grupoId);
@@ -162,10 +163,12 @@ export default function GrupoPerfilView({ grupoId, onBack }: Props) {
 
   return (
     <div className="animate-fade-in space-y-6">
-      {/* Back button */}
-      <Button variant="ghost" size="sm" className="gap-1" onClick={onBack}>
-        <ChevronLeft className="h-4 w-4" /> Volver a Grupos
-      </Button>
+      {/* Back button — hidden for lider_casa_paz (readOnly) */}
+      {onBack && (
+        <Button variant="ghost" size="sm" className="gap-1" onClick={onBack}>
+          <ChevronLeft className="h-4 w-4" /> Volver a Grupos
+        </Button>
+      )}
 
       {/* ====== HEADER ====== */}
       <div className="rounded-xl border bg-card p-6">
@@ -184,31 +187,7 @@ export default function GrupoPerfilView({ grupoId, onBack }: Props) {
             </div>
           </div>
           <div className="flex items-center gap-2 flex-wrap">
-            <Button variant="outline" size="sm" className="gap-1.5" onClick={() => {
-              if (!grupo) return;
-              const mList = (miembros || []).map(m => ({
-                nombre: `${m.persona?.nombres || ""} ${m.persona?.apellidos || ""}`,
-                rol: ROLES_GRUPO.find(r => r.value === m.rol)?.label || "Asistente",
-                telefono: m.persona?.telefono || "",
-                email: m.persona?.email || "",
-                estado: m.persona?.estado_iglesia || "",
-              }));
-              const rList = (reportes || []).map(r => ({
-                fecha: format(parseISO(r.fecha), "dd/MM/yyyy"),
-                presentes: r.presentes,
-                ausentes: r.ausentes,
-                nuevos: r.nuevos,
-                ofrenda: r.ofrenda_casa_paz || 0,
-                estado: r.estado,
-              }));
-              exportGroupProfilePDF(grupo as any, metrics, mList, rList);
-              toast.success("PDF generado");
-            }}>
-              <Download className="h-3.5 w-3.5" /> Exportar PDF
-            </Button>
-            <Button variant="outline" size="sm" className="gap-1.5" onClick={() => setEditing(true)}>
-              <Pencil className="h-3.5 w-3.5" /> Editar
-            </Button>
+            <Button variant="outline" size="sm" className="gap-1.5" onClick={() => {\n              if (!grupo) return;\n              const mList = (miembros || []).map(m => ({\n                nombre: `${m.persona?.nombres || ""} ${m.persona?.apellidos || ""}`,\n                rol: ROLES_GRUPO.find(r => r.value === m.rol)?.label || "Asistente",\n                telefono: m.persona?.telefono || "",\n                email: m.persona?.email || "",\n                estado: m.persona?.estado_iglesia || "",\n              }));\n              const rList = (reportes || []).map(r => ({\n                fecha: format(parseISO(r.fecha), "dd/MM/yyyy"),\n                presentes: r.presentes,\n                ausentes: r.ausentes,\n                nuevos: r.nuevos,\n                ofrenda: r.ofrenda_casa_paz || 0,\n                estado: r.estado,\n              }));\n              exportGroupProfilePDF(grupo as any, metrics, mList, rList);\n              toast.success("PDF generado");\n            }}>\n              <Download className="h-3.5 w-3.5" /> Exportar PDF\n            </Button>\n            {!readOnly && (\n              <Button variant="outline" size="sm" className="gap-1.5" onClick={() => setEditing(true)}>\n                <Pencil className="h-3.5 w-3.5" /> Editar\n              </Button>\n            )}
             <Button size="sm" className="gap-1.5" onClick={() => setShowReportForm(true)}>
               <ClipboardList className="h-3.5 w-3.5" /> Crear Reporte
             </Button>
@@ -313,7 +292,8 @@ export default function GrupoPerfilView({ grupoId, onBack }: Props) {
         {/* ====== INTEGRANTES TAB ====== */}
         <TabsContent value="integrantes">
           <div className="space-y-4">
-            {/* Add member */}
+            {/* Add member — hidden for readOnly */}
+            {!readOnly && (
             <div className="rounded-xl border bg-card p-4 space-y-3">
               <p className="text-sm font-medium">Agregar integrante</p>
               <div className="flex gap-2 flex-wrap">
@@ -348,6 +328,7 @@ export default function GrupoPerfilView({ grupoId, onBack }: Props) {
                 </div>
               )}
             </div>
+            )} {/* end !readOnly add member */}
 
             {/* Filters */}
             <div className="flex gap-2 flex-wrap">
@@ -384,7 +365,7 @@ export default function GrupoPerfilView({ grupoId, onBack }: Props) {
                   <div className="space-y-2">
                     <h4 className="text-sm font-semibold flex items-center gap-2"><Shield className="h-4 w-4 text-primary" />Equipo de Trabajo ({equipoMembers.length})</h4>
                     <div className="space-y-1.5">
-                      {equipoMembers.map(m => <MemberCard key={m.id} miembro={m} onRolChange={handleRolChange} onRemove={handleRemove} />)}
+                      {equipoMembers.map(m => <MemberCard key={m.id} miembro={m} onRolChange={handleRolChange} onRemove={handleRemove} readOnly={readOnly} />)}
                     </div>
                   </div>
                 )}
@@ -394,7 +375,7 @@ export default function GrupoPerfilView({ grupoId, onBack }: Props) {
                     <h4 className="text-sm font-semibold flex items-center gap-2"><Users className="h-4 w-4 text-muted-foreground" />Asistentes ({asistenteMembers.length})</h4>
                     <ScrollArea className="max-h-[500px]">
                       <div className="space-y-1.5">
-                        {asistenteMembers.map(m => <MemberCard key={m.id} miembro={m} onRolChange={handleRolChange} onRemove={handleRemove} />)}
+                        {asistenteMembers.map(m => <MemberCard key={m.id} miembro={m} onRolChange={handleRolChange} onRemove={handleRemove} readOnly={readOnly} />)}
                       </div>
                     </ScrollArea>
                   </div>
@@ -548,7 +529,7 @@ function ReportStatusBadge({ estado }: { estado: string }) {
   return <Badge variant="outline" className={`text-[10px] h-5 ${styles[estado] || ""}`}>{estado}</Badge>;
 }
 
-function MemberCard({ miembro, onRolChange, onRemove }: { miembro: MiembroDetalle; onRolChange: (id: string, rol: string) => void; onRemove: (id: string) => void }) {
+function MemberCard({ miembro, onRolChange, onRemove, readOnly = false }: { miembro: MiembroDetalle; onRolChange: (id: string, rol: string) => void; onRemove: (id: string) => void; readOnly?: boolean }) {
   const p = miembro.persona;
   if (!p) return null;
   const initials = `${p.nombres?.[0] || ""}${p.apellidos?.[0] || ""}`.toUpperCase();
@@ -576,15 +557,19 @@ function MemberCard({ miembro, onRolChange, onRemove }: { miembro: MiembroDetall
           <span>· {p.estado_iglesia}</span>
         </div>
       </div>
-      <Select value={rol} onValueChange={v => onRolChange(miembro.id, v)}>
-        <SelectTrigger className="w-28 h-8 text-xs"><SelectValue /></SelectTrigger>
-        <SelectContent>
-          {ROLES_GRUPO.map(r => <SelectItem key={r.value} value={r.value}>{r.label}</SelectItem>)}
-        </SelectContent>
-      </Select>
-      <Button size="icon" variant="ghost" className="h-8 w-8 text-destructive" onClick={() => onRemove(miembro.id)}>
-        <X className="h-4 w-4" />
-      </Button>
+      {!readOnly && (
+        <Select value={rol} onValueChange={v => onRolChange(miembro.id, v)}>
+          <SelectTrigger className="w-28 h-8 text-xs"><SelectValue /></SelectTrigger>
+          <SelectContent>
+            {ROLES_GRUPO.map(r => <SelectItem key={r.value} value={r.value}>{r.label}</SelectItem>)}
+          </SelectContent>
+        </Select>
+      )}
+      {!readOnly && (
+        <Button size="icon" variant="ghost" className="h-8 w-8 text-destructive" onClick={() => onRemove(miembro.id)}>
+          <X className="h-4 w-4" />
+        </Button>
+      )}
     </div>
   );
 }

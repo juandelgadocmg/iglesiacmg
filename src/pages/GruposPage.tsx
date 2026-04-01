@@ -23,6 +23,7 @@ import { useQuery } from "@tanstack/react-query";
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid, Legend } from "recharts";
 import { useUserRoles } from "@/hooks/useUserRoles";
 import { canPerform } from "@/lib/permissions";
+import { useAuth } from "@/hooks/useAuth";
 
 const ReportesGruposContent = lazy(() => import("@/pages/ReportesGruposPage"));
 const MapaGruposContent = lazy(() => import("@/pages/MapaGruposPage"));
@@ -94,18 +95,58 @@ export default function GruposPage() {
   const deletePlan = useDeletePlanificacion();
   const [viewingPlan, setViewingPlan] = useState<any>(null);
   const { roles } = useUserRoles();
-  const canCreateGrupo = canPerform(roles, "grupos:create");
-  const canEditGrupo   = canPerform(roles, "grupos:edit");
-  const canDeleteGrupo = canPerform(roles, "grupos:delete");
+  const { user } = useAuth();
+  const canCreateGrupo   = canPerform(roles, "grupos:create");
+  const canEditGrupo     = canPerform(roles, "grupos:edit");
+  const canDeleteGrupo   = canPerform(roles, "grupos:delete");
   const canCreateReporte = canPerform(roles, "reportes_grupos:create");
+  const isLiderCDP       = roles.includes("lider_casa_paz");
 
-  if (isLoading) {
+  // Fetch profile to get assigned grupo_id for lider_casa_paz
+  const { data: profile, isLoading: loadingProfile } = useQuery({
+    queryKey: ["my_profile", user?.id],
+    enabled: !!user?.id && isLiderCDP,
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("profiles")
+        .select("grupo_id")
+        .eq("user_id", user!.id)
+        .single();
+      if (error) throw error;
+      return data;
+    },
+  });
+
+  const isLoadingAll = isLoading || (isLiderCDP && loadingProfile);
+
+  if (isLoadingAll) {
     return (
       <div className="animate-fade-in space-y-4">
         <Skeleton className="h-10 w-48" />
         <Skeleton className="h-[400px] w-full" />
       </div>
     );
+  }
+
+  // lider_casa_paz → redirect directly to their assigned group (no back button)
+  if (isLiderCDP) {
+    const grupoIdCDP = (profile as any)?.grupo_id;
+    if (!grupoIdCDP) {
+      return (
+        <div className="animate-fade-in min-h-[60vh] flex items-center justify-center">
+          <div className="text-center max-w-sm space-y-3">
+            <div className="w-14 h-14 rounded-2xl bg-amber-100 flex items-center justify-center mx-auto">
+              <Users className="h-7 w-7 text-amber-600" />
+            </div>
+            <h2 className="text-lg font-semibold">Sin grupo asignado</h2>
+            <p className="text-sm text-muted-foreground">
+              Tu usuario aún no tiene una Casa de Paz asignada. Contacta al administrador para que te la configure.
+            </p>
+          </div>
+        </div>
+      );
+    }
+    return <GrupoPerfilView grupoId={grupoIdCDP} onBack={null} readOnly />;
   }
 
   const tableData = (grupos || []).map(g => ({
