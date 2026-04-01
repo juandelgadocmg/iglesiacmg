@@ -1,5 +1,6 @@
 import { useState, useMemo } from "react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -65,6 +66,7 @@ export default function GrupoPerfilView({ grupoId, onBack, readOnly = false }: P
   const [editing, setEditing] = useState(false);
   const [showReportForm, setShowReportForm] = useState(false);
   const [memberSearch, setMemberSearch] = useState("");
+  const [selectedPersona, setSelectedPersona] = useState<any>(null);
   const [memberFilterRol, setMemberFilterRol] = useState("todos");
   const [memberFilterEstado, setMemberFilterEstado] = useState("todos");
   const [addingRol, setAddingRol] = useState("asistente");
@@ -393,7 +395,7 @@ export default function GrupoPerfilView({ grupoId, onBack, readOnly = false }: P
                   <div className="space-y-2">
                     <h4 className="text-sm font-semibold flex items-center gap-2"><Shield className="h-4 w-4 text-primary" />Equipo de Trabajo ({equipoMembers.length})</h4>
                     <div className="space-y-1.5">
-                      {equipoMembers.map(m => <MemberCard key={m.id} miembro={m} onRolChange={handleRolChange} onRemove={handleRemove} readOnly={readOnly} />)}
+                      {equipoMembers.map(m => <MemberCard key={m.id} miembro={m} onRolChange={handleRolChange} onRemove={handleRemove} readOnly={readOnly} onView={setSelectedPersona} />)}
                     </div>
                   </div>
                 )}
@@ -403,48 +405,112 @@ export default function GrupoPerfilView({ grupoId, onBack, readOnly = false }: P
                     <h4 className="text-sm font-semibold flex items-center gap-2"><Users className="h-4 w-4 text-muted-foreground" />Asistentes ({asistenteMembers.length})</h4>
                     <div className="space-y-1.5">
                       {asistenteMembers.slice((membersPage - 1) * MEMBERS_PER_PAGE, membersPage * MEMBERS_PER_PAGE).map(m => (
-                        <MemberCard key={m.id} miembro={m} onRolChange={handleRolChange} onRemove={handleRemove} readOnly={readOnly} />
+                        <MemberCard key={m.id} miembro={m} onRolChange={handleRolChange} onRemove={handleRemove} readOnly={readOnly} onView={setSelectedPersona} />
                       ))}
                     </div>
-                    {asistenteMembers.length > MEMBERS_PER_PAGE && (
-                      <div className="flex items-center justify-between pt-3 border-t">
-                        <p className="text-xs text-muted-foreground">
-                          Mostrando {(membersPage - 1) * MEMBERS_PER_PAGE + 1}–{Math.min(membersPage * MEMBERS_PER_PAGE, asistenteMembers.length)} de {asistenteMembers.length}
-                        </p>
-                        <div className="flex items-center gap-1">
-                          <Button
-                            variant="outline" size="sm" className="h-7 text-xs"
-                            disabled={membersPage <= 1}
-                            onClick={() => setMembersPage(p => p - 1)}
-                          >
-                            ← Anterior
-                          </Button>
-                          {Array.from({ length: Math.ceil(asistenteMembers.length / MEMBERS_PER_PAGE) }, (_, i) => (
-                            <Button
-                              key={i + 1}
-                              variant={membersPage === i + 1 ? "default" : "outline"}
-                              size="sm"
-                              className="h-7 w-7 text-xs p-0"
-                              onClick={() => setMembersPage(i + 1)}
-                            >
-                              {i + 1}
+                    {asistenteMembers.length > MEMBERS_PER_PAGE && (() => {
+                      const totalPages = Math.ceil(asistenteMembers.length / MEMBERS_PER_PAGE);
+                      return (
+                        <div className="flex items-center justify-between pt-3 border-t">
+                          <p className="text-xs text-muted-foreground">
+                            Mostrando {(membersPage - 1) * MEMBERS_PER_PAGE + 1}–{Math.min(membersPage * MEMBERS_PER_PAGE, asistenteMembers.length)} de {asistenteMembers.length}
+                          </p>
+                          <div className="flex items-center gap-1 flex-wrap">
+                            <Button variant="outline" size="sm" className="h-7 text-xs" disabled={membersPage <= 1} onClick={() => setMembersPage(p => p - 1)}>
+                              ← Anterior
                             </Button>
-                          ))}
-                          <Button
-                            variant="outline" size="sm" className="h-7 text-xs"
-                            disabled={membersPage >= Math.ceil(asistenteMembers.length / MEMBERS_PER_PAGE)}
-                            onClick={() => setMembersPage(p => p + 1)}
-                          >
-                            Siguiente →
-                          </Button>
+                            {totalPages <= 7 ? (
+                              Array.from({ length: totalPages }, (_, i) => (
+                                <Button key={i + 1} variant={membersPage === i + 1 ? "default" : "outline"} size="sm" className="h-7 w-7 text-xs p-0" onClick={() => setMembersPage(i + 1)}>
+                                  {i + 1}
+                                </Button>
+                              ))
+                            ) : (
+                              <>
+                                {[1, 2].map(n => (
+                                  <Button key={n} variant={membersPage === n ? "default" : "outline"} size="sm" className="h-7 w-7 text-xs p-0" onClick={() => setMembersPage(n)}>{n}</Button>
+                                ))}
+                                {membersPage > 3 && <span className="text-xs px-1">…</span>}
+                                {membersPage > 2 && membersPage < totalPages - 1 && (
+                                  <Button variant="default" size="sm" className="h-7 w-7 text-xs p-0">{membersPage}</Button>
+                                )}
+                                {membersPage < totalPages - 2 && <span className="text-xs px-1">…</span>}
+                                {[totalPages - 1, totalPages].map(n => (
+                                  <Button key={n} variant={membersPage === n ? "default" : "outline"} size="sm" className="h-7 w-7 text-xs p-0" onClick={() => setMembersPage(n)}>{n}</Button>
+                                ))}
+                              </>
+                            )}
+                            <Button variant="outline" size="sm" className="h-7 text-xs" disabled={membersPage >= totalPages} onClick={() => setMembersPage(p => p + 1)}>
+                              Siguiente →
+                            </Button>
+                          </div>
                         </div>
-                      </div>
-                    )}
+                      );
+                    })()}
                   </div>
                 )}
               </>
             )}
           </div>
+
+          {/* Person detail dialog */}
+          <Dialog open={!!selectedPersona} onOpenChange={(o) => !o && setSelectedPersona(null)}>
+            <DialogContent className="max-w-md">
+              <DialogHeader>
+                <DialogTitle>Información del Integrante</DialogTitle>
+              </DialogHeader>
+              {selectedPersona && (
+                <div className="space-y-4">
+                  <div className="flex items-center gap-4">
+                    <Avatar className="h-16 w-16">
+                      <AvatarImage src={selectedPersona.foto_url || undefined} />
+                      <AvatarFallback className="text-lg">{selectedPersona.nombres?.[0]}{selectedPersona.apellidos?.[0]}</AvatarFallback>
+                    </Avatar>
+                    <div>
+                      <p className="text-lg font-semibold">{selectedPersona.nombres} {selectedPersona.apellidos}</p>
+                      <div className="flex gap-2 mt-1">
+                        <Badge variant="outline" className="text-xs">{selectedPersona.tipo_persona}</Badge>
+                        <Badge variant="secondary" className="text-xs">{selectedPersona.estado_iglesia}</Badge>
+                      </div>
+                    </div>
+                  </div>
+                  <Separator />
+                  <div className="grid grid-cols-1 gap-3 text-sm">
+                    {selectedPersona.telefono && (
+                      <div className="flex items-center gap-2"><Phone className="h-4 w-4 text-muted-foreground" /><span>{selectedPersona.telefono}</span></div>
+                    )}
+                    {selectedPersona.email && (
+                      <div className="flex items-center gap-2"><Mail className="h-4 w-4 text-muted-foreground" /><span>{selectedPersona.email}</span></div>
+                    )}
+                    {selectedPersona.direccion && (
+                      <div className="flex items-center gap-2"><MapPin className="h-4 w-4 text-muted-foreground" /><span>{selectedPersona.direccion}</span></div>
+                    )}
+                    {selectedPersona.sexo && (
+                      <div><span className="text-muted-foreground">Sexo:</span> {selectedPersona.sexo}</div>
+                    )}
+                    {selectedPersona.estado_civil && (
+                      <div><span className="text-muted-foreground">Estado civil:</span> {selectedPersona.estado_civil}</div>
+                    )}
+                    {selectedPersona.fecha_nacimiento && (
+                      <div><span className="text-muted-foreground">Fecha de nacimiento:</span> {format(parseISO(selectedPersona.fecha_nacimiento), "d 'de' MMMM 'de' yyyy", { locale: es })}</div>
+                    )}
+                    {selectedPersona.ocupacion && (
+                      <div><span className="text-muted-foreground">Ocupación:</span> {selectedPersona.ocupacion}</div>
+                    )}
+                    {selectedPersona.whatsapp && (
+                      <div><span className="text-muted-foreground">WhatsApp:</span> {selectedPersona.whatsapp}</div>
+                    )}
+                    {selectedPersona.ministerio && (
+                      <div><span className="text-muted-foreground">Ministerio:</span> {selectedPersona.ministerio}</div>
+                    )}
+                    {selectedPersona.observaciones && (
+                      <div><span className="text-muted-foreground">Observaciones:</span> {selectedPersona.observaciones}</div>
+                    )}
+                  </div>
+                </div>
+              )}
+            </DialogContent>
+          </Dialog>
         </TabsContent>
 
         {/* ====== ESTADÍSTICAS TAB ====== */}
@@ -591,7 +657,7 @@ function ReportStatusBadge({ estado }: { estado: string }) {
   return <Badge variant="outline" className={`text-[10px] h-5 ${styles[estado] || ""}`}>{estado}</Badge>;
 }
 
-function MemberCard({ miembro, onRolChange, onRemove, readOnly = false }: { miembro: MiembroDetalle; onRolChange: (id: string, rol: string) => void; onRemove: (id: string) => void; readOnly?: boolean }) {
+function MemberCard({ miembro, onRolChange, onRemove, readOnly = false, onView }: { miembro: MiembroDetalle; onRolChange: (id: string, rol: string) => void; onRemove: (id: string) => void; readOnly?: boolean; onView?: (persona: any) => void }) {
   const p = miembro.persona;
   if (!p) return null;
   const initials = `${p.nombres?.[0] || ""}${p.apellidos?.[0] || ""}`.toUpperCase();
@@ -599,7 +665,10 @@ function MemberCard({ miembro, onRolChange, onRemove, readOnly = false }: { miem
   const rolLabel = ROLES_GRUPO.find(r => r.value === rol)?.label || "Asistente";
 
   return (
-    <div className="flex items-center gap-3 p-3 rounded-lg border bg-card hover:shadow-sm transition-shadow">
+    <div
+      className="flex items-center gap-3 p-3 rounded-lg border bg-card hover:shadow-sm transition-shadow cursor-pointer"
+      onClick={() => onView?.(p)}
+    >
       <Avatar className="h-10 w-10">
         <AvatarImage src={p.foto_url || undefined} />
         <AvatarFallback className="text-xs">{initials}</AvatarFallback>
@@ -620,17 +689,17 @@ function MemberCard({ miembro, onRolChange, onRemove, readOnly = false }: { miem
         </div>
       </div>
       {!readOnly && (
-        <Select value={rol} onValueChange={v => onRolChange(miembro.id, v)}>
-          <SelectTrigger className="w-28 h-8 text-xs"><SelectValue /></SelectTrigger>
-          <SelectContent>
-            {ROLES_GRUPO.map(r => <SelectItem key={r.value} value={r.value}>{r.label}</SelectItem>)}
-          </SelectContent>
-        </Select>
-      )}
-      {!readOnly && (
-        <Button size="icon" variant="ghost" className="h-8 w-8 text-destructive" onClick={() => onRemove(miembro.id)}>
-          <X className="h-4 w-4" />
-        </Button>
+        <div className="flex items-center gap-1" onClick={e => e.stopPropagation()}>
+          <Select value={rol} onValueChange={v => onRolChange(miembro.id, v)}>
+            <SelectTrigger className="w-28 h-8 text-xs"><SelectValue /></SelectTrigger>
+            <SelectContent>
+              {ROLES_GRUPO.map(r => <SelectItem key={r.value} value={r.value}>{r.label}</SelectItem>)}
+            </SelectContent>
+          </Select>
+          <Button size="icon" variant="ghost" className="h-8 w-8 text-destructive" onClick={() => onRemove(miembro.id)}>
+            <X className="h-4 w-4" />
+          </Button>
+        </div>
       )}
     </div>
   );
