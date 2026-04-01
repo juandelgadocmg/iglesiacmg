@@ -112,7 +112,7 @@ const downloadTemplate = () => {
     "observaciones": "Persona comprometida",
     "tipo_peticion": "Sanidad",
     "descripcion_peticion": "Oración por salud de un familiar",
-    "Ingreso a la Iglesia (Estado)": "Realizado",
+    "Ingreso a la Iglesia (Estado)": "Finalizado",
     "Ingreso a la Iglesia (Fecha)": "2024-01-15",
     "Ingreso a la Iglesia (Observación)": "Llegó invitado por un familiar",
   };
