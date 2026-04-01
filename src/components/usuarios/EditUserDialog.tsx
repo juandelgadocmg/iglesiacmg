@@ -157,7 +157,7 @@ export default function EditUserDialog({ profile, userRoles, open, onOpenChange,
   const sections = [
     { key: "info" as const,  label: "Información", icon: User, show: true },
     { key: "roles" as const, label: "Roles",       icon: ShieldCheck, show: true },
-    { key: "grupo" as const, label: "Grupo",       icon: Home, show: needsGrupo },
+    { key: "grupo" as const, label: "Grupo",       icon: Home, show: true },
   ];
 
   return (
