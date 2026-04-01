@@ -87,11 +87,11 @@ export default function EditUserDialog({ profile, userRoles, open, onOpenChange,
   }, [open, profile, userRoles]);
 
   useEffect(() => {
-    if (open && needsGrupo) {
+    if (open) {
       supabase.from("grupos").select("id, nombre, red, tipo").eq("estado", "Activo").order("nombre")
         .then(({ data }) => setGrupos(data || []));
     }
-  }, [open, needsGrupo]);
+  }, [open]);
 
   const toggleRole = (role: AppRole) => {
     setSelectedRoles(prev =>
