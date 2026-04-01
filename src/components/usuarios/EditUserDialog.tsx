@@ -248,7 +248,7 @@ export default function EditUserDialog({ profile, userRoles, open, onOpenChange,
           )}
 
           {/* ── GRUPO ── */}
-          {section === "grupo" && needsGrupo && (
+          {section === "grupo" && (
             <div className="space-y-4 pt-2">
               <div className="rounded-lg border border-primary/30 bg-primary/5 p-3 text-xs text-muted-foreground">
                 Este usuario tiene un rol que requiere un grupo asignado. Al iniciar sesión verá directamente su grupo.
