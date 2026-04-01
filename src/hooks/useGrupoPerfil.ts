@@ -76,7 +76,7 @@ export function useGrupoMiembrosDetalle(grupoId: string | null) {
     queryFn: async () => {
       const { data, error } = await supabase
         .from("grupo_miembros")
-        .select("*, personas:persona_id(id, nombres, apellidos, foto_url, tipo_persona, telefono, email, direccion, estado_iglesia, whatsapp)")
+        .select("*, personas:persona_id(id, nombres, apellidos, foto_url, tipo_persona, telefono, email, direccion, estado_iglesia, whatsapp, sexo, estado_civil, fecha_nacimiento, ocupacion, ministerio, observaciones)")
         .eq("grupo_id", grupoId!) as any;
       if (error) throw error;
       return (data || []).map((d: any) => ({
