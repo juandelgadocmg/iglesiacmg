@@ -41,11 +41,17 @@ export const ROUTE_PERMISSIONS: Record<string, AppRole[]> = {
 /**
  * Fine-grained action permissions.
  * Used by components to show/hide specific buttons.
+ *
+ * lider_red     → solo lectura en personas y grupos; puede crear reportes de su red
+ * lider_casa_paz → solo lectura en personas; solo puede crear reporte de su CDP
  */
 export type ActionPermission =
   | "personas:create"
   | "personas:edit"
   | "personas:delete"
+  | "grupos:create"
+  | "grupos:edit"
+  | "grupos:delete"
   | "peticiones:create"
   | "peticiones:edit"
   | "peticiones:view"
@@ -55,14 +61,17 @@ export type ActionPermission =
 
 const ACTION_PERMISSIONS: Record<ActionPermission, AppRole[]> = {
   "personas:create": ["admin", "super_admin", "pastor", "lider", "secretaria", "consolidador_lider"],
-  "personas:edit": ["admin", "super_admin", "pastor", "lider", "secretaria", "consolidador_lider", "consolidador", "lider_red"],
+  "personas:edit":   ["admin", "super_admin", "pastor", "lider", "secretaria", "consolidador_lider", "consolidador"],
   "personas:delete": ["admin", "super_admin", "pastor"],
-  "peticiones:create": ["admin", "super_admin", "pastor", "lider", "secretaria", "consolidador_lider"],
-  "peticiones:edit": ["admin", "super_admin", "pastor", "lider", "secretaria", "consolidador_lider"],
-  "peticiones:view": ["admin", "super_admin", "pastor", "lider", "secretaria", "consolidador_lider", "lider_intercesion"],
+  "grupos:create":   ["admin", "super_admin", "pastor", "lider"],
+  "grupos:edit":     ["admin", "super_admin", "pastor", "lider"],
+  "grupos:delete":   ["admin", "super_admin", "pastor"],
+  "peticiones:create":  ["admin", "super_admin", "pastor", "lider", "secretaria", "consolidador_lider"],
+  "peticiones:edit":    ["admin", "super_admin", "pastor", "lider", "secretaria", "consolidador_lider"],
+  "peticiones:view":    ["admin", "super_admin", "pastor", "lider", "secretaria", "consolidador_lider", "lider_intercesion"],
   "peticiones:respond": ["admin", "super_admin", "pastor", "lider_intercesion"],
   "reportes_grupos:create": ["admin", "super_admin", "pastor", "lider", "lider_red", "lider_casa_paz"],
-  "reportes_grupos:edit": ["admin", "super_admin", "pastor", "lider", "lider_red"],
+  "reportes_grupos:edit":   ["admin", "super_admin", "pastor", "lider", "lider_red"],
 };
 
 export function canAccess(userRoles: AppRole[], path: string): boolean {

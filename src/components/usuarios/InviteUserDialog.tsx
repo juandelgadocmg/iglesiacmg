@@ -39,8 +39,8 @@ const ROLE_DESCRIPTIONS: Record<AppRole, string> = {
   consolidador_lider: "Crear/editar personas y peticiones, sin eliminar",
   consolidador: "Editar información de crecimiento espiritual",
   lider_intercesion: "Ver y responder peticiones de oración",
-  lider_red: "Membresía de su red, reportes de grupos",
-  lider_casa_paz: "Crear reportes de casa de paz",
+  lider_red: "Ver personas y grupos de su red (solo lectura), crear reportes de su red",
+  lider_casa_paz: "Ver personas de casas de paz (solo lectura), crear reporte de su CDP",
   consulta: "Solo lectura del dashboard",
 };
 

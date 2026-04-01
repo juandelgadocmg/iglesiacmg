@@ -21,6 +21,8 @@ import ExportDropdown from "@/components/shared/ExportDropdown";
 import { supabase } from "@/integrations/supabase/client";
 import { useQuery } from "@tanstack/react-query";
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid, Legend } from "recharts";
+import { useUserRoles } from "@/hooks/useUserRoles";
+import { canPerform } from "@/lib/permissions";
 
 const ReportesGruposContent = lazy(() => import("@/pages/ReportesGruposPage"));
 const MapaGruposContent = lazy(() => import("@/pages/MapaGruposPage"));
@@ -91,6 +93,11 @@ export default function GruposPage() {
   const { data: planificaciones } = usePlanificaciones();
   const deletePlan = useDeletePlanificacion();
   const [viewingPlan, setViewingPlan] = useState<any>(null);
+  const { roles } = useUserRoles();
+  const canCreateGrupo = canPerform(roles, "grupos:create");
+  const canEditGrupo   = canPerform(roles, "grupos:edit");
+  const canDeleteGrupo = canPerform(roles, "grupos:delete");
+  const canCreateReporte = canPerform(roles, "reportes_grupos:create");
 
   if (isLoading) {
     return (
@@ -126,10 +133,10 @@ export default function GruposPage() {
           { header: "Día", key: "dia_reunion" }, { header: "Miembros", key: "miembrosCount" },
           { header: "Estado", key: "estado" },
         ]} data={tableData} />
-        <GrupoFormDialog />
+        {canCreateGrupo && <GrupoFormDialog />}
       </PageHeader>
 
-      {editing && <GrupoFormDialog initialData={editing} onClose={() => setEditing(null)} />}
+      {canEditGrupo && editing && <GrupoFormDialog initialData={editing} onClose={() => setEditing(null)} />}
 
       <Tabs defaultValue="lista" className="space-y-4">
         <TabsList className="flex-wrap h-auto gap-1">
@@ -184,8 +191,8 @@ export default function GruposPage() {
                 key: "actions", label: "",
                 render: (g: any) => (
                   <div className="flex items-center gap-1" onClick={e => e.stopPropagation()}>
-                    <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => setEditing({ ...g })}><Pencil className="h-4 w-4" /></Button>
-                    <DeleteConfirmDialog onConfirm={() => handleDelete(g.id)} title="¿Eliminar grupo?" description={`Se eliminará el grupo "${g.nombre}" permanentemente.`} />
+                    {canEditGrupo && <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => setEditing({ ...g })}><Pencil className="h-4 w-4" /></Button>}
+                    {canDeleteGrupo && <DeleteConfirmDialog onConfirm={() => handleDelete(g.id)} title="¿Eliminar grupo?" description={`Se eliminará el grupo "${g.nombre}" permanentemente.`} />}
                   </div>
                 )
               },
@@ -213,7 +220,7 @@ export default function GruposPage() {
                 Solo disponible el día de reunión configurado en cada grupo.
               </p>
             </div>
-            <Button onClick={() => setShowReportForm(true)} className="gap-2">
+            <Button onClick={() => setShowReportForm(true)} className="gap-2" disabled={!canCreateReporte}>
               <Plus className="h-4 w-4" /> Iniciar Reporte
             </Button>
           </div>
@@ -244,9 +251,11 @@ export default function GruposPage() {
                 <h3 className="text-base sm:text-lg font-semibold">Hojas de Planeación</h3>
                 <p className="text-xs sm:text-sm text-muted-foreground">Planificación semanal de Casas de Paz</p>
               </div>
-              <Button onClick={() => setShowPlanForm(true)} className="gap-2 w-full sm:w-auto">
-                <Plus className="h-4 w-4" /> Nueva Planificación
-              </Button>
+              {canCreateGrupo && (
+                <Button onClick={() => setShowPlanForm(true)} className="gap-2 w-full sm:w-auto">
+                  <Plus className="h-4 w-4" /> Nueva Planificación
+                </Button>
+              )}
             </div>
 
             {planificaciones && planificaciones.length > 0 ? (
@@ -262,10 +271,12 @@ export default function GruposPage() {
                         <Button size="icon" variant="ghost" className="h-7 w-7" onClick={() => setViewingPlan(p)}>
                           <Eye className="h-3.5 w-3.5" />
                         </Button>
-                        <DeleteConfirmDialog
-                          onConfirm={async () => { try { await deletePlan.mutateAsync(p.id); toast.success("Eliminada"); } catch { toast.error("Error"); } }}
-                          trigger={<Button size="icon" variant="ghost" className="h-7 w-7 text-destructive"><Trash2 className="h-3.5 w-3.5" /></Button>}
-                        />
+                        {canDeleteGrupo && (
+                          <DeleteConfirmDialog
+                            onConfirm={async () => { try { await deletePlan.mutateAsync(p.id); toast.success("Eliminada"); } catch { toast.error("Error"); } }}
+                            trigger={<Button size="icon" variant="ghost" className="h-7 w-7 text-destructive"><Trash2 className="h-3.5 w-3.5" /></Button>}
+                          />
+                        )}
                       </div>
                     </div>
                     <p className="text-[10px] text-muted-foreground">{new Date(p.created_at).toLocaleDateString()}</p>

@@ -24,6 +24,8 @@ import { format, parseISO } from "date-fns";
 import { es } from "date-fns/locale";
 import ExportDropdown from "@/components/shared/ExportDropdown";
 import ImportPersonasDialog from "@/components/forms/ImportPersonasDialog";
+import { useUserRoles } from "@/hooks/useUserRoles";
+import { canPerform } from "@/lib/permissions";
 
 const TIPOS = [
   "Todos", "Miembro", "Visitante", "Líder", "Servidor", "CDP",
@@ -54,6 +56,10 @@ export default function PersonasPage() {
   const { data: personas, isLoading } = usePersonas();
   const deletePersona = useDeletePersona();
   const [editing, setEditing] = useState<any>(null);
+  const { roles } = useUserRoles();
+  const canEdit   = canPerform(roles, "personas:edit");
+  const canCreate = canPerform(roles, "personas:create");
+  const canDelete = canPerform(roles, "personas:delete");
   const [search, setSearch] = useState("");
   const [tipoFilter, setTipoFilter] = useState("Todos");
   const [estadoFilter, setEstadoFilter] = useState("all");
@@ -119,11 +125,11 @@ export default function PersonasPage() {
           { header: "Tipo", key: "tipo_persona" }, { header: "Grupo", key: "grupoNombre" },
           { header: "Estado", key: "estado_iglesia" },
         ]} data={tableData} />
-        <ImportPersonasDialog />
-        <PersonaFormDialog />
+        {canCreate && <ImportPersonasDialog />}
+        {canCreate && <PersonaFormDialog />}
       </PageHeader>
 
-      {editing && <PersonaFormDialog initialData={editing} onClose={() => setEditing(null)} />}
+      {canEdit && editing && <PersonaFormDialog initialData={editing} onClose={() => setEditing(null)} />}
 
       {/* Metrics */}
       <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-4">
@@ -210,12 +216,16 @@ export default function PersonasPage() {
                       {p.fecha_nacimiento && <div className="flex items-center gap-2"><Calendar className="h-3 w-3" /> {format(parseISO(p.fecha_nacimiento), "dd MMM yyyy", { locale: es })}</div>}
                     </div>
                     <div className="flex items-center gap-1 pt-1 border-t opacity-0 group-hover:opacity-100 transition-opacity">
-                      <Button variant="ghost" size="sm" className="h-7 text-xs gap-1" onClick={(e) => { e.stopPropagation(); setEditing({ ...p }); }}>
-                        <Pencil className="h-3 w-3" /> Editar
-                      </Button>
-                      <div className="ml-auto" onClick={e => e.stopPropagation()}>
-                        <DeleteConfirmDialog onConfirm={() => handleDelete(p.id)} title="¿Eliminar persona?" description={`Se eliminará a ${p.nombres} ${p.apellidos} permanentemente.`} />
-                      </div>
+                      {canEdit && (
+                        <Button variant="ghost" size="sm" className="h-7 text-xs gap-1" onClick={(e) => { e.stopPropagation(); setEditing({ ...p }); }}>
+                          <Pencil className="h-3 w-3" /> Editar
+                        </Button>
+                      )}
+                      {canDelete && (
+                        <div className="ml-auto" onClick={e => e.stopPropagation()}>
+                          <DeleteConfirmDialog onConfirm={() => handleDelete(p.id)} title="¿Eliminar persona?" description={`Se eliminará a ${p.nombres} ${p.apellidos} permanentemente.`} />
+                        </div>
+                      )}
                     </div>
                   </div>
                 </CardContent>
