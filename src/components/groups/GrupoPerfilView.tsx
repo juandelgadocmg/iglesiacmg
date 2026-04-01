@@ -68,6 +68,7 @@ export default function GrupoPerfilView({ grupoId, onBack, readOnly = false }: P
   const [memberSearch, setMemberSearch] = useState("");
   const [selectedPersona, setSelectedPersona] = useState<any>(null);
   const [memberFilterRol, setMemberFilterRol] = useState("todos");
+  const [memberFilterEstado, setMemberFilterEstado] = useState("todos");
   const [addingRol, setAddingRol] = useState("asistente");
   const [searchQuery, setSearchQuery] = useState("");
   const [showMap, setShowMap] = useState(false);
