@@ -656,7 +656,7 @@ function ReportStatusBadge({ estado }: { estado: string }) {
   return <Badge variant="outline" className={`text-[10px] h-5 ${styles[estado] || ""}`}>{estado}</Badge>;
 }
 
-function MemberCard({ miembro, onRolChange, onRemove, readOnly = false }: { miembro: MiembroDetalle; onRolChange: (id: string, rol: string) => void; onRemove: (id: string) => void; readOnly?: boolean }) {
+function MemberCard({ miembro, onRolChange, onRemove, readOnly = false, onView }: { miembro: MiembroDetalle; onRolChange: (id: string, rol: string) => void; onRemove: (id: string) => void; readOnly?: boolean; onView?: (persona: any) => void }) {
   const p = miembro.persona;
   if (!p) return null;
   const initials = `${p.nombres?.[0] || ""}${p.apellidos?.[0] || ""}`.toUpperCase();
@@ -664,7 +664,10 @@ function MemberCard({ miembro, onRolChange, onRemove, readOnly = false }: { miem
   const rolLabel = ROLES_GRUPO.find(r => r.value === rol)?.label || "Asistente";
 
   return (
-    <div className="flex items-center gap-3 p-3 rounded-lg border bg-card hover:shadow-sm transition-shadow">
+    <div
+      className="flex items-center gap-3 p-3 rounded-lg border bg-card hover:shadow-sm transition-shadow cursor-pointer"
+      onClick={() => onView?.(p)}
+    >
       <Avatar className="h-10 w-10">
         <AvatarImage src={p.foto_url || undefined} />
         <AvatarFallback className="text-xs">{initials}</AvatarFallback>
@@ -685,17 +688,17 @@ function MemberCard({ miembro, onRolChange, onRemove, readOnly = false }: { miem
         </div>
       </div>
       {!readOnly && (
-        <Select value={rol} onValueChange={v => onRolChange(miembro.id, v)}>
-          <SelectTrigger className="w-28 h-8 text-xs"><SelectValue /></SelectTrigger>
-          <SelectContent>
-            {ROLES_GRUPO.map(r => <SelectItem key={r.value} value={r.value}>{r.label}</SelectItem>)}
-          </SelectContent>
-        </Select>
-      )}
-      {!readOnly && (
-        <Button size="icon" variant="ghost" className="h-8 w-8 text-destructive" onClick={() => onRemove(miembro.id)}>
-          <X className="h-4 w-4" />
-        </Button>
+        <div className="flex items-center gap-1" onClick={e => e.stopPropagation()}>
+          <Select value={rol} onValueChange={v => onRolChange(miembro.id, v)}>
+            <SelectTrigger className="w-28 h-8 text-xs"><SelectValue /></SelectTrigger>
+            <SelectContent>
+              {ROLES_GRUPO.map(r => <SelectItem key={r.value} value={r.value}>{r.label}</SelectItem>)}
+            </SelectContent>
+          </Select>
+          <Button size="icon" variant="ghost" className="h-8 w-8 text-destructive" onClick={() => onRemove(miembro.id)}>
+            <X className="h-4 w-4" />
+          </Button>
+        </div>
       )}
     </div>
   );
