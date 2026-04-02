@@ -8,7 +8,7 @@ export function usePersonaDetalle(id: string | undefined) {
     queryFn: async () => {
       const { data, error } = await supabase
         .from("personas")
-        .select("*, grupos!fk_personas_grupo(id, nombre, tipo)")
+        .select("*, grupos!fk_personas_grupo(id, nombre, tipo, red)")
         .eq("id", id!)
         .single();
       if (error) throw error;

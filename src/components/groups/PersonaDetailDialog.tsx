@@ -93,7 +93,7 @@ export default function PersonaDetailDialog({ persona, open, onOpenChange }: Pro
               <div><span className="text-muted-foreground">Ocupación:</span> {persona.ocupacion}</div>
             )}
             {persona.vinculacion && (
-              <div className="flex items-center gap-2"><Globe className="h-4 w-4 text-muted-foreground" /><span className="text-muted-foreground">Red:</span> <span>{persona.vinculacion}</span></div>
+              <div className="flex items-center gap-2"><Globe className="h-4 w-4 text-muted-foreground" /><span className="text-muted-foreground">Vinculación:</span> <span>{persona.vinculacion}</span></div>
             )}
             {persona.whatsapp && (
               <div><span className="text-muted-foreground">WhatsApp:</span> {persona.whatsapp}</div>

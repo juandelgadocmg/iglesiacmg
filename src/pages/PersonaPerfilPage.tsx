@@ -322,7 +322,8 @@ export default function PersonaPerfilPage() {
               </CardHeader>
               <CardContent className="space-y-2.5 text-sm">
                 <InfoRow label="Grupo" value={(persona as any).grupos?.nombre || "Sin grupo"} />
-                <InfoRow label="Red" value={persona.vinculacion || "—"} />
+                <InfoRow label="Red" value={(persona as any).grupos?.red || "—"} />
+                <InfoRow label="Vinculación" value={persona.vinculacion || "—"} />
                 <InfoRow label="Ministerio" value={persona.ministerio || "—"} />
                 <InfoRow label="Líder" value={persona.lider_responsable || "—"} />
                 <InfoRow label="Invitado por" value={persona.invitado_por || "—"} />
