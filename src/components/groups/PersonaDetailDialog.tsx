@@ -40,7 +40,8 @@ export default function PersonaDetailDialog({ persona, open, onOpenChange }: Pro
 
   const displayEstado = (estado: string) => {
     if (estado === "Realizado") return "Finalizado";
-    if (estado === "No Realizado" || estado === "No realizado") return "No Finalizado";
+    if (estado === "No Realizado" || estado === "No realizado" || estado === "No Finalizado") return "No Finalizado";
+    if (estado === "En Curso") return "En Curso";
     return estado;
   };
 
