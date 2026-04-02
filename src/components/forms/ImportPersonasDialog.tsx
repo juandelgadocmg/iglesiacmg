@@ -360,18 +360,73 @@ export default function ImportPersonasDialog() {
         }
 
         for (const pName of PROCESO_NAMES) {
+          // Try multiple column name formats for Estado
           let estado = str(getVal(r, `${pName} (Estado)`));
-          if (!estado || !VALID_PROC_ESTADOS.includes(estado)) continue;
-          // Normalize to standard DB values
-          if (estado === "Realizado") estado = "Finalizado";
-          if (estado === "No realizado" || estado === "No Realizado") estado = "No Finalizado";
-          if (estado === "No finalizado") estado = "No Finalizado";
+          if (!estado) estado = str(getVal(r, `${pName}_(Estado)`));
+          if (!estado) estado = str(getVal(r, `${pName} Estado`));
+          // Also try matching by iterating keys
+          if (!estado) {
+            const searchKey = pName.toLowerCase();
+            for (const key of Object.keys(r)) {
+              const lk = key.toLowerCase().trim();
+              if (lk.includes(searchKey) && (lk.includes("estado") || lk.includes("(estado)"))) {
+                estado = str(r[key]);
+                break;
+              }
+            }
+          }
+          if (!estado) continue;
+
+          // Normalize estado value (case-insensitive matching)
+          const estadoLower = estado.toLowerCase().trim();
+          if (estadoLower === "realizado" || estadoLower === "finalizado" || estadoLower === "si" || estadoLower === "sí") {
+            estado = "Realizado";
+          } else if (estadoLower === "en curso" || estadoLower === "en proceso") {
+            estado = "En Curso";
+          } else if (estadoLower === "no realizado" || estadoLower === "no finalizado" || estadoLower === "no" || estadoLower === "pendiente") {
+            estado = "No Realizado";
+          } else {
+            // If unrecognized, skip
+            continue;
+          }
+
+          // Try multiple column name formats for Fecha
+          let fechaVal = getVal(r, `${pName} (Fecha)`);
+          if (!fechaVal) fechaVal = getVal(r, `${pName}_(Fecha)`);
+          if (!fechaVal) fechaVal = getVal(r, `${pName} Fecha`);
+          if (!fechaVal) {
+            const searchKey = pName.toLowerCase();
+            for (const key of Object.keys(r)) {
+              const lk = key.toLowerCase().trim();
+              if (lk.includes(searchKey) && (lk.includes("fecha") || lk.includes("(fecha)"))) {
+                fechaVal = r[key];
+                break;
+              }
+            }
+          }
+
+          // Try multiple column name formats for Observación
+          let obsVal = getVal(r, `${pName} (Observación)`);
+          if (!obsVal) obsVal = getVal(r, `${pName}_(Observación)`);
+          if (!obsVal) obsVal = getVal(r, `${pName} Observación`);
+          if (!obsVal) obsVal = getVal(r, `${pName} (Observacion)`);
+          if (!obsVal) {
+            const searchKey = pName.toLowerCase();
+            for (const key of Object.keys(r)) {
+              const lk = key.toLowerCase().trim();
+              if (lk.includes(searchKey) && (lk.includes("observ"))) {
+                obsVal = r[key];
+                break;
+              }
+            }
+          }
+
           allProcesos.push({
             persona_id: cp.id,
             proceso_id: PROCESOS_MAP[pName],
             estado,
-            fecha_completado: parseExcelDate(getVal(r, `${pName} (Fecha)`)),
-            observacion: str(getVal(r, `${pName} (Observación)`)),
+            fecha_completado: parseExcelDate(fechaVal),
+            observacion: str(obsVal),
           });
         }
       }

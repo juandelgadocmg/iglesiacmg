@@ -576,10 +576,13 @@ export default function PersonaPerfilPage() {
                 {(procesos || []).map((p: any) => {
                   const pp = procesosMap.get(p.id);
                   const estado = pp?.estado || "No Realizado";
-                  const displayEstado = estado === "Realizado" ? "Finalizado" : estado === "No Realizado" ? "No Finalizado" : estado;
-                  const badgeClass = estado === "Realizado"
+                  const estadoNorm = estado.toLowerCase().trim();
+                  const displayEstado = (estadoNorm === "realizado" || estadoNorm === "finalizado") ? "Finalizado" 
+                    : estadoNorm === "en curso" ? "En Curso" 
+                    : "No Finalizado";
+                  const badgeClass = (estadoNorm === "realizado" || estadoNorm === "finalizado")
                     ? "bg-success text-success-foreground"
-                    : estado === "En Curso"
+                    : estadoNorm === "en curso"
                     ? "bg-primary text-primary-foreground"
                     : "bg-destructive text-destructive-foreground";
                   return (
