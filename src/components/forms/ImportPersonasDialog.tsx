@@ -431,6 +431,27 @@ export default function ImportPersonasDialog() {
         }
       }
 
+      // Phase 4: Assign personas to grupo_miembros
+      const allGrupoMiembros: any[] = [];
+      for (const cp of createdPersonas) {
+        const v = validRows[cp.index];
+        if (v.persona.grupo_id) {
+          allGrupoMiembros.push({
+            grupo_id: v.persona.grupo_id,
+            persona_id: cp.id,
+            rol: "asistente",
+          });
+        }
+      }
+
+      for (let i = 0; i < allGrupoMiembros.length; i += CHUNK_SIZE) {
+        const chunk = allGrupoMiembros.slice(i, i + CHUNK_SIZE);
+        const { error: gmErr } = await supabase.from("grupo_miembros").insert(chunk as any);
+        if (gmErr) {
+          errors.push({ row: 0, message: `Error al asignar miembros a grupos (lote): ${gmErr.message}` });
+        }
+      }
+
       // Insert peticiones in chunks
       for (let i = 0; i < allPeticiones.length; i += CHUNK_SIZE) {
         const chunk = allPeticiones.slice(i, i + CHUNK_SIZE);
