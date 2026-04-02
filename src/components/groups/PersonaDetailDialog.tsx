@@ -16,8 +16,11 @@ interface Props {
 
 const estadoBadgeClasses: Record<string, string> = {
   "Finalizado": "bg-green-600 text-white border-green-600",
+  "Realizado": "bg-green-600 text-white border-green-600",
   "En Curso": "bg-slate-800 text-white border-slate-800 dark:bg-slate-600",
   "No Finalizado": "bg-red-600 text-white border-red-600",
+  "No Realizado": "bg-red-600 text-white border-red-600",
+  "No realizado": "bg-red-600 text-white border-red-600",
 };
 
 export default function PersonaDetailDialog({ persona, open, onOpenChange }: Props) {
