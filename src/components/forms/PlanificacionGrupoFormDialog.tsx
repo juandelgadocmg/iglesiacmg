@@ -47,7 +47,7 @@ export default function PlanificacionGrupoFormDialog({ open, onOpenChange }: Pro
   const create = useCreatePlanificacion();
   
   const [grupoId, setGrupoId] = useState("");
-  const [liderNombre, setLiderNombre] = useState("");
+  const [casaDePaz, setCasaDePaz] = useState("");
   const [casaDePaz, setCasaDePaz] = useState("");
   const [evaluacion, setEvaluacion] = useState<Record<string, boolean>>({});
   const [responsableInvitacion, setResponsableInvitacion] = useState("");
