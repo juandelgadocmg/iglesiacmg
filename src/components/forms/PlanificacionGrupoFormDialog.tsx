@@ -11,7 +11,7 @@ import { useGrupos } from "@/hooks/useDatabase";
 import { toast } from "sonner";
 import { ScrollArea } from "@/components/ui/scroll-area";
 
-const REDES = ["ADONAI", "ELOHIM", "JIREH", "NISSI", "ROHI", "SHADAI"];
+
 
 const EVAL_ITEMS = [
   "Invitación CDP asistentes",
@@ -47,8 +47,6 @@ export default function PlanificacionGrupoFormDialog({ open, onOpenChange }: Pro
   const create = useCreatePlanificacion();
   
   const [grupoId, setGrupoId] = useState("");
-  const [red, setRed] = useState("");
-  const [liderNombre, setLiderNombre] = useState("");
   const [casaDePaz, setCasaDePaz] = useState("");
   const [evaluacion, setEvaluacion] = useState<Record<string, boolean>>({});
   const [responsableInvitacion, setResponsableInvitacion] = useState("");
@@ -68,20 +66,22 @@ export default function PlanificacionGrupoFormDialog({ open, onOpenChange }: Pro
   const [responsableConsolidacion, setResponsableConsolidacion] = useState("");
   const [responsableSeguimiento, setResponsableSeguimiento] = useState("");
 
+  const selectedGrupo = (grupos || []).find((g: any) => g.id === grupoId);
+
   const toggleMedio = (list: string[], setList: (v: string[]) => void, v: string) => {
     setList(list.includes(v) ? list.filter(x => x !== v) : [...list, v]);
   };
 
   const handleSubmit = async () => {
-    if (!grupoId || !liderNombre) {
+    if (!grupoId) {
       toast.error("Completa los campos obligatorios");
       return;
     }
     try {
       await create.mutateAsync({
         grupo_id: grupoId,
-        red,
-        lider_nombre: liderNombre,
+        red: selectedGrupo?.red || null,
+        lider_nombre: selectedGrupo?.nombre || "Sin líder",
         casa_de_paz: casaDePaz,
         evaluacion_equipo: evaluacion,
         responsable_invitacion: responsableInvitacion,
@@ -127,17 +127,6 @@ export default function PlanificacionGrupoFormDialog({ open, onOpenChange }: Pro
               </p>
 
               <div className="grid gap-3 sm:grid-cols-2">
-                <div className="space-y-1.5">
-                  <Label className="text-xs">Red *</Label>
-                  <Select value={red} onValueChange={setRed}>
-                    <SelectTrigger><SelectValue placeholder="Seleccionar red" /></SelectTrigger>
-                    <SelectContent>{REDES.map(r => <SelectItem key={r} value={r}>{r}</SelectItem>)}</SelectContent>
-                  </Select>
-                </div>
-                <div className="space-y-1.5">
-                  <Label className="text-xs">Líder Casa de Paz *</Label>
-                  <Input value={liderNombre} onChange={e => setLiderNombre(e.target.value)} placeholder="Nombre del líder" />
-                </div>
                 <div className="space-y-1.5">
                   <Label className="text-xs">Casa de Paz (Grupo) *</Label>
                   <Select value={grupoId} onValueChange={setGrupoId}>
