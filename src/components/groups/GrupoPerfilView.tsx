@@ -557,7 +557,7 @@ export default function GrupoPerfilView({ grupoId, onBack, readOnly = false }: P
 
         {/* ====== PLANIFICACIÓN TAB ====== */}
         <TabsContent value="planificacion">
-          <PlanificacionTab grupoId={grupoId} />
+          <PlanificacionTab grupoId={grupoId} readOnly={readOnly} />
         </TabsContent>
 
         {/* ====== MAPA TAB ====== */}
@@ -689,7 +689,7 @@ function MapEmbed({ lat, lng, nombre }: { lat: number; lng: number; nombre: stri
   );
 }
 
-function PlanificacionTab({ grupoId }: { grupoId: string }) {
+function PlanificacionTab({ grupoId, readOnly = false }: { grupoId: string; readOnly?: boolean }) {
   const { data: planificaciones } = usePlanificaciones(grupoId);
   const deletePlan = useDeletePlanificacion();
   const [showPlanForm, setShowPlanForm] = useState(false);
@@ -724,10 +724,12 @@ function PlanificacionTab({ grupoId }: { grupoId: string }) {
                   <Button size="icon" variant="ghost" className="h-7 w-7" onClick={() => setViewingPlan(p)}>
                     <Eye className="h-3.5 w-3.5" />
                   </Button>
-                  <DeleteConfirmDialog
-                    onConfirm={async () => { try { await deletePlan.mutateAsync(p.id); toast.success("Eliminada"); } catch { toast.error("Error"); } }}
-                    trigger={<Button size="icon" variant="ghost" className="h-7 w-7 text-destructive"><X className="h-3.5 w-3.5" /></Button>}
-                  />
+                  {!readOnly && (
+                    <DeleteConfirmDialog
+                      onConfirm={async () => { try { await deletePlan.mutateAsync(p.id); toast.success("Eliminada"); } catch { toast.error("Error"); } }}
+                      trigger={<Button size="icon" variant="ghost" className="h-7 w-7 text-destructive"><X className="h-3.5 w-3.5" /></Button>}
+                    />
+                  )}
                 </div>
               </div>
               <p className="text-[10px] text-muted-foreground">{new Date(p.created_at).toLocaleDateString()}</p>
