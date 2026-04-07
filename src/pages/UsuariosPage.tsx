@@ -111,26 +111,32 @@ export default function UsuariosPage() {
   const totalUsers = profiles?.length || 0;
   const usersWithRoles = new Set((roles || []).map((r) => r.user_id)).size;
 
-  const handleExportExcel = () => {
-    if (!profiles || profiles.length === 0) {
-      toast.error("No hay usuarios para exportar");
-      return;
+  const handleExportExcel = async () => {
+    try {
+      const { data: usersData, error } = await supabase.rpc("get_users_for_export");
+      if (error) throw error;
+      if (!usersData || usersData.length === 0) {
+        toast.error("No hay usuarios para exportar");
+        return;
+      }
+      const rows = (usersData as any[]).map((u) => {
+        const userRoles = (roles || []).filter((r) => r.user_id === u.user_id);
+        const rolesText = userRoles.map((r) => ROLE_LABELS[r.role] || r.role).join(", ") || "Sin rol";
+        return {
+          "Nombre": u.display_name || "",
+          "Email": u.email || "",
+          "Roles": rolesText,
+        };
+      });
+      const ws = XLSX.utils.json_to_sheet(rows);
+      ws["!cols"] = [{ wch: 30 }, { wch: 35 }, { wch: 40 }];
+      const wb = XLSX.utils.book_new();
+      XLSX.utils.book_append_sheet(wb, ws, "Usuarios");
+      XLSX.writeFile(wb, `usuarios_${new Date().toISOString().slice(0, 10)}.xlsx`);
+      toast.success("Archivo exportado exitosamente");
+    } catch {
+      toast.error("Error al exportar usuarios");
     }
-    const rows = (profiles || []).map((p) => {
-      const userRoles = getUserRoles(p.user_id);
-      const rolesText = userRoles.map((r) => ROLE_LABELS[r.role] || r.role).join(", ") || "Sin rol";
-      return {
-        "Nombre": p.display_name || "",
-        "Email": p.user_id,
-        "Roles": rolesText,
-      };
-    });
-    const ws = XLSX.utils.json_to_sheet(rows);
-    ws["!cols"] = [{ wch: 30 }, { wch: 35 }, { wch: 40 }];
-    const wb = XLSX.utils.book_new();
-    XLSX.utils.book_append_sheet(wb, ws, "Usuarios");
-    XLSX.writeFile(wb, `usuarios_${new Date().toISOString().slice(0, 10)}.xlsx`);
-    toast.success("Archivo exportado exitosamente");
   };
 
   return (
