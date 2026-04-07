@@ -1965,6 +1965,14 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      get_users_for_export: {
+        Args: never
+        Returns: {
+          display_name: string
+          email: string
+          user_id: string
+        }[]
+      }
       has_role: {
         Args: {
           _role: Database["public"]["Enums"]["app_role"]
