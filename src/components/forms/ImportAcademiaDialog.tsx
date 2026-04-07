@@ -329,8 +329,23 @@ export default function ImportAcademiaDialog() {
           return;
         }
 
-        const [{ data: personas }, { data: cursos }, { data: periodos }, { data: materias }, { data: matriculas }, { data: items }] = await Promise.all([
-          supabase.from("personas").select("id, nombres, apellidos, documento"),
+        // Recursive load to bypass 1000 row limit
+        const loadAllPersonas = async () => {
+          const all: any[] = [];
+          let from = 0;
+          const PAGE = 1000;
+          while (true) {
+            const { data } = await supabase.from("personas").select("id, nombres, apellidos, documento").range(from, from + PAGE - 1);
+            if (!data || data.length === 0) break;
+            all.push(...data);
+            if (data.length < PAGE) break;
+            from += PAGE;
+          }
+          return all;
+        };
+
+        const [personas, { data: cursos }, { data: periodos }, { data: materias }, { data: matriculas }, { data: items }] = await Promise.all([
+          loadAllPersonas(),
           supabase.from("cursos").select("id, nombre"),
           supabase.from("periodos_academicos").select("id, nombre, escuela_id"),
           supabase.from("materias").select("id, nombre, periodo_id"),
@@ -343,16 +358,19 @@ export default function ImportAcademiaDialog() {
           for (let i = 0; i < rows.length; i++) {
             const row = rows[i];
             const rowNum = i + 2;
-            const doc = String(row.documento_estudiante || "").trim();
-            const nombres = String(row.nombres_estudiante || "").trim();
-            const apellidos = String(row.apellidos_estudiante || "").trim();
-            const escuelaNombre = String(row.escuela || "").trim().toLowerCase();
-            const periodoNombre = String(row.periodo || "").trim().toLowerCase();
-            const materiaNombre = String(row.materia || "").trim().toLowerCase();
-            const estado = String(row.estado || "Activo").trim();
-            const notaFinal = row.nota_final !== "" && row.nota_final != null ? Number(row.nota_final) : null;
+            // Support flexible column names
+            const doc = String(row.documento_estudiante || row.documento || row.Documento || "").trim();
+            const nombres = String(row.nombres_estudiante || row.nombres || row.Nombres || "").trim();
+            const apellidos = String(row.apellidos_estudiante || row.apellidos || row.Apellidos || "").trim();
 
-            const personaId = findPersona(personas || [], doc, nombres, apellidos);
+            // Try findPersona first, then fuzzy full-name match
+            let personaId = findPersona(personas || [], doc, nombres, apellidos);
+            if (!personaId && (nombres || apellidos)) {
+              personaId = findPersonaByFullName(personas || [], `${nombres} ${apellidos}`);
+            }
+            if (!personaId && (nombres || apellidos)) {
+              personaId = findPersonaByFullName(personas || [], `${apellidos} ${nombres}`);
+            }
             if (!personaId) { errors.push(`Fila ${rowNum}: Persona no encontrada "${nombres} ${apellidos}"`); continue; }
 
             const escuela = (cursos || []).find((c) => c.nombre.toLowerCase() === escuelaNombre);
