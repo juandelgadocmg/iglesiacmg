@@ -1,5 +1,6 @@
 import { useState } from "react";
 import PageHeader from "@/components/shared/PageHeader";
+import { supabase } from "@/integrations/supabase/client";
 import { useProfiles, useUserRoles, useAssignRole, useRemoveRole } from "@/hooks/useUsuarios";
 import InviteUserDialog from "@/components/usuarios/InviteUserDialog";
 import EditUserDialog from "@/components/usuarios/EditUserDialog";
@@ -11,10 +12,11 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Shield, ShieldCheck, UserCog, Plus, X, Users, Pencil, Home } from "lucide-react";
+import { Shield, ShieldCheck, UserCog, Plus, X, Users, Pencil, Home, Download } from "lucide-react";
 import { toast } from "sonner";
 import { Constants } from "@/integrations/supabase/types";
 import type { Database } from "@/integrations/supabase/types";
+import * as XLSX from "xlsx";
 
 type AppRole = Database["public"]["Enums"]["app_role"];
 
@@ -109,10 +111,43 @@ export default function UsuariosPage() {
   const totalUsers = profiles?.length || 0;
   const usersWithRoles = new Set((roles || []).map((r) => r.user_id)).size;
 
+  const handleExportExcel = async () => {
+    try {
+      const { data: usersData, error } = await supabase.rpc("get_users_for_export");
+      if (error) throw error;
+      if (!usersData || usersData.length === 0) {
+        toast.error("No hay usuarios para exportar");
+        return;
+      }
+      const rows = (usersData as any[]).map((u) => {
+        const userRoles = (roles || []).filter((r) => r.user_id === u.user_id);
+        const rolesText = userRoles.map((r) => ROLE_LABELS[r.role] || r.role).join(", ") || "Sin rol";
+        return {
+          "Nombre": u.display_name || "",
+          "Email": u.email || "",
+          "Roles": rolesText,
+        };
+      });
+      const ws = XLSX.utils.json_to_sheet(rows);
+      ws["!cols"] = [{ wch: 30 }, { wch: 35 }, { wch: 40 }];
+      const wb = XLSX.utils.book_new();
+      XLSX.utils.book_append_sheet(wb, ws, "Usuarios");
+      XLSX.writeFile(wb, `usuarios_${new Date().toISOString().slice(0, 10)}.xlsx`);
+      toast.success("Archivo exportado exitosamente");
+    } catch {
+      toast.error("Error al exportar usuarios");
+    }
+  };
+
   return (
     <div className="animate-fade-in">
       <PageHeader title="Usuarios y Roles" description="Gestión de usuarios y permisos del sistema">
-        <InviteUserDialog onSuccess={handleSuccess} />
+        <div className="flex gap-2">
+          <Button variant="outline" className="gap-2" onClick={handleExportExcel}>
+            <Download className="h-4 w-4" /> Exportar
+          </Button>
+          <InviteUserDialog onSuccess={handleSuccess} />
+        </div>
       </PageHeader>
 
       {/* Stats */}
