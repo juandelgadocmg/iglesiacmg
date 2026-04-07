@@ -29,6 +29,10 @@ import { es } from "date-fns/locale";
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid, LineChart, Line, Legend } from "recharts";
 import GrupoFormDialog from "@/components/forms/GrupoFormDialog";
 import ReporteGrupoFormDialog from "@/components/forms/ReporteGrupoFormDialog";
+import PlanificacionGrupoFormDialog from "@/components/forms/PlanificacionGrupoFormDialog";
+import { usePlanificaciones, useDeletePlanificacion } from "@/hooks/usePlanificaciones";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import DeleteConfirmDialog from "@/components/shared/DeleteConfirmDialog";
 import { exportGroupProfilePDF } from "@/lib/exportUtils";
 
 interface Props {
