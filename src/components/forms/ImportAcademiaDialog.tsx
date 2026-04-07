@@ -167,7 +167,7 @@ export default function ImportAcademiaDialog() {
       ];
     } else {
       headers = [
-        ["documento_estudiante", "nombres_estudiante", "apellidos_estudiante", "materia", "fecha", "presente"],
+        ["documento", "nombres", "apellidos", "materia", "fecha", "presente"],
         ["1234567890", "Juan", "Pérez", "Hermenéutica", "2025-03-15", "Sí"],
       ];
     }
