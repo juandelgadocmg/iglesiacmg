@@ -92,8 +92,6 @@ export default function MatriculaFormDialog({ cursoId, periodoId, materiaId }: P
       toast.error(err.message?.includes("duplicate") ? "Esta persona ya está matriculada en esta materia" : err.message || "Error");
     }
   };
-    }
-  };
 
   return (
     <Dialog open={open} onOpenChange={setOpen}>
