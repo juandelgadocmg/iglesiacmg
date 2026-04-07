@@ -20,6 +20,7 @@ export default function GrupoFormDialog({ initialData, onClose }: Props) {
   const [open, setOpen] = useState(false);
   const [liderPopoverOpen, setLiderPopoverOpen] = useState(false);
   const [selectedLiderId, setSelectedLiderId] = useState<string>("");
+  const [estado, setEstado] = useState<string>("Activo");
   const createGrupo = useCreateGrupo();
   const updateGrupo = useUpdateGrupo();
   const { data: personas } = usePersonas();
