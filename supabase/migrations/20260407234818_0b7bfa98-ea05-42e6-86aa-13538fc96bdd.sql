@@ -1,0 +1,2 @@
+ALTER TABLE public.matriculas DROP CONSTRAINT IF EXISTS matriculas_curso_id_persona_id_key;
+ALTER TABLE public.matriculas ADD CONSTRAINT matriculas_curso_persona_materia_key UNIQUE (curso_id, persona_id, materia_id);
