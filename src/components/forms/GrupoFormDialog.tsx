@@ -25,8 +25,8 @@ export default function GrupoFormDialog({ initialData, onClose }: Props) {
   const updateGrupo = useUpdateGrupo();
   const { data: personas } = usePersonas();
 
-  useEffect(() => { if (initialData) { setOpen(true); setSelectedLiderId(initialData.lider_id || ""); } }, [initialData]);
-  const handleClose = () => { setOpen(false); setSelectedLiderId(""); onClose?.(); };
+  useEffect(() => { if (initialData) { setOpen(true); setSelectedLiderId(initialData.lider_id || ""); setEstado(initialData.estado || "Activo"); } }, [initialData]);
+  const handleClose = () => { setOpen(false); setSelectedLiderId(""); setEstado("Activo"); onClose?.(); };
 
   const selectedLiderName = useMemo(() => {
     if (!selectedLiderId || !personas) return "";
