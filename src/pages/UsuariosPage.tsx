@@ -11,10 +11,11 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Shield, ShieldCheck, UserCog, Plus, X, Users, Pencil, Home } from "lucide-react";
+import { Shield, ShieldCheck, UserCog, Plus, X, Users, Pencil, Home, Download } from "lucide-react";
 import { toast } from "sonner";
 import { Constants } from "@/integrations/supabase/types";
 import type { Database } from "@/integrations/supabase/types";
+import * as XLSX from "xlsx";
 
 type AppRole = Database["public"]["Enums"]["app_role"];
 
