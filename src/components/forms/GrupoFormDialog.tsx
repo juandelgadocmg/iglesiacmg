@@ -1,25 +1,36 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
-import { Plus } from "lucide-react";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from "@/components/ui/command";
+import { Plus, ChevronsUpDown, Check, X } from "lucide-react";
 import { useCreateGrupo, useUpdateGrupo, usePersonas } from "@/hooks/useDatabase";
 import { toast } from "sonner";
+import { cn } from "@/lib/utils";
 
 interface Props { initialData?: any; onClose?: () => void; }
 
 export default function GrupoFormDialog({ initialData, onClose }: Props) {
   const isEdit = !!initialData;
   const [open, setOpen] = useState(false);
+  const [liderPopoverOpen, setLiderPopoverOpen] = useState(false);
+  const [selectedLiderId, setSelectedLiderId] = useState<string>("");
   const createGrupo = useCreateGrupo();
   const updateGrupo = useUpdateGrupo();
   const { data: personas } = usePersonas();
 
-  useEffect(() => { if (initialData) setOpen(true); }, [initialData]);
-  const handleClose = () => { setOpen(false); onClose?.(); };
+  useEffect(() => { if (initialData) { setOpen(true); setSelectedLiderId(initialData.lider_id || ""); } }, [initialData]);
+  const handleClose = () => { setOpen(false); setSelectedLiderId(""); onClose?.(); };
+
+  const selectedLiderName = useMemo(() => {
+    if (!selectedLiderId || !personas) return "";
+    const p = personas.find(p => p.id === selectedLiderId);
+    return p ? `${p.nombres} ${p.apellidos}` : "";
+  }, [selectedLiderId, personas]);
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
@@ -29,7 +40,6 @@ export default function GrupoFormDialog({ initialData, onClose }: Props) {
 
     const ubicacion = (fd.get("ubicacion") as string) || null;
 
-    // Geocode address if provided
     let latitud: number | null = initialData?.latitud || null;
     let longitud: number | null = initialData?.longitud || null;
     if (ubicacion && ubicacion !== initialData?.ubicacion) {
@@ -47,7 +57,7 @@ export default function GrupoFormDialog({ initialData, onClose }: Props) {
       nombre,
       tipo: (fd.get("tipo") as any),
       descripcion: (fd.get("descripcion") as string) || null,
-      lider_id: (fd.get("lider_id") as string) || null,
+      lider_id: selectedLiderId || null,
       dia_reunion: (fd.get("dia_reunion") as string) || null,
       hora_reunion: (fd.get("hora_reunion") as string) || null,
       ubicacion,
@@ -101,15 +111,53 @@ export default function GrupoFormDialog({ initialData, onClose }: Props) {
               </Select>
             </div>
             <div className="space-y-2">
-              <Label htmlFor="lider_id">Líder</Label>
-              <Select name="lider_id" defaultValue={initialData?.lider_id || ""}>
-                <SelectTrigger><SelectValue placeholder="Seleccionar líder" /></SelectTrigger>
-                <SelectContent>
-                  {(personas || []).map(p => (
-                    <SelectItem key={p.id} value={p.id}>{p.nombres} {p.apellidos}</SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+              <Label>Líder</Label>
+              <Popover open={liderPopoverOpen} onOpenChange={setLiderPopoverOpen}>
+                <PopoverTrigger asChild>
+                  <Button
+                    variant="outline"
+                    role="combobox"
+                    aria-expanded={liderPopoverOpen}
+                    className="w-full justify-between font-normal"
+                  >
+                    <span className="truncate">
+                      {selectedLiderName || "Buscar líder..."}
+                    </span>
+                    <div className="flex items-center gap-1 ml-1 shrink-0">
+                      {selectedLiderId && (
+                        <X
+                          className="h-3.5 w-3.5 opacity-50 hover:opacity-100"
+                          onClick={(e) => { e.stopPropagation(); setSelectedLiderId(""); }}
+                        />
+                      )}
+                      <ChevronsUpDown className="h-4 w-4 opacity-50" />
+                    </div>
+                  </Button>
+                </PopoverTrigger>
+                <PopoverContent className="w-[300px] p-0" align="start">
+                  <Command>
+                    <CommandInput placeholder="Buscar persona..." />
+                    <CommandList>
+                      <CommandEmpty>No se encontró ninguna persona.</CommandEmpty>
+                      <CommandGroup className="max-h-[200px] overflow-y-auto">
+                        {(personas || []).map(p => (
+                          <CommandItem
+                            key={p.id}
+                            value={`${p.nombres} ${p.apellidos}`}
+                            onSelect={() => {
+                              setSelectedLiderId(p.id);
+                              setLiderPopoverOpen(false);
+                            }}
+                          >
+                            <Check className={cn("mr-2 h-4 w-4", selectedLiderId === p.id ? "opacity-100" : "opacity-0")} />
+                            {p.nombres} {p.apellidos}
+                          </CommandItem>
+                        ))}
+                      </CommandGroup>
+                    </CommandList>
+                  </Command>
+                </PopoverContent>
+              </Popover>
             </div>
             <div className="space-y-2">
               <Label htmlFor="dia_reunion">Día de reunión</Label>
