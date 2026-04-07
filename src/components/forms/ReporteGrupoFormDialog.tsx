@@ -457,6 +457,7 @@ export default function ReporteGrupoFormDialog({ open, onOpenChange, editReporte
     setShowNewPersonForm(false);
     setIsEditMode(false);
     setEditLoaded(false);
+    setEditAttendanceApplied(false);
   };
 
   const canCreateReport = !!grupoId && !!mensaje;
