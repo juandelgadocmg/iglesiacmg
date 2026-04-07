@@ -1488,7 +1488,7 @@ function PeriodoDetailView({ escuela, periodo, onBackToPeriodos }: any) {
                       <span className="flex items-center gap-1 font-medium text-foreground"><GraduationCap className="h-3 w-3" /> {matriculasMateria} matriculados</span>
                     </div>
 
-                    <div className="flex gap-1.5 pt-1">
+                    <div className="flex gap-1.5 pt-1" onClick={(e) => e.stopPropagation()}>
                       {(m as any).estado !== "Finalizada" ? (
                         <Button size="sm" variant="outline" className="h-7 text-[10px] flex-1 gap-1"
                           onClick={async () => {
