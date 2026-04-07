@@ -195,6 +195,20 @@ export default function GrupoFormDialog({ initialData, onClose }: Props) {
               </Select>
             </div>
           </div>
+          {isEdit && (
+            <div className="flex items-center justify-between rounded-lg border p-3">
+              <div className="space-y-0.5">
+                <Label>Estado del grupo</Label>
+                <p className="text-xs text-muted-foreground">
+                  {estado === "Activo" ? "El grupo está activo" : "El grupo está inactivo"}
+                </p>
+              </div>
+              <Switch
+                checked={estado === "Activo"}
+                onCheckedChange={(checked) => setEstado(checked ? "Activo" : "Inactivo")}
+              />
+            </div>
+          )}
           <div className="space-y-2">
             <Label htmlFor="descripcion">Descripción</Label>
             <Textarea id="descripcion" name="descripcion" maxLength={500} rows={3} defaultValue={initialData?.descripcion || ""} />
