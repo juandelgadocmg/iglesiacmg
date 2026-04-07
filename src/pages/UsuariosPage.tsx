@@ -110,10 +110,37 @@ export default function UsuariosPage() {
   const totalUsers = profiles?.length || 0;
   const usersWithRoles = new Set((roles || []).map((r) => r.user_id)).size;
 
+  const handleExportExcel = () => {
+    if (!profiles || profiles.length === 0) {
+      toast.error("No hay usuarios para exportar");
+      return;
+    }
+    const rows = (profiles || []).map((p) => {
+      const userRoles = getUserRoles(p.user_id);
+      const rolesText = userRoles.map((r) => ROLE_LABELS[r.role] || r.role).join(", ") || "Sin rol";
+      return {
+        "Nombre": p.display_name || "",
+        "Email": p.user_id,
+        "Roles": rolesText,
+      };
+    });
+    const ws = XLSX.utils.json_to_sheet(rows);
+    ws["!cols"] = [{ wch: 30 }, { wch: 35 }, { wch: 40 }];
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, "Usuarios");
+    XLSX.writeFile(wb, `usuarios_${new Date().toISOString().slice(0, 10)}.xlsx`);
+    toast.success("Archivo exportado exitosamente");
+  };
+
   return (
     <div className="animate-fade-in">
       <PageHeader title="Usuarios y Roles" description="Gestión de usuarios y permisos del sistema">
-        <InviteUserDialog onSuccess={handleSuccess} />
+        <div className="flex gap-2">
+          <Button variant="outline" className="gap-2" onClick={handleExportExcel}>
+            <Download className="h-4 w-4" /> Exportar
+          </Button>
+          <InviteUserDialog onSuccess={handleSuccess} />
+        </div>
       </PageHeader>
 
       {/* Stats */}
