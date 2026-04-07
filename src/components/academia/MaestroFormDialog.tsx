@@ -109,6 +109,7 @@ export default function MaestroFormDialog() {
                   <FormControl><SelectTrigger><SelectValue /></SelectTrigger></FormControl>
                   <SelectContent>
                     <SelectItem value="Maestro Seminario">Maestro Seminario</SelectItem>
+                    <SelectItem value="Maestro Discipulado">Maestro Discipulado</SelectItem>
                     <SelectItem value="Mentor">Mentor</SelectItem>
                   </SelectContent>
                 </Select>
