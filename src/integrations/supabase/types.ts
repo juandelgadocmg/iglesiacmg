@@ -2017,6 +2017,7 @@ export type Database = {
         | "Líder de Red"
         | "Mentor"
         | "Pastor Principal"
+        | "Maestro Discipulado"
       tipo_servicio:
         | "Culto general"
         | "Oración"
@@ -2196,6 +2197,7 @@ export const Constants = {
         "Líder de Red",
         "Mentor",
         "Pastor Principal",
+        "Maestro Discipulado",
       ],
       tipo_servicio: [
         "Culto general",
