@@ -707,7 +707,7 @@ export default function ReporteGrupoFormDialog({ open, onOpenChange, editReporte
   return (
     <>
       <Dialog open={open} onOpenChange={(o) => { if (!o) resetForm(); onOpenChange(o); }}>
-        <DialogContent className="sm:max-w-6xl max-h-[90vh] flex flex-col p-0 gap-0">
+        <DialogContent className="sm:max-w-6xl max-h-[90vh] flex flex-col p-0 gap-0 overflow-hidden">
           {/* Header */}
           <div className="p-4 border-b bg-background">
             <div className="flex items-center justify-between">
@@ -762,7 +762,7 @@ export default function ReporteGrupoFormDialog({ open, onOpenChange, editReporte
             </div>
           </div>
 
-          <ScrollArea className="flex-1">
+          <div className="flex-1 overflow-y-auto">
             {/* Step 0 */}
             {step === 0 && (
               <div className="grid grid-cols-1 lg:grid-cols-2 gap-0">
@@ -1001,7 +1001,7 @@ export default function ReporteGrupoFormDialog({ open, onOpenChange, editReporte
                 </div>
               </div>
             )}
-          </ScrollArea>
+          </div>
         </DialogContent>
       </Dialog>
 

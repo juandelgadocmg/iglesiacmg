@@ -695,6 +695,10 @@ function PlanificacionTab({ grupoId }: { grupoId: string }) {
   const [showPlanForm, setShowPlanForm] = useState(false);
   const [viewingPlan, setViewingPlan] = useState<any>(null);
 
+  if (viewingPlan) {
+    return <PlanificacionDetailView plan={viewingPlan} onBack={() => setViewingPlan(null)} />;
+  }
+
   return (
     <div className="space-y-4">
       <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2">
@@ -742,49 +746,167 @@ function PlanificacionTab({ grupoId }: { grupoId: string }) {
       )}
 
       <PlanificacionGrupoFormDialog open={showPlanForm} onOpenChange={setShowPlanForm} />
+    </div>
+  );
+}
 
-      <Dialog open={!!viewingPlan} onOpenChange={(v) => { if (!v) setViewingPlan(null); }}>
-        <DialogContent className="max-w-lg max-h-[80vh] overflow-y-auto">
-          <DialogHeader>
-            <DialogTitle>Detalle de Planificación</DialogTitle>
-          </DialogHeader>
-          {viewingPlan && (
-            <div className="space-y-4 text-sm">
-              <div className="grid grid-cols-2 gap-3">
-                <div><span className="text-muted-foreground text-xs">Líder</span><p className="font-medium">{viewingPlan.lider_nombre}</p></div>
-                <div><span className="text-muted-foreground text-xs">Red</span><p className="font-medium">{viewingPlan.red || "—"}</p></div>
-                <div><span className="text-muted-foreground text-xs">Casa de Paz</span><p className="font-medium">{viewingPlan.casa_de_paz || "—"}</p></div>
-                <div><span className="text-muted-foreground text-xs">Personas invitadas</span><p className="font-medium">{viewingPlan.personas_invitadas || 0}</p></div>
-                <div><span className="text-muted-foreground text-xs">Fecha ayuno</span><p className="font-medium">{viewingPlan.fecha_ayuno || "—"}</p></div>
-                <div><span className="text-muted-foreground text-xs">Fecha evangelización</span><p className="font-medium">{viewingPlan.fecha_evangelizacion || "—"}</p></div>
-              </div>
-              <div className="border-t pt-3">
-                <h4 className="font-semibold text-xs mb-2 text-muted-foreground uppercase tracking-wider">Responsables</h4>
-                <div className="grid grid-cols-2 gap-2 text-xs">
-                  {[
-                    ["Invitación", viewingPlan.responsable_invitacion],
-                    ["Recordar", viewingPlan.responsable_recordar],
-                    ["Oración", viewingPlan.responsable_oracion],
-                    ["Adoración", viewingPlan.responsable_adoracion],
-                    ["Dinámicas", viewingPlan.responsable_dinamicas],
-                    ["Predicación", viewingPlan.responsable_predicacion],
-                    ["Testimonios", viewingPlan.responsable_testimonios],
-                    ["Ayudas", viewingPlan.responsable_ayudas],
-                    ["Datos", viewingPlan.responsable_datos],
-                    ["Consolidación", viewingPlan.responsable_consolidacion],
-                    ["Seguimiento", viewingPlan.responsable_seguimiento],
-                  ].map(([label, value]) => (
-                    <div key={label as string}>
-                      <span className="text-muted-foreground">{label}</span>
-                      <p className="font-medium">{(value as string) || "—"}</p>
-                    </div>
-                  ))}
-                </div>
+const EVAL_ITEMS_VIEW = [
+  "Invitación CDP asistentes", "Ayuno CDP", "Evangelización CDP",
+  "Oración Inicial CDP", "Adoración y Alabanza CDP", "Dinámicas CDP",
+  "Predicación CDP", "Toma de Testimonios CDP",
+  "Ayudas Didácticas (Vídeos, Impresiones)", "Toma de Datos CDP",
+  "Consolidación (Llamar a los nuevos)",
+  "Seguimiento (crecimiento espiritual y conexión con la Iglesia)",
+];
+
+function PlanificacionDetailView({ plan, onBack }: { plan: any; onBack: () => void }) {
+  const evaluacion = (plan.evaluacion_equipo || {}) as Record<string, boolean>;
+
+  return (
+    <div className="space-y-6">
+      <div className="flex items-center gap-3">
+        <Button variant="ghost" size="icon" onClick={onBack}>
+          <ChevronLeft className="h-5 w-5" />
+        </Button>
+        <div>
+          <h2 className="text-lg font-bold">Hoja de Planeación — Casa de Paz</h2>
+          <p className="text-sm text-muted-foreground">Descripción detallada de la preparación: Antes, Durante y Después</p>
+        </div>
+      </div>
+
+      {/* Section 1: Datos del grupo */}
+      <div className="rounded-lg border p-4 bg-primary/5 space-y-4">
+        <p className="text-xs font-semibold uppercase text-primary tracking-wider">
+          VISIÓN CMG: Id y haced discípulos a todas las naciones por medio de las casas de paz
+        </p>
+        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+          <div><span className="text-xs text-muted-foreground">Red</span><p className="font-medium">{plan.red || "—"}</p></div>
+          <div><span className="text-xs text-muted-foreground">Líder Casa de Paz</span><p className="font-medium">{plan.lider_nombre}</p></div>
+          <div><span className="text-xs text-muted-foreground">Casa de Paz (Grupo)</span><p className="font-medium">{plan.casa_de_paz || "—"}</p></div>
+        </div>
+      </div>
+
+      {/* Section 2: Evaluación equipo */}
+      <div className="space-y-3">
+        <h4 className="font-semibold text-sm uppercase">Evaluación Equipo de Trabajo</h4>
+        <p className="text-xs text-muted-foreground">
+          Corresponde al trabajo en equipo de su anterior Casa de Paz.
+        </p>
+        <div className="rounded-lg border overflow-hidden">
+          <table className="w-full text-xs">
+            <thead>
+              <tr className="bg-muted/50 border-b">
+                <th className="text-left p-2 font-medium">Actividad</th>
+                <th className="text-center p-2 w-20 font-medium">Cumplió</th>
+              </tr>
+            </thead>
+            <tbody>
+              {EVAL_ITEMS_VIEW.map((item, i) => (
+                <tr key={i} className="border-b last:border-0">
+                  <td className="p-2">{item}</td>
+                  <td className="text-center p-2">
+                    {evaluacion[item] ? (
+                      <CheckCircle2 className="h-4 w-4 text-success mx-auto" />
+                    ) : (
+                      <XCircle className="h-4 w-4 text-muted-foreground/40 mx-auto" />
+                    )}
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      {/* Section 3: Antes */}
+      <div className="space-y-4">
+        <h4 className="font-semibold text-sm uppercase">Antes de la Casa de Paz</h4>
+        <div className="grid gap-4 sm:grid-cols-2">
+          <div className="rounded-lg border p-3 space-y-1">
+            <span className="text-xs text-muted-foreground">Persona Responsable de la Invitación</span>
+            <p className="font-medium text-sm">{plan.responsable_invitacion || "—"}</p>
+          </div>
+          <div className="rounded-lg border p-3 space-y-1">
+            <span className="text-xs text-muted-foreground">Número de Personas Invitadas</span>
+            <p className="font-medium text-sm">{plan.personas_invitadas || 0}</p>
+          </div>
+        </div>
+        {plan.medios_invitacion && plan.medios_invitacion.length > 0 && (
+          <div className="rounded-lg border p-3 space-y-1">
+            <span className="text-xs text-muted-foreground">Medios Usados para la invitación</span>
+            <div className="flex flex-wrap gap-1.5 mt-1">
+              {plan.medios_invitacion.map((m: string) => (
+                <Badge key={m} variant="secondary" className="text-xs">{m}</Badge>
+              ))}
+            </div>
+          </div>
+        )}
+        <div className="grid gap-4 sm:grid-cols-2">
+          <div className="rounded-lg border p-3 space-y-1">
+            <span className="text-xs text-muted-foreground">Persona responsable de recordar la CDP</span>
+            <p className="font-medium text-sm">{plan.responsable_recordar || "—"}</p>
+          </div>
+          {plan.medios_recordar && plan.medios_recordar.length > 0 && (
+            <div className="rounded-lg border p-3 space-y-1">
+              <span className="text-xs text-muted-foreground">Medios Usados para Recordar</span>
+              <div className="flex flex-wrap gap-1.5 mt-1">
+                {plan.medios_recordar.map((m: string) => (
+                  <Badge key={m} variant="secondary" className="text-xs">{m}</Badge>
+                ))}
               </div>
             </div>
           )}
-        </DialogContent>
-      </Dialog>
+        </div>
+        <div className="grid gap-4 sm:grid-cols-2">
+          <div className="rounded-lg border p-3 space-y-1">
+            <span className="text-xs text-muted-foreground">Ayuno por la Casa de Paz (fecha)</span>
+            <p className="font-medium text-sm">{plan.fecha_ayuno || "—"}</p>
+          </div>
+          <div className="rounded-lg border p-3 space-y-1">
+            <span className="text-xs text-muted-foreground">Evangelización (fecha)</span>
+            <p className="font-medium text-sm">{plan.fecha_evangelizacion || "—"}</p>
+          </div>
+        </div>
+      </div>
+
+      {/* Section 4: Durante */}
+      <div className="space-y-4">
+        <h4 className="font-semibold text-sm uppercase">Durante la Casa de Paz</h4>
+        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+          {[
+            ["Oración Inicial", plan.responsable_oracion],
+            ["Adoración y Alabanza", plan.responsable_adoracion],
+            ["Dinámicas", plan.responsable_dinamicas],
+            ["Predicación", plan.responsable_predicacion],
+            ["Toma de Testimonios", plan.responsable_testimonios],
+            ["Ayudas Didácticas", plan.responsable_ayudas],
+            ["Toma de Datos", plan.responsable_datos],
+          ].map(([label, value]) => (
+            <div key={label as string} className="rounded-lg border p-3 space-y-1">
+              <span className="text-xs text-muted-foreground">{label}</span>
+              <p className="font-medium text-sm">{(value as string) || "—"}</p>
+            </div>
+          ))}
+        </div>
+      </div>
+
+      {/* Section 5: Después */}
+      <div className="space-y-4">
+        <h4 className="font-semibold text-sm uppercase">Después de la Casa de Paz</h4>
+        <div className="grid gap-4 sm:grid-cols-2">
+          <div className="rounded-lg border p-3 space-y-1">
+            <span className="text-xs text-muted-foreground">Consolidación</span>
+            <p className="font-medium text-sm">{plan.responsable_consolidacion || "—"}</p>
+          </div>
+          <div className="rounded-lg border p-3 space-y-1">
+            <span className="text-xs text-muted-foreground">Seguimiento</span>
+            <p className="font-medium text-sm">{plan.responsable_seguimiento || "—"}</p>
+          </div>
+        </div>
+        <p className="text-xs text-muted-foreground italic">
+          Recuerda amado Líder que en la excelencia está reflejado Dios, no improvises tu Casa de Paz, planifica y darás fruto.
+        </p>
+      </div>
     </div>
   );
 }
