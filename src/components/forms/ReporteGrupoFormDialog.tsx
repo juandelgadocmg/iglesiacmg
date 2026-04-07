@@ -140,26 +140,8 @@ export default function ReporteGrupoFormDialog({ open, onOpenChange, editReporte
     }
   }, [editReporteId, allReportes, editLoaded]);
 
-  // Load edit attendance data
-  useEffect(() => {
-    if (isEditMode && editAsistencia && editAsistencia.length > 0 && attendance.length > 0 && editLoaded) {
-      setAttendance(prev => {
-        const asistMap = new Map(editAsistencia.map(a => [a.persona_id, a]));
-        return prev.map(att => {
-          const editRecord = asistMap.get(att.persona_id);
-          if (editRecord) {
-            return {
-              ...att,
-              presente: editRecord.presente,
-              es_nuevo: editRecord.es_nuevo,
-              motivo_ausencia: editRecord.motivo_ausencia || "",
-            };
-          }
-          return att;
-        });
-      });
-    }
-  }, [isEditMode, editAsistencia, editLoaded, attendance.length]);
+  // Track whether edit attendance has been applied
+  const [editAttendanceApplied, setEditAttendanceApplied] = useState(false);
 
   const filteredGrupos = useMemo(() => {
     if (!grupos || !grupoSearch.trim()) return [];
@@ -192,7 +174,7 @@ export default function ReporteGrupoFormDialog({ open, onOpenChange, editReporte
     return attendance.filter(a => !encargados.some(e => e.persona_id === a.persona_id));
   }, [attendance, encargados]);
 
-  // Load members when group selected
+  // Load members when group selected, and merge edit attendance if applicable
   useEffect(() => {
     if (miembros && miembros.length > 0 && grupoId) {
       const loadRoles = async () => {
@@ -204,37 +186,67 @@ export default function ReporteGrupoFormDialog({ open, onOpenChange, editReporte
         const roleMap: Record<string, string> = {};
         (memberData || []).forEach((m: any) => { roleMap[m.persona_id] = m.rol || "asistente"; });
 
-        const records: AttendanceRecord[] = miembros.map((m) => ({
-          persona_id: m.id,
-          nombres: m.nombres,
-          apellidos: m.apellidos,
-          foto_url: m.foto_url,
-          tipo_persona: m.tipo_persona,
-          presente: false,
-          es_nuevo: false,
-          motivo_ausencia: "",
-          rol: roleMap[m.id] || "asistente",
-        }));
+        // Build edit attendance map if in edit mode
+        const asistMap = new Map<string, any>();
+        if (isEditMode && editAsistencia && editAsistencia.length > 0) {
+          editAsistencia.forEach(a => asistMap.set(a.persona_id, a));
+        }
 
-        if (liderInfo && !records.some(r => r.persona_id === liderInfo.id)) {
+        const records: AttendanceRecord[] = miembros.map((m) => {
+          const editRecord = asistMap.get(m.id);
+          return {
+            persona_id: m.id,
+            nombres: m.nombres,
+            apellidos: m.apellidos,
+            foto_url: m.foto_url,
+            tipo_persona: m.tipo_persona,
+            presente: editRecord ? editRecord.presente : false,
+            es_nuevo: editRecord ? editRecord.es_nuevo : false,
+            motivo_ausencia: editRecord ? (editRecord.motivo_ausencia || "") : "",
+            rol: roleMap[m.id] || "asistente",
+          };
+        });
+
+        if (liderInfo && liderInfo.id && !records.some(r => r.persona_id === liderInfo.id)) {
+          const editRecord = asistMap.get(liderInfo.id);
           records.unshift({
             persona_id: liderInfo.id,
             nombres: liderInfo.nombres,
             apellidos: liderInfo.apellidos,
             foto_url: liderInfo.foto_url || null,
             tipo_persona: liderInfo.tipo_persona || "Líder",
-            presente: false,
-            es_nuevo: false,
-            motivo_ausencia: "",
+            presente: editRecord ? editRecord.presente : false,
+            es_nuevo: editRecord ? editRecord.es_nuevo : false,
+            motivo_ausencia: editRecord ? (editRecord.motivo_ausencia || "") : "",
             rol: "lider",
           });
         }
 
+        // Also add any persons from edit attendance that aren't in current members
+        if (isEditMode && editAsistencia) {
+          editAsistencia.forEach(a => {
+            if (!records.some(r => r.persona_id === a.persona_id) && a.persona) {
+              records.push({
+                persona_id: a.persona_id,
+                nombres: a.persona.nombres,
+                apellidos: a.persona.apellidos,
+                foto_url: a.persona.foto_url || null,
+                tipo_persona: a.persona.tipo_persona,
+                presente: a.presente,
+                es_nuevo: a.es_nuevo,
+                motivo_ausencia: a.motivo_ausencia || "",
+                rol: "asistente",
+              });
+            }
+          });
+        }
+
         setAttendance(records);
+        if (isEditMode) setEditAttendanceApplied(true);
       };
       loadRoles();
     }
-  }, [miembros, grupoId, liderInfo]);
+  }, [miembros, grupoId, liderInfo, isEditMode, editAsistencia]);
 
   const togglePresente = (personaId: string) => {
     setAttendance((prev) =>
@@ -349,12 +361,14 @@ export default function ReporteGrupoFormDialog({ open, onOpenChange, editReporte
     }
 
     try {
-      const allAttendance = !seRealizo ? [] : attendance.map((a) => ({
-        persona_id: a.persona_id,
-        presente: a.presente,
-        es_nuevo: a.es_nuevo,
-        motivo_ausencia: a.motivo_ausencia || undefined,
-      }));
+      const allAttendance = !seRealizo ? [] : attendance
+        .filter((a) => !!a.persona_id)
+        .map((a) => ({
+          persona_id: a.persona_id,
+          presente: a.presente,
+          es_nuevo: a.es_nuevo,
+          motivo_ausencia: a.motivo_ausencia || undefined,
+        }));
 
       if (isEditMode && editReporteId) {
         // Update report
@@ -445,6 +459,7 @@ export default function ReporteGrupoFormDialog({ open, onOpenChange, editReporte
     setShowNewPersonForm(false);
     setIsEditMode(false);
     setEditLoaded(false);
+    setEditAttendanceApplied(false);
   };
 
   const canCreateReport = !!grupoId && !!mensaje;
