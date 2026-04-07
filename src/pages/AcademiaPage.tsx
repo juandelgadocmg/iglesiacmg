@@ -798,7 +798,7 @@ function GradingGrid({ cortes, materias, periodoId, maestroId, escuelaName }: an
   }, [materiaItems]);
 
   const activeStudents = useMemo(() => {
-    return (matriculas || []).filter((m: any) => m.estado === "Activo" && m.materia_id === selectedMateria);
+    return (matriculas || []).filter((m: any) => m.materia_id === selectedMateria && m.estado !== "Retirado");
   }, [matriculas, selectedMateria]);
 
   const [localGrades, setLocalGrades] = useState<Record<string, string>>({});
@@ -1000,7 +1000,7 @@ function GradingGrid({ cortes, materias, periodoId, maestroId, escuelaName }: an
           {!materiaItems.length ? (
             <p className="text-xs text-muted-foreground text-center py-6">No hay ítems calificables. Agrega uno primero.</p>
           ) : !activeStudents.length ? (
-            <p className="text-xs text-muted-foreground text-center py-6">No hay estudiantes activos matriculados.</p>
+            <p className="text-xs text-muted-foreground text-center py-6">No hay estudiantes matriculados en esta materia.</p>
           ) : (
             <div className="rounded-xl border bg-card overflow-hidden">
               <div className="overflow-x-auto">
@@ -1086,7 +1086,7 @@ function AsistenciaMateriaTab({ materias, periodoId }: any) {
   const [localAtt, setLocalAtt] = useState<Record<string, boolean>>({});
   const [initialized, setInitialized] = useState<string | null>(null);
 
-  const activeStudents = useMemo(() => (matriculas || []).filter((m: any) => m.estado === "Activo" && m.materia_id === selectedMateria), [matriculas, selectedMateria]);
+  const activeStudents = useMemo(() => (matriculas || []).filter((m: any) => m.materia_id === selectedMateria && m.estado !== "Retirado"), [matriculas, selectedMateria]);
 
   const attKey = `${selectedMateria}_${fecha}`;
   if (asistenciaData && initialized !== attKey) {
@@ -1157,7 +1157,7 @@ function AsistenciaMateriaTab({ materias, periodoId }: any) {
 
           <div className="rounded-xl border bg-card divide-y">
             {!activeStudents.length ? (
-              <p className="text-xs text-muted-foreground text-center py-8">No hay estudiantes activos.</p>
+              <p className="text-xs text-muted-foreground text-center py-8">No hay estudiantes matriculados en esta materia.</p>
             ) : (
               activeStudents.map((m: any) => {
                 const isPresent = !!localAtt[m.id];
@@ -1431,7 +1431,7 @@ function PeriodoDetailView({ escuela, periodo, onBackToPeriodos }: any) {
           ) : (
             <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
               {materias.map((m: any) => {
-                const matriculasMateria = (matriculas || []).filter((mat: any) => mat.materia_id === m.id && mat.estado === "Activo").length;
+                const matriculasMateria = (matriculas || []).filter((mat: any) => mat.materia_id === m.id && mat.estado !== "Retirado").length;
                 return (
                   <div key={m.id} className="rounded-xl border bg-card p-4 space-y-3 hover:shadow-sm transition-shadow">
                     <div className="flex items-start justify-between">
