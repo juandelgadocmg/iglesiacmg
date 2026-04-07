@@ -65,20 +65,50 @@ export default function MatriculaFormDialog({ cursoId, periodoId, materiaId }: P
 
   const onSubmit = async (values: z.infer<typeof schema>) => {
     try {
-      const result = await createMatricula.mutateAsync({
-        curso_id: values.curso_id,
-        persona_id: values.persona_id,
-        periodo_id: values.periodo_id || undefined,
-        materia_id: values.materia_id || undefined,
-      });
-      // Auto-create payment records if conceptos exist
-      if (conceptos?.length) {
-        await createPagos.mutateAsync({
-          matriculaId: result.id,
-          conceptoIds: conceptos.map((c: any) => c.id),
+      const selectedMateriaId = values.materia_id || materiaId;
+      
+      // If no specific materia selected and there are materias in the period, enroll in all
+      if (!selectedMateriaId && materias && materias.length > 0) {
+        let firstResult: any = null;
+        for (const mat of materias as any[]) {
+          try {
+            const result = await createMatricula.mutateAsync({
+              curso_id: values.curso_id,
+              persona_id: values.persona_id,
+              periodo_id: values.periodo_id || undefined,
+              materia_id: mat.id,
+            });
+            if (!firstResult) firstResult = result;
+            // Auto-create payment records only for the first matricula
+            if (!firstResult || firstResult.id === result.id) {
+              if (conceptos?.length) {
+                await createPagos.mutateAsync({
+                  matriculaId: result.id,
+                  conceptoIds: conceptos.map((c: any) => c.id),
+                });
+              }
+            }
+          } catch (err: any) {
+            // Skip duplicates silently
+            if (!err.message?.includes("duplicate")) throw err;
+          }
+        }
+        toast.success(`Alumno matriculado en ${materias.length} materia(s)`);
+      } else {
+        const result = await createMatricula.mutateAsync({
+          curso_id: values.curso_id,
+          persona_id: values.persona_id,
+          periodo_id: values.periodo_id || undefined,
+          materia_id: selectedMateriaId || undefined,
         });
+        if (conceptos?.length) {
+          await createPagos.mutateAsync({
+            matriculaId: result.id,
+            conceptoIds: conceptos.map((c: any) => c.id),
+          });
+        }
+        toast.success("Alumno matriculado");
       }
-      toast.success("Alumno matriculado");
       form.reset();
       setOpen(false);
     } catch (err: any) {
