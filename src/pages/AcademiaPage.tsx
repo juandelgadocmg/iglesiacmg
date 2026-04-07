@@ -244,6 +244,9 @@ function PeriodosSection({ escuelas, allPeriodos, allMatriculas }: any) {
           </SelectContent>
         </Select>
         {selectedEscuela && selectedEscuela !== "all" && <PeriodoFormDialog escuelaId={selectedEscuela} />}
+        {(!selectedEscuela || selectedEscuela === "all") && (
+          <p className="text-xs text-muted-foreground italic">Selecciona una escuela para crear períodos</p>
+        )}
       </div>
 
       {enriched.length === 0 ? (
