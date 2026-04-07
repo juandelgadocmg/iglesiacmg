@@ -66,6 +66,7 @@ export default function GrupoFormDialog({ initialData, onClose }: Props) {
       red: (fd.get("red") as string) || null,
       latitud,
       longitud,
+      estado,
     };
 
     try {
