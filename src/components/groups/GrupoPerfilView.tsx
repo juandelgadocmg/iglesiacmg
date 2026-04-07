@@ -250,6 +250,9 @@ export default function GrupoPerfilView({ grupoId, onBack, readOnly = false }: P
           <TabsTrigger value="integrantes">Integrantes ({metrics.total})</TabsTrigger>
           <TabsTrigger value="estadisticas">Estadísticas</TabsTrigger>
           <TabsTrigger value="reportes">Reportes</TabsTrigger>
+          <TabsTrigger value="planificacion" className="gap-1">
+            <FileText className="h-3.5 w-3.5" /> Planificación
+          </TabsTrigger>
           <TabsTrigger value="mapa">Mapa</TabsTrigger>
         </TabsList>
 
@@ -546,6 +549,11 @@ export default function GrupoPerfilView({ grupoId, onBack, readOnly = false }: P
               </ScrollArea>
             )}
           </div>
+        </TabsContent>
+
+        {/* ====== PLANIFICACIÓN TAB ====== */}
+        <TabsContent value="planificacion">
+          <PlanificacionTab grupoId={grupoId} />
         </TabsContent>
 
         {/* ====== MAPA TAB ====== */}

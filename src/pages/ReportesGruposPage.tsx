@@ -186,9 +186,14 @@ export default function ReportesGruposPage() {
                   </Badge>
                 </div>
 
-                <div className="text-sm text-muted-foreground">
-                  <CalendarIcon className="inline h-3.5 w-3.5 mr-1" />
-                  {format(parseISO(r.fecha), "PPP", { locale: es })}
+                <div className="text-sm text-muted-foreground space-y-0.5">
+                  <div>
+                    <CalendarIcon className="inline h-3.5 w-3.5 mr-1" />
+                    Fecha reunión: {format(parseISO(r.fecha), "PPP", { locale: es })}
+                  </div>
+                  <div className="text-xs text-muted-foreground/70">
+                    Reportado: {format(parseISO(r.created_at), "PPP 'a las' hh:mm a", { locale: es })}
+                  </div>
                 </div>
 
                 {r.observaciones && (

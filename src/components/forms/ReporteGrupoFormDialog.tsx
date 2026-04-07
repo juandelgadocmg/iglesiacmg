@@ -76,11 +76,8 @@ const DAY_MAP: Record<string, number> = {
   "Jueves": 4, "Viernes": 5, "Sábado": 6,
 };
 
-function isDayAllowed(diaReunion: string | null | undefined): boolean {
-  if (!diaReunion) return true; // If no day configured, allow any day
-  const expectedDay = DAY_MAP[diaReunion];
-  if (expectedDay === undefined) return true;
-  return getDay(new Date()) === expectedDay;
+function isDayAllowed(_diaReunion: string | null | undefined): boolean {
+  return true; // Allow reports on any date
 }
 
 const emptyNewPerson = (): NuevaPersona => ({
