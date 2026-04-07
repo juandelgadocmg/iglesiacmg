@@ -373,16 +373,22 @@ export default function ImportAcademiaDialog() {
             }
             if (!personaId) { errors.push(`Fila ${rowNum}: Persona no encontrada "${nombres} ${apellidos}"`); continue; }
 
+            const escuelaNombre = String(row.escuela || row.Escuela || "").trim().toLowerCase();
+            const periodoNombre = String(row.periodo || row.Periodo || "").trim().toLowerCase();
+            const materiaNombre = String(row.materia || row.Materia || "").trim().toLowerCase();
+            const estado = String(row.estado || row.Estado || "Activo").trim();
+            const notaFinal = row.nota_final !== "" && row.nota_final != null ? Number(row.nota_final) : (row.Nota_Final || row["Nota Final"]) !== "" && (row.Nota_Final || row["Nota Final"]) != null ? Number(row.Nota_Final || row["Nota Final"]) : null;
+
             const escuela = (cursos || []).find((c) => c.nombre.toLowerCase() === escuelaNombre);
-            if (!escuela) { errors.push(`Fila ${rowNum}: Escuela no encontrada "${row.escuela}"`); continue; }
+            if (!escuela) { errors.push(`Fila ${rowNum}: Escuela no encontrada "${row.escuela || row.Escuela}"`); continue; }
 
             const periodo = (periodos || []).find((p) => p.nombre.toLowerCase() === periodoNombre && p.escuela_id === escuela.id);
-            if (!periodo) { errors.push(`Fila ${rowNum}: Período no encontrado "${row.periodo}"`); continue; }
+            if (!periodo) { errors.push(`Fila ${rowNum}: Período no encontrado "${row.periodo || row.Periodo}"`); continue; }
 
             let materiaId: string | null = null;
             if (materiaNombre) {
               const mat = (materias || []).find((m) => m.nombre.toLowerCase() === materiaNombre && m.periodo_id === periodo.id);
-              if (!mat) { errors.push(`Fila ${rowNum}: Materia no encontrada "${row.materia}"`); continue; }
+              if (!mat) { errors.push(`Fila ${rowNum}: Materia no encontrada "${row.materia || row.Materia}"`); continue; }
               materiaId = mat.id;
             }
 
