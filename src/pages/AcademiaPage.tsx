@@ -205,7 +205,7 @@ function PeriodosSection({ escuelas, allPeriodos, allMatriculas }: any) {
   const updatePeriodo = useUpdatePeriodo();
 
   const periodos = useMemo(() => {
-    if (!selectedEscuela) return allPeriodos || [];
+    if (!selectedEscuela || selectedEscuela === "all") return allPeriodos || [];
     return (allPeriodos || []).filter((p: any) => p.escuela_id === selectedEscuela);
   }, [allPeriodos, selectedEscuela]);
 
