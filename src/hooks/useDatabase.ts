@@ -84,7 +84,7 @@ export function useGrupos() {
     queryFn: async () => {
       const { data, error } = await supabase
         .from("grupos")
-        .select("*, grupo_miembros(count), personas!grupos_lider_id_fkey(nombres, apellidos)")
+        .select("*, grupo_miembros(count), personas!grupos_lider_id_fkey(id, nombres, apellidos, foto_url, tipo_persona)")
         .order("created_at", { ascending: false });
       if (error) throw error;
       return data;
