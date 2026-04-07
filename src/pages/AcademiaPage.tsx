@@ -798,8 +798,8 @@ function GradingGrid({ cortes, materias, periodoId, maestroId, escuelaName }: an
   }, [materiaItems]);
 
   const activeStudents = useMemo(() => {
-    return (matriculas || []).filter((m: any) => m.estado === "Activo");
-  }, [matriculas]);
+    return (matriculas || []).filter((m: any) => m.estado === "Activo" && m.materia_id === selectedMateria);
+  }, [matriculas, selectedMateria]);
 
   const [localGrades, setLocalGrades] = useState<Record<string, string>>({});
   const [initialized, setInitialized] = useState<string | null>(null);
@@ -1086,7 +1086,7 @@ function AsistenciaMateriaTab({ materias, periodoId }: any) {
   const [localAtt, setLocalAtt] = useState<Record<string, boolean>>({});
   const [initialized, setInitialized] = useState<string | null>(null);
 
-  const activeStudents = useMemo(() => (matriculas || []).filter((m: any) => m.estado === "Activo"), [matriculas]);
+  const activeStudents = useMemo(() => (matriculas || []).filter((m: any) => m.estado === "Activo" && m.materia_id === selectedMateria), [matriculas, selectedMateria]);
 
   const attKey = `${selectedMateria}_${fecha}`;
   if (asistenciaData && initialized !== attKey) {
