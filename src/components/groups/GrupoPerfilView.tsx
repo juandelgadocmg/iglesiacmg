@@ -688,3 +688,103 @@ function MapEmbed({ lat, lng, nombre }: { lat: number; lng: number; nombre: stri
     </div>
   );
 }
+
+function PlanificacionTab({ grupoId }: { grupoId: string }) {
+  const { data: planificaciones } = usePlanificaciones(grupoId);
+  const deletePlan = useDeletePlanificacion();
+  const [showPlanForm, setShowPlanForm] = useState(false);
+  const [viewingPlan, setViewingPlan] = useState<any>(null);
+
+  return (
+    <div className="space-y-4">
+      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2">
+        <div>
+          <h3 className="text-base sm:text-lg font-semibold">Hojas de Planeación</h3>
+          <p className="text-xs sm:text-sm text-muted-foreground">Planificación semanal de Casa de Paz</p>
+        </div>
+        <Button onClick={() => setShowPlanForm(true)} className="gap-2 w-full sm:w-auto">
+          <UserPlus className="h-4 w-4" /> Nueva Planificación
+        </Button>
+      </div>
+
+      {planificaciones && planificaciones.length > 0 ? (
+        <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+          {planificaciones.map((p: any) => (
+            <div key={p.id} className="rounded-xl border bg-card p-4 space-y-2 cursor-pointer hover:border-primary/40 transition-colors" onClick={() => setViewingPlan(p)}>
+              <div className="flex items-start justify-between">
+                <div>
+                  <p className="font-semibold text-sm">{p.lider_nombre}</p>
+                  <p className="text-xs text-muted-foreground">Red: {p.red || "—"} · {p.casa_de_paz || "—"}</p>
+                </div>
+                <div className="flex items-center gap-1" onClick={e => e.stopPropagation()}>
+                  <Button size="icon" variant="ghost" className="h-7 w-7" onClick={() => setViewingPlan(p)}>
+                    <Eye className="h-3.5 w-3.5" />
+                  </Button>
+                  <DeleteConfirmDialog
+                    onConfirm={async () => { try { await deletePlan.mutateAsync(p.id); toast.success("Eliminada"); } catch { toast.error("Error"); } }}
+                    trigger={<Button size="icon" variant="ghost" className="h-7 w-7 text-destructive"><X className="h-3.5 w-3.5" /></Button>}
+                  />
+                </div>
+              </div>
+              <p className="text-[10px] text-muted-foreground">{new Date(p.created_at).toLocaleDateString()}</p>
+              <div className="text-xs space-y-0.5">
+                <p>Invitados: {p.personas_invitadas}</p>
+                <p>Ayuno: {p.fecha_ayuno || "—"}</p>
+              </div>
+            </div>
+          ))}
+        </div>
+      ) : (
+        <div className="text-center py-12 text-muted-foreground">
+          <FileText className="h-10 w-10 mx-auto mb-2 opacity-50" />
+          <p>No hay planificaciones registradas.</p>
+        </div>
+      )}
+
+      <PlanificacionGrupoFormDialog open={showPlanForm} onOpenChange={setShowPlanForm} />
+
+      <Dialog open={!!viewingPlan} onOpenChange={(v) => { if (!v) setViewingPlan(null); }}>
+        <DialogContent className="max-w-lg max-h-[80vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>Detalle de Planificación</DialogTitle>
+          </DialogHeader>
+          {viewingPlan && (
+            <div className="space-y-4 text-sm">
+              <div className="grid grid-cols-2 gap-3">
+                <div><span className="text-muted-foreground text-xs">Líder</span><p className="font-medium">{viewingPlan.lider_nombre}</p></div>
+                <div><span className="text-muted-foreground text-xs">Red</span><p className="font-medium">{viewingPlan.red || "—"}</p></div>
+                <div><span className="text-muted-foreground text-xs">Casa de Paz</span><p className="font-medium">{viewingPlan.casa_de_paz || "—"}</p></div>
+                <div><span className="text-muted-foreground text-xs">Personas invitadas</span><p className="font-medium">{viewingPlan.personas_invitadas || 0}</p></div>
+                <div><span className="text-muted-foreground text-xs">Fecha ayuno</span><p className="font-medium">{viewingPlan.fecha_ayuno || "—"}</p></div>
+                <div><span className="text-muted-foreground text-xs">Fecha evangelización</span><p className="font-medium">{viewingPlan.fecha_evangelizacion || "—"}</p></div>
+              </div>
+              <div className="border-t pt-3">
+                <h4 className="font-semibold text-xs mb-2 text-muted-foreground uppercase tracking-wider">Responsables</h4>
+                <div className="grid grid-cols-2 gap-2 text-xs">
+                  {[
+                    ["Invitación", viewingPlan.responsable_invitacion],
+                    ["Recordar", viewingPlan.responsable_recordar],
+                    ["Oración", viewingPlan.responsable_oracion],
+                    ["Adoración", viewingPlan.responsable_adoracion],
+                    ["Dinámicas", viewingPlan.responsable_dinamicas],
+                    ["Predicación", viewingPlan.responsable_predicacion],
+                    ["Testimonios", viewingPlan.responsable_testimonios],
+                    ["Ayudas", viewingPlan.responsable_ayudas],
+                    ["Datos", viewingPlan.responsable_datos],
+                    ["Consolidación", viewingPlan.responsable_consolidacion],
+                    ["Seguimiento", viewingPlan.responsable_seguimiento],
+                  ].map(([label, value]) => (
+                    <div key={label as string}>
+                      <span className="text-muted-foreground">{label}</span>
+                      <p className="font-medium">{(value as string) || "—"}</p>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
+    </div>
+  );
+}
