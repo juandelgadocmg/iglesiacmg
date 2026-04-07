@@ -1,6 +1,7 @@
 import { useState, useEffect, useMemo } from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
+import { Switch } from "@/components/ui/switch";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -19,12 +20,13 @@ export default function GrupoFormDialog({ initialData, onClose }: Props) {
   const [open, setOpen] = useState(false);
   const [liderPopoverOpen, setLiderPopoverOpen] = useState(false);
   const [selectedLiderId, setSelectedLiderId] = useState<string>("");
+  const [estado, setEstado] = useState<string>("Activo");
   const createGrupo = useCreateGrupo();
   const updateGrupo = useUpdateGrupo();
   const { data: personas } = usePersonas();
 
-  useEffect(() => { if (initialData) { setOpen(true); setSelectedLiderId(initialData.lider_id || ""); } }, [initialData]);
-  const handleClose = () => { setOpen(false); setSelectedLiderId(""); onClose?.(); };
+  useEffect(() => { if (initialData) { setOpen(true); setSelectedLiderId(initialData.lider_id || ""); setEstado(initialData.estado || "Activo"); } }, [initialData]);
+  const handleClose = () => { setOpen(false); setSelectedLiderId(""); setEstado("Activo"); onClose?.(); };
 
   const selectedLiderName = useMemo(() => {
     if (!selectedLiderId || !personas) return "";
@@ -64,6 +66,7 @@ export default function GrupoFormDialog({ initialData, onClose }: Props) {
       red: (fd.get("red") as string) || null,
       latitud,
       longitud,
+      estado,
     };
 
     try {
@@ -192,6 +195,20 @@ export default function GrupoFormDialog({ initialData, onClose }: Props) {
               </Select>
             </div>
           </div>
+          {isEdit && (
+            <div className="flex items-center justify-between rounded-lg border p-3">
+              <div className="space-y-0.5">
+                <Label>Estado del grupo</Label>
+                <p className="text-xs text-muted-foreground">
+                  {estado === "Activo" ? "El grupo está activo" : "El grupo está inactivo"}
+                </p>
+              </div>
+              <Switch
+                checked={estado === "Activo"}
+                onCheckedChange={(checked) => setEstado(checked ? "Activo" : "Inactivo")}
+              />
+            </div>
+          )}
           <div className="space-y-2">
             <Label htmlFor="descripcion">Descripción</Label>
             <Textarea id="descripcion" name="descripcion" maxLength={500} rows={3} defaultValue={initialData?.descripcion || ""} />
