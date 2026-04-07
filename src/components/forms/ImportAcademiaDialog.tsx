@@ -157,17 +157,17 @@ export default function ImportAcademiaDialog() {
     let headers: string[][];
     if (tab === "matriculas") {
       headers = [
-        ["documento_estudiante", "nombres_estudiante", "apellidos_estudiante", "escuela", "periodo", "materia", "estado", "nota_final"],
+        ["documento", "nombres", "apellidos", "escuela", "periodo", "materia", "estado", "nota_final"],
         ["1234567890", "Juan", "Pérez", "Seminario Bíblico", "Período 2025-1", "Hermenéutica", "Activo", ""],
       ];
     } else if (tab === "calificaciones") {
       headers = [
-        ["documento_estudiante", "nombres_estudiante", "apellidos_estudiante", "materia", "item_calificable", "nota", "observacion"],
+        ["documento", "nombres", "apellidos", "materia", "item_calificable", "nota", "observacion"],
         ["1234567890", "Juan", "Pérez", "Hermenéutica", "Examen parcial", "4.5", "Buen desempeño"],
       ];
     } else {
       headers = [
-        ["documento_estudiante", "nombres_estudiante", "apellidos_estudiante", "materia", "fecha", "presente"],
+        ["documento", "nombres", "apellidos", "materia", "fecha", "presente"],
         ["1234567890", "Juan", "Pérez", "Hermenéutica", "2025-03-15", "Sí"],
       ];
     }
@@ -329,8 +329,23 @@ export default function ImportAcademiaDialog() {
           return;
         }
 
-        const [{ data: personas }, { data: cursos }, { data: periodos }, { data: materias }, { data: matriculas }, { data: items }] = await Promise.all([
-          supabase.from("personas").select("id, nombres, apellidos, documento"),
+        // Recursive load to bypass 1000 row limit
+        const loadAllPersonas = async () => {
+          const all: any[] = [];
+          let from = 0;
+          const PAGE = 1000;
+          while (true) {
+            const { data } = await supabase.from("personas").select("id, nombres, apellidos, documento").range(from, from + PAGE - 1);
+            if (!data || data.length === 0) break;
+            all.push(...data);
+            if (data.length < PAGE) break;
+            from += PAGE;
+          }
+          return all;
+        };
+
+        const [personas, { data: cursos }, { data: periodos }, { data: materias }, { data: matriculas }, { data: items }] = await Promise.all([
+          loadAllPersonas(),
           supabase.from("cursos").select("id, nombre"),
           supabase.from("periodos_academicos").select("id, nombre, escuela_id"),
           supabase.from("materias").select("id, nombre, periodo_id"),
@@ -343,28 +358,37 @@ export default function ImportAcademiaDialog() {
           for (let i = 0; i < rows.length; i++) {
             const row = rows[i];
             const rowNum = i + 2;
-            const doc = String(row.documento_estudiante || "").trim();
-            const nombres = String(row.nombres_estudiante || "").trim();
-            const apellidos = String(row.apellidos_estudiante || "").trim();
-            const escuelaNombre = String(row.escuela || "").trim().toLowerCase();
-            const periodoNombre = String(row.periodo || "").trim().toLowerCase();
-            const materiaNombre = String(row.materia || "").trim().toLowerCase();
-            const estado = String(row.estado || "Activo").trim();
-            const notaFinal = row.nota_final !== "" && row.nota_final != null ? Number(row.nota_final) : null;
+            // Support flexible column names
+            const doc = String(row.documento_estudiante || row.documento || row.Documento || "").trim();
+            const nombres = String(row.nombres_estudiante || row.nombres || row.Nombres || "").trim();
+            const apellidos = String(row.apellidos_estudiante || row.apellidos || row.Apellidos || "").trim();
 
-            const personaId = findPersona(personas || [], doc, nombres, apellidos);
+            // Try findPersona first, then fuzzy full-name match
+            let personaId = findPersona(personas || [], doc, nombres, apellidos);
+            if (!personaId && (nombres || apellidos)) {
+              personaId = findPersonaByFullName(personas || [], `${nombres} ${apellidos}`);
+            }
+            if (!personaId && (nombres || apellidos)) {
+              personaId = findPersonaByFullName(personas || [], `${apellidos} ${nombres}`);
+            }
             if (!personaId) { errors.push(`Fila ${rowNum}: Persona no encontrada "${nombres} ${apellidos}"`); continue; }
 
+            const escuelaNombre = String(row.escuela || row.Escuela || "").trim().toLowerCase();
+            const periodoNombre = String(row.periodo || row.Periodo || "").trim().toLowerCase();
+            const materiaNombre = String(row.materia || row.Materia || "").trim().toLowerCase();
+            const estado = String(row.estado || row.Estado || "Activo").trim();
+            const notaFinal = row.nota_final !== "" && row.nota_final != null ? Number(row.nota_final) : (row.Nota_Final || row["Nota Final"]) !== "" && (row.Nota_Final || row["Nota Final"]) != null ? Number(row.Nota_Final || row["Nota Final"]) : null;
+
             const escuela = (cursos || []).find((c) => c.nombre.toLowerCase() === escuelaNombre);
-            if (!escuela) { errors.push(`Fila ${rowNum}: Escuela no encontrada "${row.escuela}"`); continue; }
+            if (!escuela) { errors.push(`Fila ${rowNum}: Escuela no encontrada "${row.escuela || row.Escuela}"`); continue; }
 
             const periodo = (periodos || []).find((p) => p.nombre.toLowerCase() === periodoNombre && p.escuela_id === escuela.id);
-            if (!periodo) { errors.push(`Fila ${rowNum}: Período no encontrado "${row.periodo}"`); continue; }
+            if (!periodo) { errors.push(`Fila ${rowNum}: Período no encontrado "${row.periodo || row.Periodo}"`); continue; }
 
             let materiaId: string | null = null;
             if (materiaNombre) {
               const mat = (materias || []).find((m) => m.nombre.toLowerCase() === materiaNombre && m.periodo_id === periodo.id);
-              if (!mat) { errors.push(`Fila ${rowNum}: Materia no encontrada "${row.materia}"`); continue; }
+              if (!mat) { errors.push(`Fila ${rowNum}: Materia no encontrada "${row.materia || row.Materia}"`); continue; }
               materiaId = mat.id;
             }
 
@@ -401,15 +425,17 @@ export default function ImportAcademiaDialog() {
           for (let i = 0; i < rows.length; i++) {
             const row = rows[i];
             const rowNum = i + 2;
-            const doc = String(row.documento_estudiante || "").trim();
-            const nombres = String(row.nombres_estudiante || "").trim();
-            const apellidos = String(row.apellidos_estudiante || "").trim();
-            const materiaNombre = String(row.materia || "").trim().toLowerCase();
-            const itemNombre = String(row.item_calificable || "").trim().toLowerCase();
+            const doc = String(row.documento_estudiante || row.documento || row.Documento || "").trim();
+            const nombres = String(row.nombres_estudiante || row.nombres || row.Nombres || "").trim();
+            const apellidos = String(row.apellidos_estudiante || row.apellidos || row.Apellidos || "").trim();
+            const materiaNombre = String(row.materia || row.Materia || "").trim().toLowerCase();
+            const itemNombre = String(row.item_calificable || row.Item_Calificable || row["Item Calificable"] || "").trim().toLowerCase();
             const nota = row.nota !== "" && row.nota != null ? Number(row.nota) : null;
-            const observacion = String(row.observacion || "").trim() || null;
+            const observacion = String(row.observacion || row.Observacion || "").trim() || null;
 
-            const personaId = findPersona(personas || [], doc, nombres, apellidos);
+            let personaId = findPersona(personas || [], doc, nombres, apellidos);
+            if (!personaId && (nombres || apellidos)) personaId = findPersonaByFullName(personas || [], `${nombres} ${apellidos}`);
+            if (!personaId && (nombres || apellidos)) personaId = findPersonaByFullName(personas || [], `${apellidos} ${nombres}`);
             if (!personaId) { errors.push(`Fila ${rowNum}: Persona no encontrada "${nombres} ${apellidos}"`); continue; }
 
             const materia = (materias || []).find((m) => m.nombre.toLowerCase() === materiaNombre);
@@ -441,15 +467,17 @@ export default function ImportAcademiaDialog() {
           for (let i = 0; i < rows.length; i++) {
             const row = rows[i];
             const rowNum = i + 2;
-            const doc = String(row.documento_estudiante || "").trim();
-            const nombres = String(row.nombres_estudiante || "").trim();
-            const apellidos = String(row.apellidos_estudiante || "").trim();
-            const materiaNombre = String(row.materia || "").trim().toLowerCase();
-            const fecha = String(row.fecha || "").trim();
-            const presenteRaw = String(row.presente || "").trim().toLowerCase();
+            const doc = String(row.documento_estudiante || row.documento || row.Documento || "").trim();
+            const nombres = String(row.nombres_estudiante || row.nombres || row.Nombres || "").trim();
+            const apellidos = String(row.apellidos_estudiante || row.apellidos || row.Apellidos || "").trim();
+            const materiaNombre = String(row.materia || row.Materia || "").trim().toLowerCase();
+            const fecha = String(row.fecha || row.Fecha || "").trim();
+            const presenteRaw = String(row.presente || row.Presente || "").trim().toLowerCase();
             const presente = ["sí", "si", "yes", "1", "true", "x"].includes(presenteRaw);
 
-            const personaId = findPersona(personas || [], doc, nombres, apellidos);
+            let personaId = findPersona(personas || [], doc, nombres, apellidos);
+            if (!personaId && (nombres || apellidos)) personaId = findPersonaByFullName(personas || [], `${nombres} ${apellidos}`);
+            if (!personaId && (nombres || apellidos)) personaId = findPersonaByFullName(personas || [], `${apellidos} ${nombres}`);
             if (!personaId) { errors.push(`Fila ${rowNum}: Persona no encontrada "${nombres} ${apellidos}"`); continue; }
 
             const materia = (materias || []).find((m) => m.nombre.toLowerCase() === materiaNombre);
