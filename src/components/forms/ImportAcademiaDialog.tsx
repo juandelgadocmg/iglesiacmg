@@ -162,7 +162,7 @@ export default function ImportAcademiaDialog() {
       ];
     } else if (tab === "calificaciones") {
       headers = [
-        ["documento_estudiante", "nombres_estudiante", "apellidos_estudiante", "materia", "item_calificable", "nota", "observacion"],
+        ["documento", "nombres", "apellidos", "materia", "item_calificable", "nota", "observacion"],
         ["1234567890", "Juan", "Pérez", "Hermenéutica", "Examen parcial", "4.5", "Buen desempeño"],
       ];
     } else {
