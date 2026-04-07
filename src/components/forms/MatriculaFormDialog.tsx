@@ -167,10 +167,10 @@ export default function MatriculaFormDialog({ cursoId, periodoId, materiaId }: P
               )} />
             )}
 
-            {!materiaId && (
+            {!materiaId && materias && materias.length > 0 && (
               <FormField control={form.control} name="materia_id" render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Materia (opcional)</FormLabel>
+                  <FormLabel>Materia <span className="text-destructive">*</span></FormLabel>
                   <Select onValueChange={field.onChange} value={field.value} disabled={!watchPeriodoId}>
                     <FormControl><SelectTrigger><SelectValue placeholder="Seleccionar materia" /></SelectTrigger></FormControl>
                     <SelectContent>
