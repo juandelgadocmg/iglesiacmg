@@ -361,12 +361,14 @@ export default function ReporteGrupoFormDialog({ open, onOpenChange, editReporte
     }
 
     try {
-      const allAttendance = !seRealizo ? [] : attendance.map((a) => ({
-        persona_id: a.persona_id,
-        presente: a.presente,
-        es_nuevo: a.es_nuevo,
-        motivo_ausencia: a.motivo_ausencia || undefined,
-      }));
+      const allAttendance = !seRealizo ? [] : attendance
+        .filter((a) => !!a.persona_id)
+        .map((a) => ({
+          persona_id: a.persona_id,
+          presente: a.presente,
+          es_nuevo: a.es_nuevo,
+          motivo_ausencia: a.motivo_ausencia || undefined,
+        }));
 
       if (isEditMode && editReporteId) {
         // Update report
