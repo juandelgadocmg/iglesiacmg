@@ -1433,7 +1433,8 @@ function PeriodoDetailView({ escuela, periodo, onBackToPeriodos }: any) {
               {materias.map((m: any) => {
                 const matriculasMateria = (matriculas || []).filter((mat: any) => mat.materia_id === m.id && mat.estado !== "Retirado").length;
                 return (
-                  <div key={m.id} className="rounded-xl border bg-card p-4 space-y-3 hover:shadow-sm transition-shadow">
+                  <div key={m.id} className="rounded-xl border bg-card p-4 space-y-3 hover:shadow-md transition-shadow cursor-pointer group"
+                    onClick={() => { setActiveTab("calificaciones"); }}>
                     <div className="flex items-start justify-between">
                       <div>
                         <h4 className="font-bold text-foreground text-sm uppercase">{m.nombre}</h4>
@@ -1487,7 +1488,7 @@ function PeriodoDetailView({ escuela, periodo, onBackToPeriodos }: any) {
                       <span className="flex items-center gap-1 font-medium text-foreground"><GraduationCap className="h-3 w-3" /> {matriculasMateria} matriculados</span>
                     </div>
 
-                    <div className="flex gap-1.5 pt-1">
+                    <div className="flex gap-1.5 pt-1" onClick={(e) => e.stopPropagation()}>
                       {(m as any).estado !== "Finalizada" ? (
                         <Button size="sm" variant="outline" className="h-7 text-[10px] flex-1 gap-1"
                           onClick={async () => {
