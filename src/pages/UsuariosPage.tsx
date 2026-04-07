@@ -1,5 +1,6 @@
 import { useState } from "react";
 import PageHeader from "@/components/shared/PageHeader";
+import { supabase } from "@/integrations/supabase/client";
 import { useProfiles, useUserRoles, useAssignRole, useRemoveRole } from "@/hooks/useUsuarios";
 import InviteUserDialog from "@/components/usuarios/InviteUserDialog";
 import EditUserDialog from "@/components/usuarios/EditUserDialog";
