@@ -157,7 +157,7 @@ export default function ImportAcademiaDialog() {
     let headers: string[][];
     if (tab === "matriculas") {
       headers = [
-        ["documento_estudiante", "nombres_estudiante", "apellidos_estudiante", "escuela", "periodo", "materia", "estado", "nota_final"],
+        ["documento", "nombres", "apellidos", "escuela", "periodo", "materia", "estado", "nota_final"],
         ["1234567890", "Juan", "Pérez", "Seminario Bíblico", "Período 2025-1", "Hermenéutica", "Activo", ""],
       ];
     } else if (tab === "calificaciones") {
