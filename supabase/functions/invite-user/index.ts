@@ -43,7 +43,31 @@ serve(async (req) => {
       });
     }
 
-    const { email, password, display_name, roles } = await req.json();
+    const body = await req.json();
+    const { action } = body;
+
+    // ── Reset password action ──
+    if (action === "reset_password") {
+      const { user_id, password } = body;
+      if (!user_id || !password) {
+        return new Response(JSON.stringify({ error: "user_id y password son requeridos" }), {
+          status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" },
+        });
+      }
+      const { error: updateErr } = await supabaseAdmin.auth.admin.updateUserById(user_id, { password });
+      if (updateErr) {
+        return new Response(JSON.stringify({ error: updateErr.message }), {
+          status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" },
+        });
+      }
+      return new Response(
+        JSON.stringify({ success: true }),
+        { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+
+    // ── Create user action (default) ──
+    const { email, password, display_name, roles } = body;
 
     if (!email || !password) {
       return new Response(JSON.stringify({ error: "Email y contraseña son requeridos" }), {
