@@ -719,7 +719,45 @@ function HistorialMatriculasSection({ escuelas, allPeriodos, allMatriculas }: an
                         )}>{m.estado}</Badge>
                       </td>
                       <td className="p-3 text-center text-muted-foreground">{m.fecha_matricula}</td>
-                      <td className="p-3 text-center font-semibold">{m.nota_final ?? "—"}</td>
+                      <td className="p-3 text-center font-semibold">
+                        {editingId === m.id ? (
+                          <div className="flex items-center justify-center gap-1">
+                            <Input
+                              type="number"
+                              step="0.1"
+                              min="0"
+                              max="5"
+                              value={editValue}
+                              onChange={(e) => setEditValue(e.target.value)}
+                              className="w-16 h-7 text-center text-xs p-1"
+                              autoFocus
+                              onKeyDown={(e) => {
+                                if (e.key === "Enter") {
+                                  const val = editValue.trim() === "" ? null : parseFloat(editValue);
+                                  updateMatricula.mutate({ id: m.id, nota_final: val } as any);
+                                  setEditingId(null);
+                                } else if (e.key === "Escape") {
+                                  setEditingId(null);
+                                }
+                              }}
+                            />
+                            <Button size="icon" variant="ghost" className="h-6 w-6" onClick={() => {
+                              const val = editValue.trim() === "" ? null : parseFloat(editValue);
+                              updateMatricula.mutate({ id: m.id, nota_final: val } as any);
+                              setEditingId(null);
+                            }}><Check className="h-3 w-3" /></Button>
+                            <Button size="icon" variant="ghost" className="h-6 w-6" onClick={() => setEditingId(null)}><X className="h-3 w-3" /></Button>
+                          </div>
+                        ) : (
+                          <button
+                            onClick={() => { setEditingId(m.id); setEditValue(m.nota_final != null ? String(m.nota_final) : ""); }}
+                            className="cursor-pointer hover:bg-muted/50 rounded px-2 py-0.5 transition-colors"
+                            title="Clic para editar nota final"
+                          >
+                            {m.nota_final ?? "—"}
+                          </button>
+                        )}
+                      </td>
                       <td className="p-3 text-center">
                         <Badge variant="outline" className={cn("text-[10px]", res.color)}>{res.label}</Badge>
                       </td>
