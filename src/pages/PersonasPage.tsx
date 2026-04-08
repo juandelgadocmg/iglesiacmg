@@ -69,7 +69,10 @@ export default function PersonasPage() {
   const filtered = useMemo(() => {
     if (!personas) return [];
     return personas.filter((p: any) => {
-      if (tipoFilter !== "Todos" && p.tipo_persona !== tipoFilter) return false;
+      if (tipoFilter !== "Todos") {
+        const tipos: string[] = p.tipos_persona?.length ? p.tipos_persona : [p.tipo_persona];
+        if (!tipos.includes(tipoFilter)) return false;
+      }
       if (estadoFilter !== "all" && p.estado_iglesia !== estadoFilter) return false;
       if (search) {
         const q = search.toLowerCase();
@@ -89,7 +92,10 @@ export default function PersonasPage() {
     if (!personas) return {} as Record<string, number>;
     const c: Record<string, number> = { total: personas.length };
     TIPOS.filter(t => t !== "Todos").forEach(t => {
-      c[t] = personas.filter((p: any) => p.tipo_persona === t).length;
+      c[t] = personas.filter((p: any) => {
+        const tipos: string[] = p.tipos_persona?.length ? p.tipos_persona : [p.tipo_persona];
+        return tipos.includes(t);
+      }).length;
     });
     return c;
   }, [personas]);
@@ -177,18 +183,20 @@ export default function PersonasPage() {
             {filtered.slice((page - 1) * pageSize, page * pageSize).map((p: any) => (
               <Card key={p.id} className="overflow-hidden hover:shadow-md transition-shadow group cursor-pointer" onClick={() => navigate(`/personas/${p.id}`)}>
                 <CardContent className="p-0">
-                  <div className={`h-2 ${tipoColor[p.tipo_persona]?.includes("primary") ? "bg-primary" : tipoColor[p.tipo_persona]?.includes("info") ? "bg-info" : tipoColor[p.tipo_persona]?.includes("accent") ? "bg-accent" : "bg-success"}`} />
+                  <div className={`h-2 ${tipoColor[(p.tipos_persona?.[0] || p.tipo_persona)]?.includes("primary") ? "bg-primary" : tipoColor[(p.tipos_persona?.[0] || p.tipo_persona)]?.includes("info") ? "bg-info" : tipoColor[(p.tipos_persona?.[0] || p.tipo_persona)]?.includes("accent") ? "bg-accent" : "bg-success"}`} />
                   <div className="p-4 space-y-3">
                     <div className="flex items-start gap-3">
                       <Avatar className="h-12 w-12">
-                        <AvatarFallback className={`text-sm font-bold ${tipoColor[p.tipo_persona] || "bg-muted text-muted-foreground"}`}>
+                        <AvatarFallback className={`text-sm font-bold ${tipoColor[(p.tipos_persona?.[0] || p.tipo_persona)] || "bg-muted text-muted-foreground"}`}>
                           {p.nombres?.[0]}{p.apellidos?.[0]}
                         </AvatarFallback>
                       </Avatar>
                       <div className="flex-1 min-w-0">
                         <p className="font-semibold text-foreground truncate">{p.nombres} {p.apellidos}</p>
                         <div className="flex items-center gap-2 mt-1">
-                          <Badge variant="secondary" className={`text-[10px] ${tipoColor[p.tipo_persona] || ""}`}>{p.tipo_persona}</Badge>
+                          {(p.tipos_persona?.length ? p.tipos_persona : [p.tipo_persona]).map((tipo: string) => (
+                            <Badge key={tipo} variant="secondary" className={`text-[10px] ${tipoColor[tipo] || ""}`}>{tipo}</Badge>
+                          ))}
                           <StatusBadge status={p.estado_iglesia} />
                         </div>
                       </div>

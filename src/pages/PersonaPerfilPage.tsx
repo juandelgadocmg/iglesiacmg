@@ -229,9 +229,11 @@ export default function PersonaPerfilPage() {
                 {persona.nombres} {persona.apellidos}
               </h1>
               <div className="flex items-center gap-2 mt-2 flex-wrap">
-                <Badge className={cn("shadow-sm", tipoColor[persona.tipo_persona] || "bg-muted")}>
-                  <Church className="h-3 w-3 mr-1" /> {persona.tipo_persona}
-                </Badge>
+                {(persona.tipos_persona?.length ? persona.tipos_persona : [persona.tipo_persona]).map((tipo: string) => (
+                  <Badge key={tipo} className={cn("shadow-sm", tipoColor[tipo] || "bg-muted")}>
+                    <Church className="h-3 w-3 mr-1" /> {tipo}
+                  </Badge>
+                ))}
                 <StatusBadge status={persona.estado_iglesia} />
                 {age !== null && (
                   <Badge variant="outline" className="border-primary-foreground/30 text-primary-foreground/90 bg-primary-foreground/10">

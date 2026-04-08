@@ -79,8 +79,20 @@ export default function PersonaFormDialog({ initialData, onClose }: Props) {
   const [descripcionPeticion, setDescripcionPeticion] = useState("");
   const [aceptaPolitica, setAceptaPolitica] = useState(false);
 
+  // Multi-select tipos_persona
+  const [tiposSeleccionados, setTiposSeleccionados] = useState<string[]>([]);
+
   useEffect(() => {
-    if (initialData) setOpen(true);
+    if (initialData) {
+      setOpen(true);
+      // Load existing tipos — prefer tipos_persona array, fallback to tipo_persona string
+      const existentes: string[] = (initialData.tipos_persona && initialData.tipos_persona.length > 0)
+        ? initialData.tipos_persona
+        : initialData.tipo_persona ? [initialData.tipo_persona] : ["Miembro"];
+      setTiposSeleccionados(existentes);
+    } else {
+      setTiposSeleccionados(["Miembro"]);
+    }
   }, [initialData]);
 
   const handleClose = () => {
@@ -88,6 +100,7 @@ export default function PersonaFormDialog({ initialData, onClose }: Props) {
     setTipoPeticion("");
     setDescripcionPeticion("");
     setAceptaPolitica(false);
+    setTiposSeleccionados(["Miembro"]);
     onClose?.();
   };
 
@@ -113,7 +126,8 @@ export default function PersonaFormDialog({ initialData, onClose }: Props) {
       direccion: clean("direccion"),
       sexo: clean("sexo"),
       fecha_nacimiento: clean("fecha_nacimiento"),
-      tipo_persona: clean("tipo_persona") || "Miembro",
+      tipo_persona: (tiposSeleccionados[0] || "Miembro") as any,
+      tipos_persona: tiposSeleccionados.length > 0 ? tiposSeleccionados : ["Miembro"],
       estado_iglesia: clean("estado_iglesia") || "Activo",
       grupo_id: clean("grupo_id"),
       estado_civil: clean("estado_civil"),
@@ -260,16 +274,34 @@ export default function PersonaFormDialog({ initialData, onClose }: Props) {
           {/* === INFORMACIÓN CONGREGACIONAL === */}
           <p className="text-sm font-semibold text-muted-foreground uppercase tracking-wide pt-2">Información congregacional</p>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            <div className="space-y-2">
-              <Label htmlFor="tipo_persona">Tipo de asistente</Label>
-              <Select name="tipo_persona" defaultValue={initialData?.tipo_persona || "CDP"}>
-                <SelectTrigger><SelectValue /></SelectTrigger>
-                <SelectContent>
-                  {TIPOS_PERSONA.map(t => (
-                    <SelectItem key={t} value={t}>{t}</SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+            <div className="space-y-2 sm:col-span-2">
+              <Label>Tipo de asistente <span className="text-muted-foreground font-normal">(puede seleccionar varios)</span></Label>
+              <div className="grid grid-cols-2 sm:grid-cols-3 gap-2 rounded-lg border p-3 bg-muted/20">
+                {TIPOS_PERSONA.map(tipo => (
+                  <label key={tipo} className={`flex items-center gap-2 rounded-md px-2 py-1.5 cursor-pointer transition-colors text-xs ${
+                    tiposSeleccionados.includes(tipo) ? "bg-primary/10 border border-primary/30" : "hover:bg-muted/50"
+                  }`}>
+                    <Checkbox
+                      checked={tiposSeleccionados.includes(tipo)}
+                      onCheckedChange={(checked) => {
+                        setTiposSeleccionados(prev =>
+                          checked ? [...prev, tipo] : prev.filter(t => t !== tipo)
+                        );
+                      }}
+                      className="h-3.5 w-3.5"
+                    />
+                    <span>{tipo}</span>
+                  </label>
+                ))}
+              </div>
+              {tiposSeleccionados.length === 0 && (
+                <p className="text-xs text-destructive">Selecciona al menos un tipo</p>
+              )}
+              {tiposSeleccionados.length > 0 && (
+                <p className="text-xs text-muted-foreground">
+                  Seleccionados: <strong>{tiposSeleccionados.join(", ")}</strong>
+                </p>
+              )}
             </div>
             <div className="space-y-2">
               <Label htmlFor="estado_iglesia">Estado</Label>
