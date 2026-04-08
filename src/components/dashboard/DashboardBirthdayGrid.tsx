@@ -1,6 +1,6 @@
 import { Cake } from "lucide-react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { format } from "date-fns";
+import { format, startOfWeek, endOfWeek } from "date-fns";
 import { es } from "date-fns/locale";
 
 interface BirthdayPerson {
@@ -15,10 +15,11 @@ interface Props {
   birthdays: BirthdayPerson[];
 }
 
-const MONTHS_ES = ["Enero", "Febrero", "Marzo", "Abril", "Mayo", "Junio", "Julio", "Agosto", "Septiembre", "Octubre", "Noviembre", "Diciembre"];
-
 export default function DashboardBirthdayGrid({ birthdays }: Props) {
-  const currentMonth = MONTHS_ES[new Date().getMonth()];
+  const now = new Date();
+  const weekStart = startOfWeek(now, { weekStartsOn: 1 }); // Monday
+  const weekEnd = endOfWeek(now, { weekStartsOn: 1 });     // Sunday
+  const rangeLabel = `${format(weekStart, "d", { locale: es })} – ${format(weekEnd, "d 'de' MMMM", { locale: es })}`;
 
   return (
     <div className="rounded-xl overflow-hidden border shadow-sm">
@@ -28,7 +29,8 @@ export default function DashboardBirthdayGrid({ birthdays }: Props) {
           <Cake className="h-6 w-6" />
         </div>
         <div>
-          <h3 className="font-bold text-lg uppercase tracking-wide">Próximos Cumpleaños de {currentMonth}</h3>
+          <h3 className="font-bold text-lg uppercase tracking-wide">Cumpleaños esta semana</h3>
+          <p className="text-sm opacity-80">{rangeLabel}</p>
         </div>
       </div>
 
@@ -38,20 +40,13 @@ export default function DashboardBirthdayGrid({ birthdays }: Props) {
           <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 lg:grid-cols-6 gap-4">
             {birthdays.map((b, i) => {
               const isFemale = b.sexo === "Femenino" || b.sexo === "F";
-              const ringColor = isFemale
-                ? "ring-pink-500"
-                : "ring-[hsl(var(--info))]";
-              const bgColor = isFemale
-                ? "bg-pink-500"
-                : "bg-[hsl(var(--info))]";
+              const bgColor = isFemale ? "bg-pink-500" : "bg-[hsl(var(--info))]";
 
               return (
                 <div key={i} className="flex flex-col items-center text-center gap-1.5">
                   <div className={`rounded-full p-[3px] ${bgColor}`}>
                     <Avatar className="h-16 w-16 border-2 border-white">
-                      {b.foto_url ? (
-                        <AvatarImage src={b.foto_url} alt={b.nombre} />
-                      ) : null}
+                      {b.foto_url ? <AvatarImage src={b.foto_url} alt={b.nombre} /> : null}
                       <AvatarFallback className="bg-muted text-foreground text-sm font-bold">
                         {b.initials}
                       </AvatarFallback>
@@ -68,7 +63,11 @@ export default function DashboardBirthdayGrid({ birthdays }: Props) {
             })}
           </div>
         ) : (
-          <p className="text-sm text-muted-foreground text-center py-8">Sin cumpleaños este mes</p>
+          <div className="text-center py-8 space-y-1">
+            <Cake className="h-10 w-10 mx-auto text-muted-foreground/30" />
+            <p className="text-sm text-muted-foreground">Sin cumpleaños esta semana</p>
+            <p className="text-xs text-muted-foreground">{rangeLabel}</p>
+          </div>
         )}
       </div>
     </div>
