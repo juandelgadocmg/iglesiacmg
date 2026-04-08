@@ -477,7 +477,7 @@ export function useAllMatriculas() {
     queryFn: async () => {
       const { data, error } = await supabase
         .from("matriculas")
-        .select("*, personas(nombres, apellidos, foto_url), cursos(nombre)")
+        .select("*, personas(nombres, apellidos, foto_url), cursos(nombre), materias(nombre)")
         .order("created_at", { ascending: false });
       if (error) throw error;
       return data;
