@@ -508,7 +508,7 @@ export function useCreateMatricula() {
 export function useUpdateMatricula() {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: async ({ id, ...updates }: { id: string; estado?: string; nota_final?: number }) => {
+    mutationFn: async ({ id, ...updates }: { id: string; estado?: string; nota_final?: number | null }) => {
       const { error } = await supabase.from("matriculas").update(updates).eq("id", id);
       if (error) throw error;
     },
