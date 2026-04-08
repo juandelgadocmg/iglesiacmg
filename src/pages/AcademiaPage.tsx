@@ -571,6 +571,9 @@ function EstudiantesSection({ escuelas, allPeriodos, allMatriculas }: any) {
 // ========== HISTORIAL MATRICULAS SECTION ==========
 function HistorialMatriculasSection({ escuelas, allPeriodos, allMatriculas }: any) {
   const [selectedEscuela, setSelectedEscuela] = useState<string>("");
+  const [editingId, setEditingId] = useState<string | null>(null);
+  const [editValue, setEditValue] = useState<string>("");
+  const updateMatricula = useUpdateMatricula();
   const [selectedPeriodo, setSelectedPeriodo] = useState<string>("");
   const { data: aulas } = useAulas();
 
