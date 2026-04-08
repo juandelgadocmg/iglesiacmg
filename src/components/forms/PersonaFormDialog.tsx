@@ -127,7 +127,6 @@ export default function PersonaFormDialog({ initialData, onClose }: Props) {
       sexo: clean("sexo"),
       fecha_nacimiento: clean("fecha_nacimiento"),
       tipo_persona: (tiposSeleccionados[0] || "Miembro") as any,
-      tipos_persona: tiposSeleccionados.length > 0 ? tiposSeleccionados : ["Miembro"],
       estado_iglesia: clean("estado_iglesia") || "Activo",
       grupo_id: clean("grupo_id"),
       estado_civil: clean("estado_civil"),
@@ -154,6 +153,20 @@ export default function PersonaFormDialog({ initialData, onClose }: Props) {
         const result = await createPersona.mutateAsync(payload);
         personaId = (result as any)?.id;
         toast.success("Persona creada exitosamente");
+      }
+
+      // Save tipos_persona array separately — column may not exist yet if migration pending
+      if (personaId && tiposSeleccionados.length > 0) {
+        const { error: tiposErr } = await supabase
+          .from("personas")
+          .update({ tipos_persona: tiposSeleccionados } as any)
+          .eq("id", personaId);
+        if (tiposErr && (tiposErr.message?.includes("tipos_persona") || tiposErr.message?.includes("schema cache"))) {
+          toast.warning(
+            "Los datos se guardaron. Para activar múltiples tipos ejecuta en Supabase → SQL Editor: ALTER TABLE public.personas ADD COLUMN IF NOT EXISTS tipos_persona TEXT[] DEFAULT \'{}\';",
+            { duration: 8000 }
+          );
+        }
       }
 
       if (tipoPeticion && personaId) {
