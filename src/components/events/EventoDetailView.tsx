@@ -27,7 +27,19 @@ interface Props {
   onBack: () => void;
 }
 
-const CLASIFICACIONES = ["Ujier", "Predicador", "Músico", "Bienvenida", "Logística", "Sonido", "Multimedia"];
+const CLASIFICACIONES = [
+  "Protocolo",
+  "Alabanza",
+  "Danza",
+  "Diaconado",
+  "Intercesión",
+  "Infantil",
+  "Afirmación",
+  "EscuelasFel",
+  "Comunicaciones",
+  "Adolescentes y Jóvenes",
+  "En Proceso",
+];
 
 export default function EventoDetailView({ evento, onBack }: Props) {
   const updateEvento = useUpdateEvento();
@@ -62,7 +74,7 @@ export default function EventoDetailView({ evento, onBack }: Props) {
   const [newCatAforo, setNewCatAforo] = useState("");
   const [searchEnc, setSearchEnc] = useState("");
   const [searchSrv, setSearchSrv] = useState("");
-  const [selectedClasificacion, setSelectedClasificacion] = useState("Ujier");
+  const [selectedClasificacion, setSelectedClasificacion] = useState("Protocolo");
   const [informeTab, setInformeTab] = useState("inscripciones");
   const [informeFechaDesde, setInformeFechaDesde] = useState("");
   const [informeFechaHasta, setInformeFechaHasta] = useState("");
