@@ -46,7 +46,7 @@ export default function QrAttendanceScanner({ servicioId, onPersonaScanned }: Pr
 
           const nombre = `${data.nombres} ${data.apellidos}`;
           onPersonaScanned(data.id, nombre);
-          toast.success(`✓ ${nombre}`, { description: "Asistencia registrada" });
+          toast.success(`✓ ${nombre}`, { description: "Check-in registrado" });
         },
         () => {} // ignore errors
       );

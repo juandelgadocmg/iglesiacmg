@@ -18,6 +18,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell } from "@/components/ui/table";
 import { toast } from "sonner";
+import { supabase } from "@/integrations/supabase/client";
 import { cn } from "@/lib/utils";
 import ExportDropdown from "@/components/shared/ExportDropdown";
 import AttendanceTrendChart from "@/components/charts/AttendanceTrendChart";
@@ -346,10 +347,20 @@ function ReporteDetalleView({
             <div className="flex items-center gap-2">
               <QrAttendanceScanner
                 servicioId={reunion.id}
-                onPersonaScanned={(personaId) => {
-                  toggleAttendance(personaId);
-                  // Force mark as present
+                onPersonaScanned={async (personaId, nombre) => {
+                  // 1. Update local state immediately for UI feedback
                   setLocalAttendance((prev: Record<string, boolean>) => ({ ...prev, [personaId]: true }));
+                  // 2. Persist directly to Supabase — don't wait for "Guardar"
+                  try {
+                    await supabase
+                      .from("asistencia")
+                      .upsert(
+                        { servicio_id: reunion.id, persona_id: personaId, presente: true },
+                        { onConflict: "servicio_id,persona_id" }
+                      );
+                  } catch (err: any) {
+                    toast.error("Error al registrar asistencia por QR", { description: err.message });
+                  }
                 }}
               />
               <Button
