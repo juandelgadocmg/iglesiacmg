@@ -100,16 +100,17 @@ export default function GruposPage() {
   const canEditGrupo     = canPerform(roles, "grupos:edit");
   const canDeleteGrupo   = canPerform(roles, "grupos:delete");
   const canCreateReporte = canPerform(roles, "reportes_grupos:create");
-  const isLiderCDP       = roles.includes("lider_casa_paz");
+  const isLiderCDP       = roles.includes("lider_casa_paz") && !roles.includes("lider_red") && !roles.includes("admin") && !roles.includes("super_admin") && !roles.includes("pastor") && !roles.includes("lider");
+  const isLiderRed       = roles.includes("lider_red") && !roles.includes("admin") && !roles.includes("super_admin") && !roles.includes("pastor") && !roles.includes("lider");
 
-  // Fetch profile to get assigned grupo_id for lider_casa_paz
+  // Fetch profile to get assigned grupo_id (lider_casa_paz) and red (lider_red)
   const { data: profile, isLoading: loadingProfile } = useQuery({
     queryKey: ["my_profile", user?.id],
-    enabled: !!user?.id && isLiderCDP,
+    enabled: !!user?.id && (isLiderCDP || isLiderRed),
     queryFn: async () => {
       const { data, error } = await supabase
         .from("profiles")
-        .select("grupo_id")
+        .select("grupo_id, red")
         .eq("user_id", user!.id)
         .single();
       if (error) throw error;
@@ -117,7 +118,7 @@ export default function GruposPage() {
     },
   });
 
-  const isLoadingAll = isLoading || (isLiderCDP && loadingProfile);
+  const isLoadingAll = isLoading || ((isLiderCDP || isLiderRed) && loadingProfile);
 
   if (isLoadingAll) {
     return (
@@ -128,7 +129,7 @@ export default function GruposPage() {
     );
   }
 
-  // lider_casa_paz → redirect directly to their assigned group (no back button)
+  // lider_casa_paz → show only their assigned group
   if (isLiderCDP) {
     const grupoIdCDP = (profile as any)?.grupo_id;
     if (!grupoIdCDP) {
@@ -147,6 +148,58 @@ export default function GruposPage() {
       );
     }
     return <GrupoPerfilView grupoId={grupoIdCDP} onBack={null} readOnly />;
+  }
+
+  // lider_red → show only groups in their assigned red
+  if (isLiderRed) {
+    const redAsignada = (profile as any)?.red;
+    if (!redAsignada) {
+      return (
+        <div className="animate-fade-in min-h-[60vh] flex items-center justify-center">
+          <div className="text-center max-w-sm space-y-3">
+            <div className="w-14 h-14 rounded-2xl bg-amber-100 flex items-center justify-center mx-auto">
+              <Users className="h-7 w-7 text-amber-600" />
+            </div>
+            <h2 className="text-lg font-semibold">Sin red asignada</h2>
+            <p className="text-sm text-muted-foreground">
+              Tu usuario aún no tiene una Red asignada. Contacta al administrador.
+            </p>
+          </div>
+        </div>
+      );
+    }
+    const gruposDeRed = (grupos || []).filter((g: any) => g.red === redAsignada);
+    return (
+      <div className="animate-fade-in">
+        <PageHeader title={`Red ${redAsignada}`} description={`Casas de paz y grupos de la Red ${redAsignada}`} />
+        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 mt-4">
+          {gruposDeRed.length === 0 ? (
+            <div className="col-span-3 text-center py-12 text-muted-foreground text-sm">
+              No hay grupos en la Red {redAsignada}
+            </div>
+          ) : gruposDeRed.map((g: any) => (
+            <div
+              key={g.id}
+              className="rounded-xl border bg-card p-4 cursor-pointer hover:shadow-md hover:border-primary/30 transition-all"
+              onClick={() => setSelectedGrupoId(g.id)}
+            >
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center shrink-0">
+                  <Users className="h-5 w-5 text-primary" />
+                </div>
+                <div>
+                  <p className="font-semibold text-sm">{g.nombre}</p>
+                  <p className="text-xs text-muted-foreground">{g.tipo} · {g.dia_reunion || "—"}</p>
+                </div>
+              </div>
+            </div>
+          ))}
+        </div>
+        {selectedGrupoId && (
+          <GrupoPerfilView grupoId={selectedGrupoId} onBack={() => setSelectedGrupoId(null)} readOnly />
+        )}
+      </div>
+    );
   }
 
   const tableData = (grupos || []).map(g => ({

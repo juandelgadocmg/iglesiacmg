@@ -1,27 +1,39 @@
-import { Search, ChevronRight, Menu } from "lucide-react";
+import { Search, ChevronRight, Menu, ChevronDown, Check } from "lucide-react";
 import { useLocation } from "react-router-dom";
 import { Input } from "@/components/ui/input";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
+import {
+  DropdownMenu, DropdownMenuContent, DropdownMenuItem,
+  DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import { useAuth } from "@/hooks/useAuth";
+import { useActiveRole, ROLE_LABELS } from "@/hooks/useActiveRole";
 import NotificationDropdown from "@/components/layout/NotificationDropdown";
 
 const breadcrumbMap: Record<string, string> = {
-  dashboard: "Dashboard",
-  personas: "Personas",
-  grupos: "Grupos",
-  servicios: "Servicios",
-  asistencia: "Asistencia",
-  finanzas: "Finanzas",
-  donaciones: "Donaciones",
-  eventos: "Eventos",
-  inscripciones: "Inscripciones",
-  academia: "Academia",
-  certificados: "Certificados",
-  reportes: "Reportes",
-  usuarios: "Usuarios",
-  configuracion: "Configuración",
-  nuevo: "Nuevo",
+  dashboard: "Dashboard", personas: "Personas", grupos: "Grupos",
+  servicios: "Servicios", asistencia: "Asistencia", finanzas: "Finanzas",
+  donaciones: "Donaciones", eventos: "Eventos", inscripciones: "Inscripciones",
+  academia: "Academia", certificados: "Certificados", reportes: "Reportes",
+  usuarios: "Usuarios", configuracion: "Configuración", nuevo: "Nuevo",
+};
+
+const ROLE_COLORS: Record<string, string> = {
+  super_admin: "bg-destructive/10 text-destructive",
+  admin: "bg-destructive/10 text-destructive",
+  pastor: "bg-primary/10 text-primary",
+  lider: "bg-blue-100 text-blue-700",
+  secretaria: "bg-purple-100 text-purple-700",
+  tesoreria: "bg-amber-100 text-amber-700",
+  maestro: "bg-green-100 text-green-700",
+  consolidador_lider: "bg-cyan-100 text-cyan-700",
+  consolidador: "bg-slate-100 text-slate-600",
+  lider_intercesion: "bg-pink-100 text-pink-700",
+  lider_red: "bg-orange-100 text-orange-700",
+  lider_casa_paz: "bg-teal-100 text-teal-700",
+  consulta: "bg-muted text-muted-foreground",
 };
 
 interface AppHeaderProps {
@@ -32,10 +44,13 @@ export default function AppHeader({ onMenuClick }: AppHeaderProps) {
   const location = useLocation();
   const segments = location.pathname.split("/").filter(Boolean);
   const { user } = useAuth();
+  const { activeRole, setActiveRole, allRoles, roleLabel } = useActiveRole();
   const initials = user?.email?.slice(0, 2).toUpperCase() || "U";
+  const hasMultipleRoles = allRoles.length > 1;
 
   return (
     <header className="h-14 md:h-16 border-b bg-card flex items-center justify-between px-3 md:px-6 sticky top-0 z-20">
+      {/* Breadcrumb */}
       <div className="flex items-center gap-1.5 text-sm min-w-0">
         <Button variant="ghost" size="icon" className="md:hidden shrink-0 h-8 w-8" onClick={onMenuClick}>
           <Menu className="h-5 w-5" />
@@ -51,6 +66,7 @@ export default function AppHeader({ onMenuClick }: AppHeaderProps) {
         ))}
       </div>
 
+      {/* Right side */}
       <div className="flex items-center gap-2 md:gap-4 shrink-0">
         <div className="relative hidden md:block">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
@@ -59,14 +75,58 @@ export default function AppHeader({ onMenuClick }: AppHeaderProps) {
 
         <NotificationDropdown />
 
-        <div className="flex items-center gap-2.5 pl-2 md:pl-3 border-l">
-          <Avatar className="h-8 w-8">
-            <AvatarFallback className="bg-primary text-primary-foreground text-xs font-semibold">{initials}</AvatarFallback>
-          </Avatar>
-          <div className="hidden lg:block">
-            <p className="text-sm font-medium leading-none">{user?.email?.split("@")[0] || "Usuario"}</p>
-            <p className="text-[11px] text-muted-foreground">{user?.email}</p>
-          </div>
+        {/* User + role switcher */}
+        <div className="pl-2 md:pl-3 border-l">
+          {hasMultipleRoles ? (
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <button className="flex items-center gap-2.5 hover:bg-muted/50 rounded-lg px-2 py-1 transition-colors">
+                  <Avatar className="h-8 w-8 shrink-0">
+                    <AvatarFallback className="bg-primary text-primary-foreground text-xs font-semibold">{initials}</AvatarFallback>
+                  </Avatar>
+                  <div className="hidden lg:block text-left">
+                    <p className="text-sm font-medium leading-none">{user?.email?.split("@")[0] || "Usuario"}</p>
+                    <div className="flex items-center gap-1 mt-0.5">
+                      <Badge className={`text-[10px] h-4 px-1.5 rounded-full font-medium ${ROLE_COLORS[activeRole || ""] || "bg-muted text-muted-foreground"}`}>
+                        {roleLabel}
+                      </Badge>
+                      <ChevronDown className="h-3 w-3 text-muted-foreground" />
+                    </div>
+                  </div>
+                </button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end" className="w-56">
+                <DropdownMenuLabel className="text-xs text-muted-foreground font-normal">
+                  {user?.email}
+                </DropdownMenuLabel>
+                <DropdownMenuLabel className="text-xs pb-1">Cambiar perfil activo</DropdownMenuLabel>
+                <DropdownMenuSeparator />
+                {allRoles.map(role => (
+                  <DropdownMenuItem
+                    key={role}
+                    onClick={() => setActiveRole(role)}
+                    className="flex items-center justify-between gap-2 cursor-pointer"
+                  >
+                    <div className="flex items-center gap-2">
+                      <div className={`w-2 h-2 rounded-full ${ROLE_COLORS[role]?.includes("destructive") ? "bg-destructive" : ROLE_COLORS[role]?.includes("primary") ? "bg-primary" : "bg-blue-500"}`} />
+                      <span className="text-sm">{ROLE_LABELS[role] || role}</span>
+                    </div>
+                    {activeRole === role && <Check className="h-4 w-4 text-primary" />}
+                  </DropdownMenuItem>
+                ))}
+              </DropdownMenuContent>
+            </DropdownMenu>
+          ) : (
+            <div className="flex items-center gap-2.5">
+              <Avatar className="h-8 w-8">
+                <AvatarFallback className="bg-primary text-primary-foreground text-xs font-semibold">{initials}</AvatarFallback>
+              </Avatar>
+              <div className="hidden lg:block">
+                <p className="text-sm font-medium leading-none">{user?.email?.split("@")[0] || "Usuario"}</p>
+                <p className="text-[11px] text-muted-foreground">{user?.email}</p>
+              </div>
+            </div>
+          )}
         </div>
       </div>
     </header>

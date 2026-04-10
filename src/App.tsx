@@ -4,6 +4,7 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { AuthProvider } from "@/hooks/useAuth";
+import { ActiveRoleProvider } from "@/hooks/useActiveRole";
 import ProtectedRoute from "@/components/auth/ProtectedRoute";
 import RoleGuard from "@/components/auth/RoleGuard";
 import AppLayout from "@/components/layout/AppLayout";
@@ -34,6 +35,7 @@ const App = () => (
       <Sonner />
       <BrowserRouter>
         <AuthProvider>
+          <ActiveRoleProvider>
           <Routes>
             <Route path="/" element={<Navigate to="/login" replace />} />
             <Route path="/login" element={<LoginPage />} />
@@ -56,6 +58,7 @@ const App = () => (
             </Route>
             <Route path="*" element={<NotFound />} />
           </Routes>
+        </ActiveRoleProvider>
         </AuthProvider>
       </BrowserRouter>
     </TooltipProvider>

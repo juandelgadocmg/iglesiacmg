@@ -55,7 +55,10 @@ interface Profile {
   user_id: string;
   display_name: string;
   grupo_id?: string | null;
+  red?: string | null;
 }
+
+const REDES = ["Nissi", "Rohi", "Jireh", "Adonai", "Shaddai", "Elohim"];
 
 interface EditUserDialogProps {
   profile: Profile;
@@ -70,11 +73,13 @@ export default function EditUserDialog({ profile, userRoles, open, onOpenChange,
   const [newPassword, setNewPassword]   = useState("");
   const [selectedRoles, setSelectedRoles] = useState<AppRole[]>(userRoles.map(r => r.role));
   const [grupoId, setGrupoId]           = useState(profile.grupo_id || "");
+  const [red, setRed]                   = useState(profile.red || "");
   const [grupos, setGrupos]             = useState<{ id: string; nombre: string; red: string | null; tipo: string }[]>([]);
   const [loading, setLoading]           = useState(false);
   const [section, setSection]           = useState<"info" | "roles" | "grupo">("info");
 
   const needsGrupo = selectedRoles.some(r => ROLES_CON_GRUPO.includes(r));
+  const isLiderRed = selectedRoles.includes("lider_red");
 
   useEffect(() => {
     if (open) {
@@ -82,6 +87,7 @@ export default function EditUserDialog({ profile, userRoles, open, onOpenChange,
       setNewPassword("");
       setSelectedRoles(userRoles.map(r => r.role));
       setGrupoId(profile.grupo_id || "");
+      setRed(profile.red || "");
       setSection("info");
     }
   }, [open, profile, userRoles]);
@@ -114,13 +120,18 @@ export default function EditUserDialog({ profile, userRoles, open, onOpenChange,
         .eq("user_id", profile.user_id);
       if (nameErr) throw nameErr;
 
-      // 2. Update grupo_id
+      // 2. Update grupo_id and red
       const finalGrupoId = (grupoId && grupoId !== "none") ? grupoId : null;
+      const finalRed = (isLiderRed && red && red !== "none") ? red : null;
       const { error: grupoErr } = await supabase
         .from("profiles")
-        .update({ grupo_id: finalGrupoId } as any)
+        .update({ grupo_id: finalGrupoId, red: finalRed } as any)
         .eq("user_id", profile.user_id);
-      if (grupoErr) throw grupoErr;
+      if (grupoErr) {
+        if (grupoErr.message?.includes("schema cache") || grupoErr.message?.includes("red")) {
+          toast.warning("Datos guardados. Ejecuta las migraciones pendientes en Supabase SQL Editor.", { duration: 6000 });
+        } else throw grupoErr;
+      }
 
       // 2. Sync roles — remove old, add new
       const currentRoleIds = userRoles.map(r => r.id);
@@ -254,15 +265,40 @@ export default function EditUserDialog({ profile, userRoles, open, onOpenChange,
               <div className="rounded-lg border border-primary/30 bg-primary/5 p-3 text-xs text-muted-foreground">
                 Asigna un grupo (Casa de Paz, Red, etc.) a este usuario para que pueda ver y gestionar su grupo al iniciar sesión.
               </div>
+              {/* Red selector — only for lider_red */}
+              {isLiderRed && (
+                <div className="space-y-2">
+                  <Label className="flex items-center gap-1.5">
+                    🌐 Red asignada <span className="text-destructive">*</span>
+                  </Label>
+                  <p className="text-xs text-muted-foreground">El líder de red verá solo los grupos de esta red.</p>
+                  <Select value={red} onValueChange={setRed}>
+                    <SelectTrigger>
+                      <SelectValue placeholder="Seleccionar red..." />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {REDES.map(r => (
+                        <SelectItem key={r} value={r}>Red {r}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                  {red && (
+                    <p className="text-xs text-success font-medium">✓ Red seleccionada: {red}</p>
+                  )}
+                </div>
+              )}
+
+              {/* Grupo selector — for lider_casa_paz */}
+              {selectedRoles.includes("lider_casa_paz") && (
               <div className="space-y-2">
-                <Label>Grupo asignado</Label>
+                <Label>{isLiderRed ? "Casa de Paz propia (opcional)" : "Casa de Paz asignada"}</Label>
                 <Select value={grupoId} onValueChange={setGrupoId}>
                   <SelectTrigger>
                     <SelectValue placeholder="Seleccionar grupo..." />
                   </SelectTrigger>
                   <SelectContent>
                     <SelectItem value="none">Sin grupo</SelectItem>
-                    {grupos.map(g => (
+                    {grupos.filter(g => g.tipo === "Casas de paz").map(g => (
                       <SelectItem key={g.id} value={g.id}>
                         <span>{g.nombre}</span>
                         {g.red && <span className="text-xs text-muted-foreground ml-2">· Red {g.red}</span>}
@@ -276,6 +312,7 @@ export default function EditUserDialog({ profile, userRoles, open, onOpenChange,
                   </p>
                 )}
               </div>
+              )}
             </div>
           )}
         </div>

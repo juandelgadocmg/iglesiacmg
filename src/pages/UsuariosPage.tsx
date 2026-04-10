@@ -256,6 +256,11 @@ export default function UsuariosPage() {
                           {(profile as any).grupo.red && <span>· Red {(profile as any).grupo.red}</span>}
                         </p>
                       )}
+                      {(profile as any).red && !(profile as any).grupo && (
+                        <p className="text-xs text-orange-600 flex items-center gap-1 mt-0.5">
+                          🌐 Red {(profile as any).red}
+                        </p>
+                      )}
                     </div>
                   </div>
 

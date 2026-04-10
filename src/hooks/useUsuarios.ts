@@ -10,7 +10,7 @@ export function useProfiles() {
     queryFn: async () => {
       const { data, error } = await supabase
         .from("profiles")
-        .select("*, grupo:grupos!profiles_grupo_id_fkey(id, nombre, red)")
+        .select("*, red, grupo:grupos!profiles_grupo_id_fkey(id, nombre, red)")
         .order("created_at", { ascending: false });
       if (error) throw error;
       return data;
