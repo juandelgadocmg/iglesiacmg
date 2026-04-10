@@ -173,10 +173,35 @@ export default function GruposPage() {
       );
     }
     const gruposDeRed = (grupos || []).filter((g: any) => g.red === redAsignada);
+    const totalIntegrantes = gruposDeRed.reduce((sum: number, g: any) => sum + (g.grupo_miembros?.[0]?.count || 0), 0);
+    const totalGrupos = gruposDeRed.length;
+    const gruposCasaPaz = gruposDeRed.filter((g: any) => g.tipo === "Casas de paz").length;
+
     return (
-      <div className="animate-fade-in">
+      <div className="animate-fade-in space-y-4">
         <PageHeader title={`Red ${redAsignada}`} description={`Casas de paz y grupos de la Red ${redAsignada}`} />
-        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 mt-4">
+
+        {/* Metrics */}
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
+          <div className="rounded-xl border bg-card p-4 text-center">
+            <p className="text-2xl font-bold text-primary">{totalGrupos}</p>
+            <p className="text-xs text-muted-foreground mt-1">Grupos en la red</p>
+          </div>
+          <div className="rounded-xl border bg-card p-4 text-center">
+            <p className="text-2xl font-bold text-blue-600">{gruposCasaPaz}</p>
+            <p className="text-xs text-muted-foreground mt-1">Casas de paz</p>
+          </div>
+          <div className="rounded-xl border bg-card p-4 text-center">
+            <p className="text-2xl font-bold text-green-600">{totalIntegrantes}</p>
+            <p className="text-xs text-muted-foreground mt-1">Personas en la red</p>
+          </div>
+          <div className="rounded-xl border bg-card p-4 text-center">
+            <p className="text-2xl font-bold text-amber-600">{totalGrupos - gruposCasaPaz}</p>
+            <p className="text-xs text-muted-foreground mt-1">Otros grupos</p>
+          </div>
+        </div>
+
+        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
           {gruposDeRed.length === 0 ? (
             <div className="col-span-3 text-center py-12 text-muted-foreground text-sm">
               No hay grupos en la Red {redAsignada}
@@ -191,10 +216,15 @@ export default function GruposPage() {
                 <div className="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center shrink-0">
                   <Users className="h-5 w-5 text-primary" />
                 </div>
-                <div>
+                <div className="flex-1 min-w-0">
                   <p className="font-semibold text-sm">{g.nombre}</p>
                   <p className="text-xs text-muted-foreground">{g.tipo} · {g.dia_reunion || "—"}</p>
                 </div>
+                {g.grupo_miembros?.[0]?.count > 0 && (
+                  <span className="text-xs font-medium text-muted-foreground bg-muted px-2 py-0.5 rounded-full">
+                    {g.grupo_miembros[0].count}
+                  </span>
+                )}
               </div>
             </div>
           ))}
@@ -318,9 +348,29 @@ export default function GruposPage() {
                 Solo disponible el día de reunión configurado en cada grupo.
               </p>
             </div>
-            <Button onClick={() => setShowReportForm(true)} className="gap-2" disabled={!canCreateReporte}>
-              <Plus className="h-4 w-4" /> Iniciar Reporte
-            </Button>
+            {(() => {
+              const now = new Date();
+              const day = now.getDay();
+              const mins = now.getHours() * 60 + now.getMinutes();
+              // Open: lunes(1) a jueves(4) hasta las 23:59
+              const isOpen = day >= 1 && day <= 4 && !(day === 4 && mins >= 23 * 60 + 59);
+              return (
+                <>
+                  <Button
+                    onClick={() => setShowReportForm(true)}
+                    className="gap-2"
+                    disabled={!canCreateReporte || !isOpen}
+                  >
+                    <Plus className="h-4 w-4" /> Iniciar Reporte
+                  </Button>
+                  {!isOpen && (
+                    <p className="text-xs text-destructive text-center mt-1">
+                      ⏰ Los reportes solo pueden enviarse de lunes a jueves hasta las 11:59 PM
+                    </p>
+                  )}
+                </>
+              );
+            })()}
           </div>
         </TabsContent>
 

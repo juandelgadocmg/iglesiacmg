@@ -222,9 +222,28 @@ export default function GrupoPerfilView({ grupoId, onBack, readOnly = false }: P
                 <Pencil className="h-3.5 w-3.5" /> Editar
               </Button>
             )}
-            <Button size="sm" className="gap-1.5" onClick={() => setShowReportForm(true)}>
-              <ClipboardList className="h-3.5 w-3.5" /> Crear Reporte
-            </Button>
+            {(() => {
+              const now = new Date();
+              const day = now.getDay();
+              const mins = now.getHours() * 60 + now.getMinutes();
+              const isOpen = day >= 1 && day <= 4 && !(day === 4 && mins >= 23 * 60 + 59);
+              return (
+                <div className="flex flex-col items-end gap-0.5">
+                  <Button
+                    size="sm"
+                    className="gap-1.5"
+                    onClick={() => setShowReportForm(true)}
+                    disabled={!isOpen}
+                    title={!isOpen ? "Solo disponible lunes a jueves hasta las 11:59 PM" : ""}
+                  >
+                    <ClipboardList className="h-3.5 w-3.5" /> Crear Reporte
+                  </Button>
+                  {!isOpen && (
+                    <p className="text-[10px] text-destructive">⏰ Lunes–Jue 11:59 PM</p>
+                  )}
+                </div>
+              );
+            })()}
           </div>
         </div>
 

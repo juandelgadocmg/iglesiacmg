@@ -12,7 +12,8 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Shield, ShieldCheck, UserCog, Plus, X, Users, Pencil, Home, Download } from "lucide-react";
+import { Shield, ShieldCheck, UserCog, Plus, X, Users, Pencil, Home, Trash2 } from "lucide-react";
+import { toast } from "sonner";
 import { toast } from "sonner";
 import { Constants } from "@/integrations/supabase/types";
 import type { Database } from "@/integrations/supabase/types";
@@ -105,6 +106,20 @@ export default function UsuariosPage() {
       toast.success("Rol eliminado");
     } catch {
       toast.error("Error al eliminar rol");
+    }
+  };
+
+  const handleDeleteUser = async (userId: string, name: string) => {
+    if (!window.confirm(`¿Eliminar permanentemente al usuario "${name}"? Esta acción no se puede deshacer.`)) return;
+    try {
+      const { error } = await supabase.functions.invoke("invite-user", {
+        body: { action: "delete_user", user_id: userId },
+      });
+      if (error) throw error;
+      toast.success(`Usuario "${name}" eliminado`);
+      handleSuccess();
+    } catch (err: any) {
+      toast.error(err.message || "Error al eliminar usuario");
     }
   };
 
@@ -295,6 +310,16 @@ export default function UsuariosPage() {
                     >
                       <Pencil className="h-3.5 w-3.5" /> Editar
                     </Button>
+                    {!isCurrentUser && (
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        className="h-8 gap-1.5 text-xs ml-1 text-destructive border-destructive/30 hover:bg-destructive/10"
+                        onClick={() => handleDeleteUser(profile.user_id, profile.display_name || profile.user_id.slice(0,8))}
+                      >
+                        <Trash2 className="h-3.5 w-3.5" />
+                      </Button>
+                    )}
                   </div>
                 </div>
               );

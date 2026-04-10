@@ -1,6 +1,7 @@
 import { useMemo } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
+import { useActiveRole, ROLE_LABELS } from "@/hooks/useActiveRole";
 import { useDashboardStats, usePersonas } from "@/hooks/useDatabase";
 import { useCursos, useAllMatriculas, useCertificados } from "@/hooks/useAcademia";
 import { usePeticiones } from "@/hooks/usePeticiones";
@@ -136,6 +137,8 @@ export default function Dashboard() {
   const hour = new Date().getHours();
   const greeting = hour < 12 ? "Buenos días" : hour < 18 ? "Buenas tardes" : "Buenas noches";
   const displayName = user?.user_metadata?.display_name || user?.email?.split("@")[0] || "Usuario";
+  const { activeRole, roleLabel } = useActiveRole();
+  const greetingRole = roleLabel || "Usuario";
 
   if (isLoading) {
     return (
@@ -154,7 +157,7 @@ export default function Dashboard() {
       {/* Header */}
       <div className="flex items-end justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-foreground">{greeting}, {displayName} 👋</h1>
+          <h1 className="text-2xl font-bold text-foreground">{greeting}, {greetingRole} 👋</h1>
           <p className="text-sm text-muted-foreground mt-1">{format(new Date(), "EEEE, d 'de' MMMM yyyy", { locale: es })}</p>
         </div>
         <div className="hidden md:flex items-center gap-2 px-3 py-1.5 rounded-lg bg-success/10 text-success text-xs font-medium">

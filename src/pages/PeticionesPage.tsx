@@ -110,6 +110,7 @@ export default function PeticionesPage() {
     tipo: p.tipo || "Sin tipo",
     estado: p.estado,
     prioridad: p.prioridad,
+    descripcion: p.descripcion || "",
     fecha_seguimiento: p.fecha_seguimiento || "",
     fecha: p.created_at ? format(parseISO(p.created_at), "dd/MM/yyyy") : "",
   }));
@@ -135,6 +136,7 @@ export default function PeticionesPage() {
             { header: "Tipo", key: "tipo" },
             { header: "Estado", key: "estado" },
             { header: "Prioridad", key: "prioridad" },
+            { header: "Descripción", key: "descripcion" },
             { header: "Seguimiento", key: "fecha_seguimiento" },
             { header: "Fecha", key: "fecha" },
           ]}

@@ -46,6 +46,31 @@ serve(async (req) => {
     const body = await req.json();
     const { action } = body;
 
+    // ── Delete user action ──
+    if (action === "delete_user") {
+      const { user_id } = body;
+      if (!user_id) {
+        return new Response(JSON.stringify({ error: "user_id es requerido" }), {
+          status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" },
+        });
+      }
+      // Delete roles first
+      await supabaseAdmin.from("user_roles").delete().eq("user_id", user_id);
+      // Delete profile
+      await supabaseAdmin.from("profiles").delete().eq("user_id", user_id);
+      // Delete auth user
+      const { error: deleteErr } = await supabaseAdmin.auth.admin.deleteUser(user_id);
+      if (deleteErr) {
+        return new Response(JSON.stringify({ error: deleteErr.message }), {
+          status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" },
+        });
+      }
+      return new Response(
+        JSON.stringify({ success: true }),
+        { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+
     // ── Reset password action ──
     if (action === "reset_password") {
       const { user_id, password } = body;
