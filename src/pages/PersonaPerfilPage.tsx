@@ -229,7 +229,7 @@ export default function PersonaPerfilPage() {
                 {persona.nombres} {persona.apellidos}
               </h1>
               <div className="flex items-center gap-2 mt-2 flex-wrap">
-                {(persona.tipos_persona?.length ? persona.tipos_persona : [persona.tipo_persona]).map((tipo: string) => (
+                {((persona as any).tipos_persona?.length ? (persona as any).tipos_persona : [persona.tipo_persona]).map((tipo: string) => (
                   <Badge key={tipo} className={cn("shadow-sm", tipoColor[tipo] || "bg-muted")}>
                     <Church className="h-3 w-3 mr-1" /> {tipo}
                   </Badge>
