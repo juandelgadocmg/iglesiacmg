@@ -34,6 +34,86 @@ interface Props {
   onSelectGrupo?: (id: string) => void;
 }
 
+// ── Searchable person picker ──────────────────────────────────────────────────
+function PersonaSearchSelect({
+  personas, value, onChange, placeholder, allowNone = false,
+}: {
+  personas: any[]; value: string; onChange: (id: string) => void;
+  placeholder?: string; allowNone?: boolean;
+}) {
+  const [query, setQuery] = useState("");
+  const [open, setOpen] = useState(false);
+
+  const selected = personas.find(p => p.id === value);
+
+  const filtered = useMemo(() => {
+    const list = allowNone ? personas : personas;
+    if (!query.trim()) return list.slice(0, 60);
+    const q = query.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+    return list.filter(p => {
+      const full = `${p.nombres} ${p.apellidos}`.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+      return full.includes(q) || (p.documento || "").includes(q);
+    }).slice(0, 60);
+  }, [personas, query]);
+
+  return (
+    <div className="relative">
+      {selected && !open ? (
+        <div
+          className="flex items-center justify-between rounded-md border px-3 py-2 bg-background text-sm cursor-pointer hover:border-primary/50 transition-colors"
+          onClick={() => { setOpen(true); setQuery(""); }}
+        >
+          <span className="font-medium">{selected.nombres} {selected.apellidos}</span>
+          {allowNone && (
+            <button
+              type="button"
+              className="text-muted-foreground hover:text-destructive ml-2 text-xs"
+              onClick={e => { e.stopPropagation(); onChange("none"); }}
+            >✕</button>
+          )}
+        </div>
+      ) : (
+        <div className="relative">
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground pointer-events-none" />
+          <Input
+            placeholder={placeholder || "Buscar persona..."}
+            value={query}
+            onChange={e => { setQuery(e.target.value); setOpen(true); }}
+            onFocus={() => setOpen(true)}
+            onBlur={() => setTimeout(() => setOpen(false), 150)}
+            className="pl-8 text-sm"
+            autoComplete="off"
+          />
+        </div>
+      )}
+      {open && (
+        <div className="absolute z-50 w-full mt-1 rounded-md border bg-popover shadow-lg max-h-52 overflow-y-auto">
+          {allowNone && (
+            <div
+              className="px-3 py-2 text-sm text-muted-foreground cursor-pointer hover:bg-muted/50 border-b italic"
+              onMouseDown={() => { onChange("none"); setOpen(false); setQuery(""); }}
+            >— Sin segundo líder —</div>
+          )}
+          {filtered.length === 0 ? (
+            <div className="px-3 py-3 text-sm text-center text-muted-foreground">Sin resultados</div>
+          ) : filtered.map(p => (
+            <div
+              key={p.id}
+              className={`flex items-center gap-2.5 px-3 py-2 cursor-pointer hover:bg-muted/60 text-sm ${p.id === value ? "bg-primary/5 font-medium" : ""}`}
+              onMouseDown={() => { onChange(p.id); setOpen(false); setQuery(""); }}
+            >
+              <div className="w-6 h-6 rounded-full bg-primary/10 flex items-center justify-center text-[10px] font-bold text-primary shrink-0">
+                {p.nombres?.[0]}{p.apellidos?.[0]}
+              </div>
+              <span>{p.nombres} {p.apellidos}</span>
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
 export default function GrupoHierarchyView({ onSelectGrupo }: Props) {
   const { data: grupos, isLoading: loadingGrupos } = useGrupos();
   const { data: equipos, isLoading: loadingEquipos } = useEquiposMinisteriales();
@@ -393,27 +473,23 @@ export default function GrupoHierarchyView({ onSelectGrupo }: Props) {
             )}
             <div className="space-y-1.5">
               <label className="text-sm font-medium">Líder 1</label>
-              <Select value={form.lider_id} onValueChange={(v) => setForm({ ...form, lider_id: v })}>
-                <SelectTrigger><SelectValue placeholder="Seleccionar líder" /></SelectTrigger>
-                <SelectContent>
-                  {(personas || []).map(p => (
-                    <SelectItem key={p.id} value={p.id}>{p.nombres} {p.apellidos}</SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+              <PersonaSearchSelect
+                personas={personas || []}
+                value={form.lider_id}
+                onChange={(v) => setForm({ ...form, lider_id: v })}
+                placeholder="Buscar líder..."
+              />
             </div>
             {form.tipo === "lider_red" && (
               <div className="space-y-1.5">
-                <label className="text-sm font-medium">Líder 2</label>
-                <Select value={form.lider2_id} onValueChange={(v) => setForm({ ...form, lider2_id: v })}>
-                  <SelectTrigger><SelectValue placeholder="Seleccionar segundo líder (opcional)" /></SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="none">— Sin segundo líder —</SelectItem>
-                    {(personas || []).filter(p => p.id !== form.lider_id).map(p => (
-                      <SelectItem key={p.id} value={p.id}>{p.nombres} {p.apellidos}</SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
+                <label className="text-sm font-medium">Líder 2 <span className="text-muted-foreground font-normal">(opcional)</span></label>
+                <PersonaSearchSelect
+                  personas={(personas || []).filter(p => p.id !== form.lider_id)}
+                  value={form.lider2_id}
+                  onChange={(v) => setForm({ ...form, lider2_id: v })}
+                  placeholder="Buscar segundo líder..."
+                  allowNone
+                />
               </div>
             )}
             <div className="space-y-1.5">

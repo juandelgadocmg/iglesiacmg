@@ -23,7 +23,7 @@ type AppRole = Database["public"]["Enums"]["app_role"];
  */
 export const ROUTE_PERMISSIONS: Record<string, AppRole[]> = {
   "/dashboard": [],
-  "/personas": ["admin", "super_admin", "pastor", "lider", "secretaria", "consolidador_lider", "consolidador", "lider_red"],
+  "/personas": ["admin", "super_admin", "pastor", "lider", "secretaria", "consolidador_lider", "consolidador"],
   "/grupos": ["admin", "super_admin", "pastor", "lider", "lider_red", "lider_casa_paz"],
   "/servicios": ["admin", "super_admin", "pastor", "lider", "secretaria"],
   "/finanzas": ["admin", "super_admin", "tesoreria"],
