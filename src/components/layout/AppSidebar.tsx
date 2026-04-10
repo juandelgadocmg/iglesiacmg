@@ -3,6 +3,7 @@ import { NavLink, useLocation, useNavigate } from "react-router-dom";
 import { cn } from "@/lib/utils";
 import { useAuth } from "@/hooks/useAuth";
 import { useUserRoles } from "@/hooks/useUserRoles";
+import { useActiveRole } from "@/hooks/useActiveRole";
 import { canAccess } from "@/lib/permissions";
 import { useIsMobile } from "@/hooks/use-mobile";
 import logo from "@/assets/logo.jpeg";
@@ -45,9 +46,13 @@ function SidebarContent({ onNavigate }: { onNavigate?: () => void }) {
   const navigate = useNavigate();
   const { signOut } = useAuth();
   const { roles } = useUserRoles();
+  const { activeRole } = useActiveRole();
   const isMobile = useIsMobile();
 
-  const visibleItems = menuItems.filter((item) => canAccess(roles, item.path));
+  // When a specific profile is active, filter menu by that single role
+  // This makes the sidebar reflect what the user can do in their current profile
+  const effectiveRoles = activeRole ? [activeRole as any] : roles;
+  const visibleItems = menuItems.filter((item) => canAccess(effectiveRoles, item.path));
 
   const handleLogout = async () => {
     await signOut();

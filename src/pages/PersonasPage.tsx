@@ -26,6 +26,7 @@ import ExportDropdown from "@/components/shared/ExportDropdown";
 import ImportPersonasDialog from "@/components/forms/ImportPersonasDialog";
 import { useUserRoles } from "@/hooks/useUserRoles";
 import { canPerform } from "@/lib/permissions";
+import { useActiveRole } from "@/hooks/useActiveRole";
 
 const TIPOS = [
   "Todos", "Miembro", "Visitante", "Líder", "Servidor", "CDP",
@@ -57,6 +58,7 @@ export default function PersonasPage() {
   const deletePersona = useDeletePersona();
   const [editing, setEditing] = useState<any>(null);
   const { roles } = useUserRoles();
+  const { activeRole } = useActiveRole();
   const canEdit   = canPerform(roles, "personas:edit");
   const canCreate = canPerform(roles, "personas:create");
   const canDelete = canPerform(roles, "personas:delete");
@@ -124,7 +126,14 @@ export default function PersonasPage() {
 
   return (
     <div className="animate-fade-in space-y-6">
-      <PageHeader title="Personas" description="Gestión de miembros, visitantes, líderes y servidores">
+      <PageHeader
+        title="Personas"
+        description={
+          activeRole === "consolidador_lider" ? "Toda la membresía — puedes crear y editar personas" :
+          activeRole === "lider_red" ? "Personas de tu red" :
+          "Gestión de miembros, visitantes, líderes y servidores"
+        }
+      >
         <ExportDropdown title="Personas" filename="personas" columns={[
           { header: "Nombres", key: "nombres" }, { header: "Apellidos", key: "apellidos" },
           { header: "Teléfono", key: "telefono" }, { header: "Email", key: "email" },

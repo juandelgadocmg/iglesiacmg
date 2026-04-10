@@ -24,6 +24,7 @@ import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGri
 import { useUserRoles } from "@/hooks/useUserRoles";
 import { canPerform } from "@/lib/permissions";
 import { useAuth } from "@/hooks/useAuth";
+import { useActiveRole } from "@/hooks/useActiveRole";
 
 const ReportesGruposContent = lazy(() => import("@/pages/ReportesGruposPage"));
 const MapaGruposContent = lazy(() => import("@/pages/MapaGruposPage"));
@@ -96,12 +97,15 @@ export default function GruposPage() {
   const [viewingPlan, setViewingPlan] = useState<any>(null);
   const { roles } = useUserRoles();
   const { user } = useAuth();
+  const { activeRole } = useActiveRole();
   const canCreateGrupo   = canPerform(roles, "grupos:create");
   const canEditGrupo     = canPerform(roles, "grupos:edit");
   const canDeleteGrupo   = canPerform(roles, "grupos:delete");
   const canCreateReporte = canPerform(roles, "reportes_grupos:create");
-  const isLiderCDP       = roles.includes("lider_casa_paz") && !roles.includes("lider_red") && !roles.includes("admin") && !roles.includes("super_admin") && !roles.includes("pastor") && !roles.includes("lider");
-  const isLiderRed       = roles.includes("lider_red") && !roles.includes("admin") && !roles.includes("super_admin") && !roles.includes("pastor") && !roles.includes("lider");
+
+  // Use activeRole to determine the view — respects the profile switcher
+  const isLiderCDP = activeRole === "lider_casa_paz";
+  const isLiderRed = activeRole === "lider_red";
 
   // Fetch profile to get assigned grupo_id (lider_casa_paz) and red (lider_red)
   const { data: profile, isLoading: loadingProfile } = useQuery({
