@@ -1379,6 +1379,7 @@ export type Database = {
           telefono: string | null
           tipo_documento: string | null
           tipo_persona: Database["public"]["Enums"]["tipo_persona"]
+          tipos_persona: string[] | null
           updated_at: string
           vinculacion: string | null
           whatsapp: string | null
@@ -1411,6 +1412,7 @@ export type Database = {
           telefono?: string | null
           tipo_documento?: string | null
           tipo_persona?: Database["public"]["Enums"]["tipo_persona"]
+          tipos_persona?: string[] | null
           updated_at?: string
           vinculacion?: string | null
           whatsapp?: string | null
@@ -1443,6 +1445,7 @@ export type Database = {
           telefono?: string | null
           tipo_documento?: string | null
           tipo_persona?: Database["public"]["Enums"]["tipo_persona"]
+          tipos_persona?: string[] | null
           updated_at?: string
           vinculacion?: string | null
           whatsapp?: string | null
@@ -1627,6 +1630,7 @@ export type Database = {
           display_name: string
           grupo_id: string | null
           id: string
+          red: string | null
           updated_at: string
           user_id: string
         }
@@ -1636,6 +1640,7 @@ export type Database = {
           display_name?: string
           grupo_id?: string | null
           id?: string
+          red?: string | null
           updated_at?: string
           user_id: string
         }
@@ -1645,6 +1650,7 @@ export type Database = {
           display_name?: string
           grupo_id?: string | null
           id?: string
+          red?: string | null
           updated_at?: string
           user_id?: string
         }
