@@ -85,11 +85,17 @@ export default function PersonaFormDialog({ initialData, onClose }: Props) {
   useEffect(() => {
     if (initialData) {
       setOpen(true);
-      // Load existing tipos — prefer tipos_persona array, fallback to tipo_persona string
-      const existentes: string[] = (initialData.tipos_persona && initialData.tipos_persona.length > 0)
+      // Merge tipos_persona array with tipo_persona for consistency
+      // If tipos_persona exists, use it — but always ensure tipo_persona is included
+      const tipoActual = initialData.tipo_persona;
+      const tiposArray: string[] = (initialData.tipos_persona && initialData.tipos_persona.length > 0)
         ? initialData.tipos_persona
-        : initialData.tipo_persona ? [initialData.tipo_persona] : ["Miembro"];
-      setTiposSeleccionados(existentes);
+        : tipoActual ? [tipoActual] : ["Miembro"];
+      // If tipo_persona is not in the array, add it (fixes migration inconsistency)
+      const merged = tipoActual && !tiposArray.includes(tipoActual)
+        ? [tipoActual, ...tiposArray.filter(t => t !== "Miembro")]
+        : tiposArray;
+      setTiposSeleccionados(merged.length > 0 ? merged : ["Miembro"]);
     } else {
       setTiposSeleccionados(["Miembro"]);
     }

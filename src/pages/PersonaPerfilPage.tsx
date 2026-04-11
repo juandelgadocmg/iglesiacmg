@@ -229,11 +229,19 @@ export default function PersonaPerfilPage() {
                 {persona.nombres} {persona.apellidos}
               </h1>
               <div className="flex items-center gap-2 mt-2 flex-wrap">
-                {((persona as any).tipos_persona?.length ? (persona as any).tipos_persona : [persona.tipo_persona]).map((tipo: string) => (
-                  <Badge key={tipo} className={cn("shadow-sm", tipoColor[tipo] || "bg-muted")}>
-                    <Church className="h-3 w-3 mr-1" /> {tipo}
-                  </Badge>
-                ))}
+                {(() => {
+                  const arr: string[] = (persona as any).tipos_persona?.length
+                    ? (persona as any).tipos_persona
+                    : [persona.tipo_persona];
+                  const merged = persona.tipo_persona && !arr.includes(persona.tipo_persona)
+                    ? [persona.tipo_persona, ...arr.filter((t: string) => t !== "Miembro")]
+                    : arr;
+                  return [...new Set(merged)].map((tipo: string) => (
+                    <Badge key={tipo} className={cn("shadow-sm", tipoColor[tipo] || "bg-muted")}>
+                      <Church className="h-3 w-3 mr-1" /> {tipo}
+                    </Badge>
+                  ));
+                })()}
                 <StatusBadge status={persona.estado_iglesia} />
                 {age !== null && (
                   <Badge variant="outline" className="border-primary-foreground/30 text-primary-foreground/90 bg-primary-foreground/10">

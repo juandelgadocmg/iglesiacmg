@@ -203,9 +203,15 @@ export default function PersonasPage() {
                       <div className="flex-1 min-w-0">
                         <p className="font-semibold text-foreground truncate">{p.nombres} {p.apellidos}</p>
                         <div className="flex items-center gap-2 mt-1">
-                          {(p.tipos_persona?.length ? p.tipos_persona : [p.tipo_persona]).map((tipo: string) => (
-                            <Badge key={tipo} variant="secondary" className={`text-[10px] ${tipoColor[tipo] || ""}`}>{tipo}</Badge>
-                          ))}
+                          {(() => {
+                            const arr: string[] = p.tipos_persona?.length ? p.tipos_persona : [p.tipo_persona];
+                            const merged = p.tipo_persona && !arr.includes(p.tipo_persona)
+                              ? [p.tipo_persona, ...arr.filter((t: string) => t !== "Miembro")]
+                              : arr;
+                            return [...new Set(merged)].map((tipo: string) => (
+                              <Badge key={tipo} variant="secondary" className={`text-[10px] ${tipoColor[tipo] || ""}`}>{tipo}</Badge>
+                            ));
+                          })()}
                           <StatusBadge status={p.estado_iglesia} />
                         </div>
                       </div>
