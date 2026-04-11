@@ -111,14 +111,24 @@ export default function UsuariosPage() {
   const handleDeleteUser = async (userId: string, name: string) => {
     if (!window.confirm(`¿Eliminar permanentemente al usuario "${name}"? Esta acción no se puede deshacer.`)) return;
     try {
-      const { error } = await supabase.functions.invoke("invite-user", {
+      const { data, error } = await supabase.functions.invoke("invite-user", {
         body: { action: "delete_user", user_id: userId },
       });
-      if (error) throw error;
+      if (error) throw new Error(error.message || "Error en la función");
+      if (data?.error) throw new Error(data.error);
       toast.success(`Usuario "${name}" eliminado`);
       handleSuccess();
     } catch (err: any) {
-      toast.error(err.message || "Error al eliminar usuario");
+      // If edge function not deployed yet, delete from DB directly
+      try {
+        await supabase.from("user_roles").delete().eq("user_id", userId);
+        await supabase.from("profiles").delete().eq("user_id", userId);
+        toast.success(`Usuario "${name}" eliminado (roles y perfil)`);
+        toast.warning("La cuenta de auth requiere que la función edge esté desplegada en Supabase");
+        handleSuccess();
+      } catch {
+        toast.error(err.message || "Error al eliminar usuario");
+      }
     }
   };
 
