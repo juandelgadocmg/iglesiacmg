@@ -204,11 +204,11 @@ export default function PersonasPage() {
                         <p className="font-semibold text-foreground truncate">{p.nombres} {p.apellidos}</p>
                         <div className="flex items-center gap-2 mt-1">
                           {(() => {
-                            const arr: string[] = p.tipos_persona?.length ? p.tipos_persona : [p.tipo_persona];
-                            const merged = p.tipo_persona && !arr.includes(p.tipo_persona)
-                              ? [p.tipo_persona, ...arr.filter((t: string) => t !== "Miembro")]
-                              : arr;
-                            return [...new Set(merged)].map((tipo: string) => (
+                            // Use tipos_persona only if it's consistent (contains tipo_persona)
+                            const tipoP: string = p.tipo_persona || "Miembro";
+                            const arr: string[] = p.tipos_persona?.length ? p.tipos_persona : [tipoP];
+                            const tipos = arr.includes(tipoP) ? [...new Set(arr)] : [tipoP];
+                            return tipos.map((tipo: string) => (
                               <Badge key={tipo} variant="secondary" className={`text-[10px] ${tipoColor[tipo] || ""}`}>{tipo}</Badge>
                             ));
                           })()}

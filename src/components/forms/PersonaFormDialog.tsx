@@ -29,11 +29,12 @@ const TIPOS_DOCUMENTO = [
 ];
 
 const TIPOS_PERSONA = [
-  "CDP",
+  "Miembro",
   "Visitante",
+  "CDP",
+  "Discípulo",
   "Iglesia Virtual",
   "Estudiante Seminario",
-  "Discípulo",
   "Maestro Seminario",
   "Miembro No Activo",
   "Líder Casa de Paz",
@@ -85,19 +86,19 @@ export default function PersonaFormDialog({ initialData, onClose }: Props) {
   useEffect(() => {
     if (initialData) {
       setOpen(true);
-      // Merge tipos_persona array with tipo_persona for consistency
-      // If tipos_persona exists, use it — but always ensure tipo_persona is included
-      const tipoActual = initialData.tipo_persona;
-      const tiposArray: string[] = (initialData.tipos_persona && initialData.tipos_persona.length > 0)
-        ? initialData.tipos_persona
-        : tipoActual ? [tipoActual] : ["Miembro"];
-      // If tipo_persona is not in the array, add it (fixes migration inconsistency)
-      const merged = tipoActual && !tiposArray.includes(tipoActual)
-        ? [tipoActual, ...tiposArray.filter(t => t !== "Miembro")]
-        : tiposArray;
-      setTiposSeleccionados(merged.length > 0 ? merged : ["Miembro"]);
+      // Use tipos_persona if it has meaningful data (more than one type, or a non-Miembro type)
+      // Otherwise fall back to tipo_persona as single source of truth
+      const tipoActual: string = initialData.tipo_persona || "Miembro";
+      const tiposArr: string[] = initialData.tipos_persona || [];
+      // Only trust tipos_persona if it contains the current tipo_persona
+      // This avoids showing stale migration data
+      const cleanTipos = tiposArr.includes(tipoActual)
+        ? [...new Set(tiposArr)]
+        : [tipoActual];
+      setTiposSeleccionados(cleanTipos.length > 0 ? cleanTipos : [tipoActual]);
     } else {
-      setTiposSeleccionados(["Miembro"]);
+      // New persona: start with empty selection so user must choose deliberately
+      setTiposSeleccionados([]);
     }
   }, [initialData]);
 
@@ -106,7 +107,7 @@ export default function PersonaFormDialog({ initialData, onClose }: Props) {
     setTipoPeticion("");
     setDescripcionPeticion("");
     setAceptaPolitica(false);
-    setTiposSeleccionados(["Miembro"]);
+    setTiposSeleccionados([]);
     onClose?.();
   };
 
@@ -117,6 +118,7 @@ export default function PersonaFormDialog({ initialData, onClose }: Props) {
     const apellidos = (fd.get("apellidos") as string)?.trim();
     if (!nombres || !apellidos) { toast.error("Nombres y apellidos son obligatorios"); return; }
     if (!isEdit && !aceptaPolitica) { toast.error("Debe aceptar la política de tratamiento de datos"); return; }
+    if (tiposSeleccionados.length === 0) { toast.error("Debes seleccionar al menos un tipo de asistente"); return; }
 
     const clean = (key: string) => {
       const v = (fd.get(key) as string)?.trim();
@@ -294,7 +296,7 @@ export default function PersonaFormDialog({ initialData, onClose }: Props) {
           <p className="text-sm font-semibold text-muted-foreground uppercase tracking-wide pt-2">Información congregacional</p>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div className="space-y-2 sm:col-span-2">
-              <Label>Tipo de asistente <span className="text-muted-foreground font-normal">(puede seleccionar varios)</span></Label>
+              <Label>Tipo de asistente <span className="text-destructive">*</span> <span className="text-muted-foreground font-normal text-xs">(puedes seleccionar varios)</span></Label>
               <div className="grid grid-cols-2 sm:grid-cols-3 gap-2 rounded-lg border p-3 bg-muted/20">
                 {TIPOS_PERSONA.map(tipo => (
                   <label key={tipo} className={`flex items-center gap-2 rounded-md px-2 py-1.5 cursor-pointer transition-colors text-xs ${
@@ -314,7 +316,7 @@ export default function PersonaFormDialog({ initialData, onClose }: Props) {
                 ))}
               </div>
               {tiposSeleccionados.length === 0 && (
-                <p className="text-xs text-destructive">Selecciona al menos un tipo</p>
+                <p className="text-xs text-destructive">⚠️ Selecciona al menos un tipo</p>
               )}
               {tiposSeleccionados.length > 0 && (
                 <p className="text-xs text-muted-foreground">
