@@ -95,30 +95,15 @@ export default function Dashboard() {
   const birthdays = useMemo(() => {
     if (!personas) return [];
     const now = new Date();
-
-    // Get start (Monday) and end (Sunday) of the current week
-    const dayOfWeek = now.getDay() === 0 ? 6 : now.getDay() - 1; // Mon=0 … Sun=6
-    const weekStart = new Date(now);
-    weekStart.setDate(now.getDate() - dayOfWeek);
-    weekStart.setHours(0, 0, 0, 0);
-    const weekEnd = new Date(weekStart);
-    weekEnd.setDate(weekStart.getDate() + 6);
-    weekEnd.setHours(23, 59, 59, 999);
+    const today = { month: now.getMonth(), day: now.getDate() };
 
     return (personas as any[])
       .filter(p => {
         if (!p.fecha_nacimiento) return false;
         try {
           const bday = parseISO(p.fecha_nacimiento);
-          // Compare only month+day (ignore year)
-          const bdayThisYear = new Date(now.getFullYear(), bday.getMonth(), bday.getDate());
-          return bdayThisYear >= weekStart && bdayThisYear <= weekEnd;
+          return bday.getMonth() === today.month && bday.getDate() === today.day;
         } catch { return false; }
-      })
-      .sort((a, b) => {
-        const da = parseISO(a.fecha_nacimiento);
-        const db = parseISO(b.fecha_nacimiento);
-        return (da.getMonth() * 31 + da.getDate()) - (db.getMonth() * 31 + db.getDate());
       })
       .map(p => ({
         nombre: `${p.nombres} ${p.apellidos}`,
