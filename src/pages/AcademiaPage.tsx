@@ -1623,15 +1623,11 @@ function PeriodoDetailView({ escuela, periodo, onBackToPeriodos }: any) {
                         </div>
                         <div>
                           <label className="text-[10px] text-muted-foreground font-medium">Maestro</label>
-                          <Select value={editForm.maestro_id} onValueChange={(v) => setEditForm(f => ({ ...f, maestro_id: v }))}>
-                            <SelectTrigger className="h-8 text-xs"><SelectValue placeholder="Seleccionar maestro" /></SelectTrigger>
-                            <SelectContent>
-                              <SelectItem value="none">Sin maestro</SelectItem>
-                              {(personas || []).map((p: any) => (
-                                <SelectItem key={p.id} value={p.id}>{p.nombres} {p.apellidos}</SelectItem>
-                              ))}
-                            </SelectContent>
-                          </Select>
+                          <MaestroSearchPickerShared
+                            personas={maestros}
+                            value={editForm.maestro_id || ""}
+                            onChange={(v) => setEditForm(f => ({ ...f, maestro_id: v }))}
+                          />
                         </div>
                         <div>
                           <label className="text-[10px] text-muted-foreground font-medium">Aula</label>
