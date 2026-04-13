@@ -14,6 +14,7 @@ import ConceptoPagoFormDialog from "@/components/forms/ConceptoPagoFormDialog";
 import RecursoFormDialog from "@/components/forms/RecursoFormDialog";
 import HomologacionFormDialog from "@/components/forms/HomologacionFormDialog";
 import MaestroFormDialog from "@/components/academia/MaestroFormDialog";
+import MaestroSearchPickerShared from "@/components/academia/MaestroSearchPicker";
 import HistorialCalificacionesSection from "@/components/academia/HistorialCalificacionesSection";
 import DeleteConfirmDialog from "@/components/shared/DeleteConfirmDialog";
 import MateriaAttendanceTrendChart from "@/components/charts/MateriaAttendanceTrendChart";
@@ -1623,15 +1624,14 @@ function PeriodoDetailView({ escuela, periodo, onBackToPeriodos }: any) {
                         </div>
                         <div>
                           <label className="text-[10px] text-muted-foreground font-medium">Maestro</label>
-                          <Select value={editForm.maestro_id} onValueChange={(v) => setEditForm(f => ({ ...f, maestro_id: v }))}>
-                            <SelectTrigger className="h-8 text-xs"><SelectValue placeholder="Seleccionar maestro" /></SelectTrigger>
-                            <SelectContent>
-                              <SelectItem value="none">Sin maestro</SelectItem>
-                              {(personas || []).map((p: any) => (
-                                <SelectItem key={p.id} value={p.id}>{p.nombres} {p.apellidos}</SelectItem>
-                              ))}
-                            </SelectContent>
-                          </Select>
+                          <MaestroSearchPickerShared
+                            personas={(personas || []).filter((p: any) => {
+                              const TIPOS = ["Maestro Seminario", "Maestro Discipulado", "Maestro", "Mentor", "Pastor Principal"];
+                              return TIPOS.includes(p.tipo_persona) || (p.tipos_persona || []).some((t: string) => TIPOS.includes(t));
+                            })}
+                            value={editForm.maestro_id || ""}
+                            onChange={(v) => setEditForm(f => ({ ...f, maestro_id: v }))}
+                          />
                         </div>
                         <div>
                           <label className="text-[10px] text-muted-foreground font-medium">Aula</label>
