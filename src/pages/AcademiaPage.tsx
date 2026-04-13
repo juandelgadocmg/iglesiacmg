@@ -296,11 +296,13 @@ function MaestrosSection({ escuelas, allPeriodos }: any) {
   const [search, setSearch] = useState("");
   const [selectedMaestro, setSelectedMaestro] = useState<any>(null);
 
-  // Get all maestros: personas who are assigned to any materia or have tipo "Maestro Seminario"
+  // Include ALL teacher types: Seminario, Discipulado, Maestro, Mentor
+  const TIPOS_MAESTRO = ["Maestro Seminario", "Maestro Discipulado", "Maestro", "Mentor", "Pastor Principal"];
   const maestros = useMemo(() => {
     if (!personas) return [];
     return personas.filter((p: any) =>
-      p.tipo_persona === "Maestro Seminario" || p.tipo_persona === "Maestro"
+      TIPOS_MAESTRO.includes(p.tipo_persona) ||
+      (p.tipos_persona || []).some((t: string) => TIPOS_MAESTRO.includes(t))
     );
   }, [personas]);
 
@@ -332,7 +334,7 @@ function MaestrosSection({ escuelas, allPeriodos }: any) {
       {filtered.length === 0 ? (
         <div className="rounded-xl border bg-card p-12 text-center text-muted-foreground">
           <UserCheck className="h-12 w-12 mx-auto mb-3 opacity-40" />
-          <p className="text-sm">No hay maestros registrados. Asigna tipo "Maestro Seminario" a una persona.</p>
+          <p className="text-sm">No hay maestros registrados. Asigna tipo "Maestro Seminario" o "Maestro Discipulado" a una persona.</p>
         </div>
       ) : (
         <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">

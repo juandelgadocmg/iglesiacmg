@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useMemo, useRef, useEffect } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
@@ -9,10 +9,12 @@ import { Textarea } from "@/components/ui/textarea";
 import { Switch } from "@/components/ui/switch";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage, FormDescription } from "@/components/ui/form";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Plus } from "lucide-react";
+import { Plus, Search, X } from "lucide-react";
 import { useCreateMateria, useAulas } from "@/hooks/useAcademia";
 import { usePersonas } from "@/hooks/useDatabase";
 import { toast } from "sonner";
+
+const TIPOS_MAESTRO = ["Maestro Seminario", "Maestro Discipulado", "Maestro", "Mentor", "Pastor Principal"];
 
 const schema = z.object({
   nombre: z.string().min(1, "El nombre es requerido"),
@@ -29,6 +31,83 @@ const schema = z.object({
   alerta_inasistencias: z.boolean(),
   cantidad_inasistencias_alerta: z.string().optional(),
 });
+
+// ── Searchable maestro picker ────────────────────────────────────────────────
+function MaestroSearchPicker({
+  personas, value, onChange,
+}: { personas: any[]; value: string; onChange: (id: string) => void }) {
+  const [query, setQuery] = useState("");
+  const [open, setOpen] = useState(false);
+  const wrapperRef = useRef<HTMLDivElement>(null);
+
+  const selected = personas.find(p => p.id === value);
+
+  const filtered = useMemo(() => {
+    const q = query.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+    return personas.filter(p => {
+      const full = `${p.nombres} ${p.apellidos}`.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+      return !q || full.includes(q);
+    }).slice(0, 60);
+  }, [personas, query]);
+
+  useEffect(() => {
+    const handler = (e: MouseEvent) => {
+      if (wrapperRef.current && !wrapperRef.current.contains(e.target as Node)) setOpen(false);
+    };
+    document.addEventListener("mousedown", handler);
+    return () => document.removeEventListener("mousedown", handler);
+  }, []);
+
+  if (selected && !open) {
+    return (
+      <div className="flex items-center justify-between rounded-md border px-3 py-2 bg-background text-sm">
+        <div>
+          <span className="font-medium">{selected.nombres} {selected.apellidos}</span>
+          <span className="text-xs text-muted-foreground ml-2">({selected.tipo_persona})</span>
+        </div>
+        <button type="button" onClick={() => { onChange(""); setQuery(""); }}
+          className="text-muted-foreground hover:text-destructive ml-2">
+          <X className="h-3.5 w-3.5" />
+        </button>
+      </div>
+    );
+  }
+
+  return (
+    <div ref={wrapperRef} className="relative">
+      <div className="relative">
+        <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground pointer-events-none" />
+        <Input
+          placeholder="Buscar maestro por nombre..."
+          value={query}
+          onChange={e => { setQuery(e.target.value); setOpen(true); }}
+          onFocus={() => setOpen(true)}
+          className="pl-8 text-sm"
+          autoComplete="off"
+        />
+      </div>
+      {open && (
+        <div className="absolute z-50 w-full mt-1 rounded-md border bg-popover shadow-lg max-h-52 overflow-y-auto">
+          {filtered.length === 0 ? (
+            <div className="px-3 py-3 text-sm text-center text-muted-foreground">Sin resultados</div>
+          ) : filtered.map(p => (
+            <div key={p.id}
+              className="flex items-center gap-2.5 px-3 py-2 cursor-pointer hover:bg-muted/60 text-sm"
+              onMouseDown={() => { onChange(p.id); setQuery(""); setOpen(false); }}>
+              <div className="w-7 h-7 rounded-full bg-primary/10 flex items-center justify-center text-[10px] font-bold text-primary shrink-0">
+                {p.nombres[0]}{p.apellidos[0]}
+              </div>
+              <div className="flex-1 min-w-0">
+                <p className="font-medium truncate">{p.nombres} {p.apellidos}</p>
+                <p className="text-[10px] text-muted-foreground">{p.tipo_persona}</p>
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
 
 export default function MateriaFormDialog({ periodoId }: { periodoId: string }) {
   const [open, setOpen] = useState(false);
@@ -76,8 +155,10 @@ export default function MateriaFormDialog({ periodoId }: { periodoId: string }) 
     }
   };
 
+  // Include ALL teacher types (Seminario + Discipulado + Maestro + Mentor)
   const maestros = (personas || []).filter((p: any) =>
-    p.tipo_persona === "Maestro Seminario" || p.tipo_persona === "Maestro"
+    TIPOS_MAESTRO.includes(p.tipo_persona) ||
+    (p.tipos_persona || []).some((t: string) => TIPOS_MAESTRO.includes(t))
   );
 
   return (
@@ -113,17 +194,16 @@ export default function MateriaFormDialog({ periodoId }: { periodoId: string }) 
             )} />
 
             <div className="grid grid-cols-2 gap-4">
+              {/* Maestro — buscador */}
               <FormField control={form.control} name="maestro_id" render={({ field }) => (
                 <FormItem>
                   <FormLabel>Maestro</FormLabel>
-                  <Select onValueChange={field.onChange} value={field.value}>
-                    <FormControl><SelectTrigger><SelectValue placeholder="Seleccionar maestro" /></SelectTrigger></FormControl>
-                    <SelectContent>
-                      {maestros.map(p => (
-                        <SelectItem key={p.id} value={p.id}>{p.nombres} {p.apellidos}</SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
+                  <MaestroSearchPicker
+                    personas={maestros}
+                    value={field.value || ""}
+                    onChange={field.onChange}
+                  />
+                  <p className="text-[10px] text-muted-foreground">Seminario, Discipulado, Mentor, etc.</p>
                 </FormItem>
               )} />
               <FormField control={form.control} name="aula_id" render={({ field }) => (
@@ -156,7 +236,6 @@ export default function MateriaFormDialog({ periodoId }: { periodoId: string }) 
               )} />
             </div>
 
-            {/* Habilitaciones */}
             <div className="rounded-lg border p-4 space-y-3">
               <p className="text-sm font-semibold text-foreground">Habilitaciones</p>
               <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
@@ -190,7 +269,6 @@ export default function MateriaFormDialog({ periodoId }: { periodoId: string }) 
               </div>
             </div>
 
-            {/* Asistencia config */}
             <div className="rounded-lg border p-4 space-y-3">
               <p className="text-sm font-semibold text-foreground">Control de asistencia</p>
               <div className="grid grid-cols-2 gap-4">

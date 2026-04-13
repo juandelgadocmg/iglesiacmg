@@ -1,6 +1,6 @@
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import { ChevronLeft, ChevronRight } from "lucide-react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useLocation } from "react-router-dom";
 import PageHeader from "@/components/shared/PageHeader";
 import StatusBadge from "@/components/shared/StatusBadge";
 import PersonaFormDialog from "@/components/forms/PersonaFormDialog";
@@ -54,6 +54,7 @@ const tipoColor: Record<string, string> = {
 
 export default function PersonasPage() {
   const navigate = useNavigate();
+  const location = useLocation();
   const { data: personas, isLoading } = usePersonas();
   const deletePersona = useDeletePersona();
   const [editing, setEditing] = useState<any>(null);
@@ -67,6 +68,16 @@ export default function PersonasPage() {
   const [estadoFilter, setEstadoFilter] = useState("all");
   const [page, setPage] = useState(1);
   const pageSize = 9;
+
+  // Apply filter from dashboard navigation state
+  useEffect(() => {
+    const state = location.state as any;
+    if (state?.estadoFilter) {
+      setEstadoFilter(state.estadoFilter.toLowerCase() === "inactivo" ? "Inactivo" : state.estadoFilter);
+      // Clear state so refresh doesn't re-apply
+      window.history.replaceState({}, "");
+    }
+  }, []);
 
   const filtered = useMemo(() => {
     if (!personas) return [];
