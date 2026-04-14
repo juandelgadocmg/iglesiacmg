@@ -192,35 +192,60 @@ export default function ImportAcademiaDialog() {
   };
 
   const findPersonaByFullName = (personas: any[], fullName: string): string | undefined => {
-    const normalized = fullName.toLowerCase().trim();
-    // Try exact match: "Apellido1 Apellido2 Nombre" vs "nombres apellidos"
-    let found = personas.find((p) => {
-      const dbFull = `${p.apellidos} ${p.nombres}`.toLowerCase().trim();
-      return dbFull === normalized;
-    });
+    // Normalize: lowercase, remove accents, collapse spaces
+    const norm = (s: string) => s.toLowerCase().trim()
+      .normalize("NFD").replace(/[\u0300-\u036f]/g, "")
+      .replace(/\s+/g, " ");
+
+    const fileNorm = norm(fullName);
+    const fileWords = fileNorm.split(" ").filter(Boolean);
+
+    // 1. Exact match "Apellidos Nombres" (normalized)
+    let found = personas.find((p) =>
+      norm(`${p.apellidos} ${p.nombres}`) === fileNorm
+    );
     if (found) return found.id;
 
-    // Try reversed: "Nombres Apellidos"
-    found = personas.find((p) => {
-      const dbFull = `${p.nombres} ${p.apellidos}`.toLowerCase().trim();
-      return dbFull === normalized;
-    });
+    // 2. Exact match "Nombres Apellidos" (normalized)
+    found = personas.find((p) =>
+      norm(`${p.nombres} ${p.apellidos}`) === fileNorm
+    );
     if (found) return found.id;
 
-    // Fuzzy: check if all words from the file appear in the DB record
-    const fileWords = normalized.split(/\s+/).filter(Boolean);
+    // 3. All file words exist in DB record (handles extra middle names, accent diffs)
     found = personas.find((p) => {
-      const dbWords = `${p.nombres} ${p.apellidos}`.toLowerCase().split(/\s+/).filter(Boolean);
+      const dbWords = norm(`${p.nombres} ${p.apellidos}`).split(" ").filter(Boolean);
       return fileWords.length >= 2 && fileWords.every((w) => dbWords.includes(w));
     });
     if (found) return found.id;
 
-    // Reverse fuzzy
+    // 4. All DB words exist in file (DB has more words than file)
     found = personas.find((p) => {
-      const dbWords = `${p.nombres} ${p.apellidos}`.toLowerCase().split(/\s+/).filter(Boolean);
+      const dbWords = norm(`${p.nombres} ${p.apellidos}`).split(" ").filter(Boolean);
       return dbWords.length >= 2 && dbWords.every((w) => fileWords.includes(w));
     });
     if (found) return found.id;
+
+    // 5. High-similarity match: at least 75% of words match (handles one missing/extra word)
+    found = personas.find((p) => {
+      const dbWords = norm(`${p.nombres} ${p.apellidos}`).split(" ").filter(Boolean);
+      const allWords = [...new Set([...fileWords, ...dbWords])];
+      const matches = fileWords.filter((w) => dbWords.includes(w)).length;
+      const maxLen = Math.max(fileWords.length, dbWords.length);
+      return maxLen >= 2 && matches / maxLen >= 0.75;
+    });
+    if (found) return found.id;
+
+    // 6. Last resort: first word (apellido) + last word (nombre) match
+    if (fileWords.length >= 2) {
+      const firstWord = fileWords[0];
+      const lastWord = fileWords[fileWords.length - 1];
+      found = personas.find((p) => {
+        const dbWords = norm(`${p.nombres} ${p.apellidos}`).split(" ").filter(Boolean);
+        return dbWords.includes(firstWord) && dbWords.includes(lastWord);
+      });
+      if (found) return found.id;
+    }
 
     return undefined;
   };
@@ -271,7 +296,16 @@ export default function ImportAcademiaDialog() {
         const personaId = findPersonaByFullName(personas || [], row.estudiante);
         if (!personaId) {
           notFoundNames.push(row.estudiante);
-          errors.push(`Persona no encontrada: "${row.estudiante}"`);
+          // Find closest candidate to help the user
+          const norm = (s: string) => s.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/\s+/g, " ").trim();
+          const fileWords = norm(row.estudiante).split(" ");
+          const candidate = (personas || []).find(p => {
+            const dbWords = norm(`${p.nombres} ${p.apellidos}`).split(" ");
+            const matches = fileWords.filter(w => dbWords.includes(w)).length;
+            return matches >= 2;
+          });
+          const hint = candidate ? ` (¿Quizás: "${candidate.nombres} ${candidate.apellidos}"?)` : "";
+          errors.push(`Persona no encontrada: "${row.estudiante}"${hint}`);
           continue;
         }
 
