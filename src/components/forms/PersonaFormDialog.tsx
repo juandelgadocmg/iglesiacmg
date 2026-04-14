@@ -16,7 +16,7 @@ interface Props {
   onClose?: () => void;
 }
 
-const TIPOS_PETICION = ["Financiera", "Familiar", "Sanidad", "Emocional", "Otros"];
+const TIPOS_PETICION = ["Financiera", "Familiar", "Sanidad", "Emocional", "Espiritual", "Otros"];
 
 const TIPOS_DOCUMENTO = [
   "Registro Civil",
@@ -265,6 +265,7 @@ export default function PersonaFormDialog({ initialData, onClose }: Props) {
                   <SelectItem value="none">Sin especificar</SelectItem>
                   <SelectItem value="Soltero/a">Soltero/a</SelectItem>
                   <SelectItem value="Casado/a">Casado/a</SelectItem>
+                  <SelectItem value="Unión libre">Unión libre</SelectItem>
                   <SelectItem value="Viudo/a">Viudo/a</SelectItem>
                   <SelectItem value="Divorciado/a">Divorciado/a</SelectItem>
                 </SelectContent>
