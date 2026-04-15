@@ -352,7 +352,13 @@ export default function ImportAcademiaDialog() {
           curso_id: selectedEscuelaId,
           periodo_id: selectedPeriodoId,
           materia_id: materia.id,
-          estado: row.aprobadaMateria ? "Completado" : row.aprobadoAsistencia ? "Activo" : "Retirado",
+          estado: row.aprobadaMateria
+            ? "Completado"
+            : (row.nota > 0 && row.nota < 3.0)
+              ? "Retirado"           // nota < 3.0 → reprobó
+              : row.aprobadoAsistencia
+                ? "Activo"
+                : "Retirado",
           nota_final: row.nota > 0 ? row.nota : null,  // Fix: don't save 0 as nota_final
         });
       }
