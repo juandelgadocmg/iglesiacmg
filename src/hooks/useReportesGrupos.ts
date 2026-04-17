@@ -91,12 +91,27 @@ export function useGrupoMiembrosForReport(grupoId: string | null) {
     queryKey: ["grupo_miembros_report", grupoId],
     enabled: !!grupoId,
     queryFn: async () => {
-      const { data, error } = await supabase
+      // Step 1: get persona_ids from grupo_miembros
+      const { data: membersData, error: membersError } = await supabase
         .from("grupo_miembros" as any)
-        .select("persona_id, personas:persona_id(id, nombres, apellidos, foto_url, tipo_persona)")
-        .eq("grupo_id", grupoId!) as any;
-      if (error) throw error;
-      return (data || []).map((d: any) => d.personas).filter(Boolean) as Array<{
+        .select("persona_id, rol")
+        .eq("grupo_id", grupoId!);
+
+      if (membersError) throw membersError;
+      if (!membersData || membersData.length === 0) return [];
+
+      const personaIds = (membersData as any[]).map((m: any) => m.persona_id).filter(Boolean);
+      if (personaIds.length === 0) return [];
+
+      // Step 2: fetch personas separately to avoid join issues
+      const { data: personasData, error: personasError } = await supabase
+        .from("personas")
+        .select("id, nombres, apellidos, foto_url, tipo_persona")
+        .in("id", personaIds);
+
+      if (personasError) throw personasError;
+
+      return (personasData || []) as Array<{
         id: string; nombres: string; apellidos: string; foto_url: string | null; tipo_persona: string;
       }>;
     },

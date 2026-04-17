@@ -176,7 +176,7 @@ export default function ReporteGrupoFormDialog({ open, onOpenChange, editReporte
 
   // Load members when group selected, and merge edit attendance if applicable
   useEffect(() => {
-    if (miembros && miembros.length > 0 && grupoId) {
+    if (miembros !== undefined && grupoId) {
       const loadRoles = async () => {
         const { data: memberData } = await supabase
           .from("grupo_miembros")
