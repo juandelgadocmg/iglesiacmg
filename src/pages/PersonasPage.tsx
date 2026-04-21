@@ -23,6 +23,7 @@ import { toast } from "sonner";
 import { format, parseISO } from "date-fns";
 import { es } from "date-fns/locale";
 import ExportDropdown from "@/components/shared/ExportDropdown";
+import ExportConsolidacionDialog from "@/components/forms/ExportConsolidacionDialog";
 import ImportPersonasDialog from "@/components/forms/ImportPersonasDialog";
 import { useUserRoles } from "@/hooks/useUserRoles";
 import { canPerform } from "@/lib/permissions";
@@ -58,6 +59,7 @@ export default function PersonasPage() {
   const { data: personas, isLoading } = usePersonas();
   const deletePersona = useDeletePersona();
   const [editing, setEditing] = useState<any>(null);
+  const [showExportConsolidacion, setShowExportConsolidacion] = useState(false);
   const { roles } = useUserRoles();
   const { activeRole } = useActiveRole();
   const canEdit   = canPerform(roles, "personas:edit");
@@ -151,9 +153,14 @@ export default function PersonasPage() {
           { header: "Tipo", key: "tipo_persona" }, { header: "Grupo", key: "grupoNombre" },
           { header: "Estado", key: "estado_iglesia" },
         ]} data={tableData} />
+        <Button variant="outline" size="sm" className="gap-1.5" onClick={() => setShowExportConsolidacion(true)}>
+          <FileSpreadsheet className="h-4 w-4" /> Informe Consolidación
+        </Button>
         {canCreate && <ImportPersonasDialog />}
         {canCreate && <PersonaFormDialog />}
       </PageHeader>
+
+      <ExportConsolidacionDialog open={showExportConsolidacion} onOpenChange={setShowExportConsolidacion} />
 
       {canEdit && editing && <PersonaFormDialog initialData={editing} onClose={() => setEditing(null)} />}
 

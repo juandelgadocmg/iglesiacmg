@@ -1536,11 +1536,81 @@ function PeriodoDetailView({ escuela, periodo, onBackToPeriodos }: any) {
                       {(m as any).estado !== "Finalizada" ? (
                         <Button size="sm" variant="outline" className="h-7 text-[10px] flex-1 gap-1"
                           onClick={async () => {
-                            if (!confirm(`¿Finalizar la materia "${m.nombre}"?`)) return;
+                            if (!confirm(`¿Finalizar la materia "${m.nombre}"?\n\nSe actualizará automáticamente el proceso de crecimiento de todos los estudiantes que aprobaron.`)) return;
                             try {
                               await updateMateria.mutateAsync({ id: m.id, estado: "Finalizada" });
-                              toast.success("Materia finalizada");
-                            } catch { toast.error("Error"); }
+
+                              // Sync growth module — update persona_procesos for all passing students
+                              const fechaFin = format(new Date(), "yyyy-MM-dd");
+                              try {
+                                // Get enrolled students for this materia
+                                const { data: matriculas } = await supabase
+                                  .from("matriculas")
+                                  .select("persona_id, nota_final, estado, personas:persona_id(nombres, apellidos)")
+                                  .eq("materia_id", m.id)
+                                  .eq("periodo_id", periodo.id);
+
+                                // Get all procesos for name matching
+                                const { data: procesos } = await supabase
+                                  .from("procesos_crecimiento")
+                                  .select("id, nombre")
+                                  .order("orden");
+
+                                if (matriculas?.length && procesos?.length) {
+                                  // Normalize helper
+                                  const norm = (s: string) => s.toLowerCase()
+                                    .normalize("NFD").replace(/[\u0300-\u036f]/g, "")
+                                    .replace(/[^a-z0-9\s]/g, "").trim();
+
+                                  // Find matching proceso for this materia
+                                  const materiaNorm = norm(m.nombre);
+                                  const matchedProceso = procesos.find((p: any) => {
+                                    const pNorm = norm(p.nombre);
+                                    return materiaNorm.includes(pNorm) || pNorm.includes(materiaNorm) ||
+                                      // Specific mappings for common names
+                                      (materiaNorm.includes("discipulado") && pNorm.includes("discipulado")) ||
+                                      (materiaNorm.includes("evangelismo") && pNorm.includes("evangelismo")) ||
+                                      (materiaNorm.includes("lideres") && pNorm.includes("lideres")) ||
+                                      (materiaNorm.includes("mentores") && pNorm.includes("mentores")) ||
+                                      (materiaNorm.includes("ministerio") && pNorm.includes("ministerio")) ||
+                                      (materiaNorm.includes("bautismo") && pNorm.includes("bautismo")) ||
+                                      (materiaNorm.includes("retiro") && pNorm.includes("retiro"));
+                                  });
+
+                                  if (matchedProceso) {
+                                    // Only update students who passed (nota_final >= 3 or estado Completado)
+                                    const passing = matriculas.filter((mat: any) =>
+                                      mat.estado === "Completado" ||
+                                      (mat.nota_final != null && mat.nota_final >= 3)
+                                    );
+
+                                    if (passing.length > 0) {
+                                      const upserts = passing.map((mat: any) => ({
+                                        persona_id: mat.persona_id,
+                                        proceso_id: matchedProceso.id,
+                                        estado: "Realizado",
+                                        fecha_completado: fechaFin,
+                                      }));
+
+                                      await supabase
+                                        .from("persona_procesos")
+                                        .upsert(upserts as any, { onConflict: "persona_id,proceso_id" });
+
+                                      toast.success(`Materia finalizada · ${passing.length} proceso(s) de crecimiento actualizados con fecha ${fechaFin}`);
+                                    } else {
+                                      toast.success("Materia finalizada · No hay estudiantes aprobados para actualizar");
+                                    }
+                                  } else {
+                                    toast.success("Materia finalizada · (sin proceso de crecimiento asociado)");
+                                  }
+                                } else {
+                                  toast.success("Materia finalizada");
+                                }
+                              } catch (syncErr) {
+                                console.error("Error syncing procesos:", syncErr);
+                                toast.success("Materia finalizada (error al sincronizar crecimiento)");
+                              }
+                            } catch { toast.error("Error al finalizar materia"); }
                           }}>
                           <Lock className="h-3 w-3" /> Finalizar
                         </Button>
