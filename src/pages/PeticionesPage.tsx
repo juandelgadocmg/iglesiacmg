@@ -12,13 +12,14 @@ import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell } from "@/components/ui/table";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import {
   HandHeart, Search, Pencil, Clock, CheckCircle2,
-  Archive, Users, FileText, LayoutGrid
+  Archive, Users, FileText, LayoutGrid, CalendarRange, X
 } from "lucide-react";
 import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip } from "recharts";
 import { toast } from "sonner";
-import { format, parseISO, isPast } from "date-fns";
+import { format, parseISO, isPast, isWithinInterval, startOfDay, endOfDay } from "date-fns";
 import { es } from "date-fns/locale";
 import ExportDropdown from "@/components/shared/ExportDropdown";
 
@@ -51,20 +52,43 @@ export default function PeticionesPage() {
   const [tab, setTab] = useState("Todos");
   const [editing, setEditing] = useState<any>(null);
   const [viewMode, setViewMode] = useState<ViewMode>("panel");
+  const [fechaDesde, setFechaDesde] = useState("");
+  const [fechaHasta, setFechaHasta] = useState("");
+  const [tipoFilter, setTipoFilter] = useState("Todos");
+
+  const hasDateFilter = !!fechaDesde || !!fechaHasta;
+
+  const clearFilters = () => {
+    setFechaDesde("");
+    setFechaHasta("");
+    setTipoFilter("Todos");
+    setSearch("");
+    setTab("Todos");
+  };
 
   const filtered = useMemo(() => {
     if (!peticiones) return [];
     return peticiones.filter((p: any) => {
       if (tab !== "Todos" && p.estado !== tab) return false;
+      if (tipoFilter !== "Todos" && p.tipo !== tipoFilter) return false;
       if (search) {
         const q = search.toLowerCase();
-        return p.titulo.toLowerCase().includes(q) ||
-          p.personas?.nombres?.toLowerCase().includes(q) ||
-          p.personas?.apellidos?.toLowerCase().includes(q);
+        if (!p.titulo.toLowerCase().includes(q) &&
+          !p.personas?.nombres?.toLowerCase().includes(q) &&
+          !p.personas?.apellidos?.toLowerCase().includes(q)) return false;
+      }
+      // Date filter on created_at
+      if (fechaDesde || fechaHasta) {
+        if (!p.created_at) return false;
+        try {
+          const date = parseISO(p.created_at);
+          if (fechaDesde && date < startOfDay(parseISO(fechaDesde))) return false;
+          if (fechaHasta && date > endOfDay(parseISO(fechaHasta))) return false;
+        } catch { return false; }
       }
       return true;
     });
-  }, [peticiones, tab, search]);
+  }, [peticiones, tab, search, tipoFilter, fechaDesde, fechaHasta]);
 
   const counts = useMemo(() => {
     if (!peticiones) return { pendiente: 0, enOracion: 0, respondida: 0, archivada: 0, total: 0 };
@@ -128,8 +152,8 @@ export default function PeticionesPage() {
     <div className="animate-fade-in space-y-6">
       <PageHeader title="Peticiones de Oración" description="Seguimiento y gestión de peticiones de oración de la congregación">
         <ExportDropdown
-          title="Peticiones de Oración"
-          filename="peticiones-oracion"
+          title={`Peticiones de Oración${hasDateFilter ? ` (${fechaDesde || "inicio"} al ${fechaHasta || "hoy"})` : ""}`}
+          filename={`peticiones-oracion${fechaDesde ? `-${fechaDesde}` : ""}${fechaHasta ? `-al-${fechaHasta}` : ""}`}
           columns={[
             { header: "Título", key: "titulo" },
             { header: "Persona", key: "persona" },
@@ -146,6 +170,49 @@ export default function PeticionesPage() {
       </PageHeader>
 
       {editing && <PeticionFormDialog initialData={editing} onClose={() => setEditing(null)} />}
+
+      {/* Date + tipo filters */}
+      <div className="rounded-xl border bg-card p-4 space-y-3">
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-2 text-sm font-medium">
+            <CalendarRange className="h-4 w-4 text-primary" />
+            Filtrar por fecha de creación
+          </div>
+          {(hasDateFilter || tipoFilter !== "Todos") && (
+            <Button variant="ghost" size="sm" className="h-7 gap-1 text-xs text-destructive" onClick={clearFilters}>
+              <X className="h-3 w-3" /> Limpiar filtros
+            </Button>
+          )}
+        </div>
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+          <div className="space-y-1">
+            <label className="text-xs text-muted-foreground font-medium">Desde</label>
+            <Input type="date" value={fechaDesde} onChange={e => setFechaDesde(e.target.value)} className="h-9 text-sm" />
+          </div>
+          <div className="space-y-1">
+            <label className="text-xs text-muted-foreground font-medium">Hasta</label>
+            <Input type="date" value={fechaHasta} onChange={e => setFechaHasta(e.target.value)} className="h-9 text-sm" />
+          </div>
+          <div className="space-y-1">
+            <label className="text-xs text-muted-foreground font-medium">Tipo de petición</label>
+            <Select value={tipoFilter} onValueChange={setTipoFilter}>
+              <SelectTrigger className="h-9 text-sm"><SelectValue /></SelectTrigger>
+              <SelectContent>
+                <SelectItem value="Todos">Todos los tipos</SelectItem>
+                {TIPOS_PETICION.map(t => <SelectItem key={t} value={t}>{t}</SelectItem>)}
+              </SelectContent>
+            </Select>
+          </div>
+        </div>
+        {(hasDateFilter || tipoFilter !== "Todos") && (
+          <div className="flex items-center gap-2 text-xs text-muted-foreground bg-primary/5 rounded-lg px-3 py-2">
+            <span className="font-semibold text-primary">{filtered.length}</span>
+            petición(es) encontradas con los filtros aplicados
+            {hasDateFilter && <span>· {fechaDesde || "inicio"} → {fechaHasta || "hoy"}</span>}
+            {tipoFilter !== "Todos" && <span>· Tipo: {tipoFilter}</span>}
+          </div>
+        )}
+      </div>
 
       {/* View mode toggle */}
       <div className="flex items-center gap-2">
